@@ -38,18 +38,80 @@ SOURCE_ADDON_PY = os.path.join(SCRIPT_DIR, "addon.py")
 SOURCE_PLAYER_JSON = os.path.join(SCRIPT_DIR, "autogen.plugin.video.xstream-player.json")
 
 
+def _looks_like_kodi_root(path):
+    """Sanity-check that a candidate folder actually looks like a Kodi profile folder."""
+    return os.path.isdir(os.path.join(path, "addons")) or os.path.isdir(os.path.join(path, "userdata"))
+
+
 def find_kodi_root():
-    """Return the Kodi userdata root, matching how Kodi resolves special://profile."""
+    """Try every known way Kodi ends up installed on this OS. Returns None if none match."""
     system = platform.system()
+    candidates = []
     if system == "Windows":
         appdata = os.environ.get("APPDATA")
-        if not appdata:
+        if appdata:
+            candidates.append(os.path.join(appdata, "Kodi"))
+        # Microsoft Store (UWP) builds are sandboxed and live under a
+        # per-install package folder with a semi-random suffix instead of
+        # the normal %APPDATA%\Kodi — search for it rather than guessing
+        # the suffix.
+        localappdata = os.environ.get("LOCALAPPDATA")
+        if localappdata:
+            packages_dir = os.path.join(localappdata, "Packages")
+            if os.path.isdir(packages_dir):
+                for entry in os.listdir(packages_dir):
+                    if entry.startswith("XBMCFoundation.Kodi"):
+                        candidates.append(
+                            os.path.join(packages_dir, entry, "LocalCache", "Roaming", "Kodi")
+                        )
+        # Portable installs (zip download run with --portable, or a
+        # portable_data folder placed next to the exe) keep everything
+        # inside the install folder itself instead of AppData.
+        for env_var in ("ProgramFiles", "ProgramFiles(x86)", "ProgramW6432"):
+            base = os.environ.get(env_var)
+            if base:
+                candidates.append(os.path.join(base, "Kodi", "portable_data"))
+        local_appdata_programs = os.environ.get("LOCALAPPDATA")
+        if local_appdata_programs:
+            candidates.append(
+                os.path.join(local_appdata_programs, "Programs", "Kodi", "portable_data")
+            )
+    elif system == "Darwin":
+        candidates.append(os.path.expanduser("~/Library/Application Support/Kodi"))
+    else:
+        # Linux and anything else Kodi-on-Linux-like
+        candidates.append(os.path.expanduser("~/.kodi"))
+        candidates.append(os.path.expanduser("~/.var/app/tv.kodi.Kodi/data"))  # Flatpak
+        candidates.append(os.path.expanduser("~/snap/kodi/current/.kodi"))  # Snap
+
+    for candidate in candidates:
+        if os.path.isdir(candidate) and _looks_like_kodi_root(candidate):
+            return candidate
+    return None
+
+
+def ask_for_kodi_root():
+    """Last resort when none of the known install patterns matched: ask the user directly."""
+    print(
+        "\nCouldn't find your Kodi folder automatically — this can happen with "
+        "portable installs, unusual install locations, or if Kodi hasn't been "
+        "run yet."
+    )
+    print(
+        "In Kodi, check Settings -> System Information (or the 'Profile' path "
+        "shown in the System info screen) to see the exact folder, then paste "
+        "it below. It should be the folder that directly contains 'addons' and "
+        "'userdata' subfolders."
+    )
+    while True:
+        entered = input(
+            "\nPath to your Kodi folder (or leave blank to give up): "
+        ).strip().strip('"')
+        if not entered:
             return None
-        return os.path.join(appdata, "Kodi")
-    if system == "Darwin":
-        return os.path.expanduser("~/Library/Application Support/Kodi")
-    # Linux and anything else Kodi-on-Linux-like
-    return os.path.expanduser("~/.kodi")
+        if os.path.isdir(entered) and _looks_like_kodi_root(entered):
+            return entered
+        print(f"That doesn't look like a Kodi folder (no addons/userdata found in: {entered}). Try again.")
 
 
 def pause_before_exit():
@@ -76,12 +138,12 @@ def main():
         fail(f"Expected to find the player JSON next to this script at:\n  {SOURCE_PLAYER_JSON}")
 
     kodi_root = find_kodi_root()
+    if not kodi_root:
+        kodi_root = ask_for_kodi_root()
     if not kodi_root or not os.path.isdir(kodi_root):
         fail(
-            "Could not find your Kodi folder automatically "
-            f"(looked for: {kodi_root}).\n"
-            "Make sure Kodi has been run at least once, or edit "
-            "find_kodi_root() in this script to point at the right path."
+            "Could not find your Kodi folder. Make sure Kodi has been run at "
+            "least once and has finished its first-run setup, then try again."
         )
     print(f"Kodi folder: {kodi_root}")
 
