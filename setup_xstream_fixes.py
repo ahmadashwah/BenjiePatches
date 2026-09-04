@@ -114,6 +114,49 @@ def ask_for_kodi_root():
         print(f"That doesn't look like a Kodi folder (no addons/userdata found in: {entered}). Try again.")
 
 
+def apply_default_player_settings(kodi_root):
+    """
+    Set TMDb Bingie Helper to always use our player without asking "which app"
+    or "which action" every time — matches the values from a working reference
+    setup. Merges into the existing settings.xml (creating it if it doesn't
+    exist yet) rather than overwriting other settings.
+    """
+    desired = {
+        "default_player_movies": "autogen.plugin.video.xstream-player.json search_movie",
+        "default_player_episodes": "autogen.plugin.video.xstream-player.json search_episode",
+        "default_player_provider": "true",
+        "default_player_kodi": "0",
+    }
+    userdata_settings_dir = os.path.join(
+        kodi_root, "userdata", "addon_data", "plugin.video.tmdb.bingie.helper"
+    )
+    os.makedirs(userdata_settings_dir, exist_ok=True)
+    settings_path = os.path.join(userdata_settings_dir, "settings.xml")
+
+    if os.path.isfile(settings_path):
+        tree = ET.parse(settings_path)
+        root = tree.getroot()
+    else:
+        root = ET.Element("settings", version="2")
+        tree = ET.ElementTree(root)
+
+    existing = {el.get("id"): el for el in root.findall("setting")}
+    for setting_id, value in desired.items():
+        if setting_id in existing:
+            existing[setting_id].text = value
+            existing[setting_id].attrib.pop("default", None)
+        else:
+            el = ET.SubElement(root, "setting", id=setting_id)
+            el.text = value
+
+    try:
+        ET.indent(tree, space="    ")
+    except AttributeError:
+        pass  # ET.indent needs Python 3.9+; harmless to skip, just less pretty-printed
+    tree.write(settings_path, encoding="UTF-8", xml_declaration=False)
+    print(f"Set default player (no more 'which app'/'which action' prompts) -> {settings_path}")
+
+
 def pause_before_exit():
     """Keep the console window open if this was double-clicked instead of run from a terminal."""
     try:
@@ -200,6 +243,10 @@ def main():
     target_json = os.path.join(players_dir, "autogen.plugin.video.xstream-player.json")
     shutil.copy2(SOURCE_PLAYER_JSON, target_json)
     print(f"Installed player config -> {target_json}")
+
+    # --- Step 3: make it the default player so no "which app" / "which action"
+    #     prompt shows up on every single play (matches the working reference setup) ---
+    apply_default_player_settings(kodi_root)
 
     print("\nDone. Reload the skin (or restart Kodi) for the changes to take effect.")
     print(
