@@ -11,11 +11,11 @@
     },
     "play_movie": [
         "plugin://plugin.video.xstream-player/?mode=search_global&query={title_url}&stype=movie&profile_num=1",
-        {"dialog": "true"}
+        {"label": "(?i)^{title}\\s*\\({year}\\)", "dialog": "Auto"}
     ],
     "search_movie": [
         "plugin://plugin.video.xstream-player/?mode=search_global&query={title_url}&stype=movie&profile_num=1",
-        {"dialog": "true"}
+        {"label": "(?i)^{title}\\s*\\({year}\\)", "dialog": "Auto"}
     ],
     "play_episode": [
         "plugin://plugin.video.xstream-player/?mode=search_global&query={showname_url}&stype=series&profile_num=1",
