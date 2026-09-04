@@ -52,8 +52,17 @@ def find_kodi_root():
     return os.path.expanduser("~/.kodi")
 
 
+def pause_before_exit():
+    """Keep the console window open if this was double-clicked instead of run from a terminal."""
+    try:
+        input("\nPress Enter to close this window...")
+    except EOFError:
+        pass
+
+
 def fail(message):
     print(f"\n[STOPPED] {message}")
+    pause_before_exit()
     sys.exit(1)
 
 
@@ -136,6 +145,7 @@ def main():
         "in XStream Player's Profiles settings if you haven't already — "
         "this script only applies the code/config fixes, not your account details."
     )
+    pause_before_exit()
 
 
 if __name__ == "__main__":
