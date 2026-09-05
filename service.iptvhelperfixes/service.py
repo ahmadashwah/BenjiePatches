@@ -94,8 +94,11 @@ def patch_xstream_player():
         return True
 
     backup = target + f".bak-{time.strftime('%Y%m%d-%H%M%S')}"
-    shutil.copy2(target, backup)
-    shutil.copy2(source, target)
+    # copyfile() (not copy2()/copy()) — Android's storage layer often refuses
+    # the permission/timestamp metadata copy those do, even though a plain
+    # content copy works fine.
+    shutil.copyfile(target, backup)
+    shutil.copyfile(source, target)
     log(f"Patched XStream Player addon.py (backup saved as {os.path.basename(backup)}).")
     return True
 
