@@ -49,8 +49,12 @@ phase below wires them together and fixes bugs that surfaced along the way.
 
 **Option A — Install the add-on (recommended, works on literally any device):**
 
-Download `service.iptvhelperfixes.zip` from this repo, then in Kodi:
-**Settings → Add-ons → Install from zip file** → pick the downloaded zip.
+In Kodi, add `https://ahmadashwah.github.io/BenjiePatches/` as a source
+(Settings → File Manager → Add source), then **Settings → Add-ons → Install
+from zip file** → pick that source → select the current zip listed on the
+page (the filename includes the version number, e.g.
+`service.iptvhelperfixes102.zip`, so each release has its own unique
+filename and never gets served stale from a cache).
 
 That's it — no computer, no command prompt, no keyboard needed, works
 identically on Android TV, Fire TV, Google TV, Windows, macOS, or Linux,
