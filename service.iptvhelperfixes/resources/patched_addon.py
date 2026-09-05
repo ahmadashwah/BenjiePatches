@@ -1198,9 +1198,14 @@ def _get_cached_xtream_streams(url, user, pwd, stype, category_id=None):
     if stype in ("movie", "series"):
         for s in data:
             raw_name = s.get("name", "")
-            cleaned = _PROVIDER_PREFIX_RE.sub("", raw_name, count=1).strip()
-            if cleaned:
-                s["name"] = cleaned
+            m = _PROVIDER_PREFIX_RE.match(raw_name)
+            if m:
+                s["provider_tag"] = m.group(0).rstrip(": ").strip()
+                cleaned = raw_name[m.end():].strip()
+                if cleaned:
+                    s["name"] = cleaned
+            else:
+                s["provider_tag"] = ""
     if category_id:
         return [s for s in data if str(s.get("category_id", "")) == str(category_id)]
     return data
@@ -7667,7 +7672,12 @@ def unified_search(query, stype=None):
                 play_url = IPTV.build_xtream_stream_url(url, user, pwd, s, "movie")
                 info = _enrich_movie_info(s, url, user, pwd)
                 display_title = info.get("clean_name") or name
-                li = xbmcgui.ListItem(label=display_title)
+                tag = s.get("provider_tag", "")
+                # Tag shown only in the picker label (to tell apart multiple
+                # matches, e.g. different language/quality sources) — the
+                # actual title metadata used elsewhere stays clean.
+                picker_label = f"{display_title}  [{tag}]" if tag else display_title
+                li = xbmcgui.ListItem(label=picker_label)
                 info_tag = li.getVideoInfoTag()
                 info_tag.setMediaType("movie")
                 info_tag.setTitle(display_title)
@@ -7712,7 +7722,9 @@ def unified_search(query, stype=None):
                     "series_id": sid,
                     "profile_num": pm.active,
                 }
-                li = xbmcgui.ListItem(label=name)
+                tag = s.get("provider_tag", "")
+                picker_label = f"{name}  [{tag}]" if tag else name
+                li = xbmcgui.ListItem(label=picker_label)
                 info_tag = li.getVideoInfoTag()
                 info_tag.setMediaType("tvshow")
                 info_tag.setTitle(name)

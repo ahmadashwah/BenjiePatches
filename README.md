@@ -53,7 +53,7 @@ In Kodi, add `https://ahmadashwah.github.io/BenjiePatches/` as a source
 (Settings → File Manager → Add source), then **Settings → Add-ons → Install
 from zip file** → pick that source → select the current zip listed on the
 page (the filename includes the version number, e.g.
-`service.iptvhelperfixes102.zip`, so each release has its own unique
+`service.iptvhelperfixes103.zip`, so each release has its own unique
 filename and never gets served stale from a cache).
 
 That's it — no computer, no command prompt, no keyboard needed, works
@@ -104,21 +104,21 @@ Create the `players/` folder if it doesn't exist, and put this file in it:
     },
     "play_movie": [
         "plugin://plugin.video.xstream-player/?mode=search_global&query={title_url}&stype=movie&profile_num=1",
-        {"dialog": "true"}
+        {"label": "(?i)^{title}\\s*\\({year}\\)", "dialog": "Auto"}
     ],
     "search_movie": [
         "plugin://plugin.video.xstream-player/?mode=search_global&query={title_url}&stype=movie&profile_num=1",
-        {"dialog": "true"}
+        {"label": "(?i)^{title}\\s*\\({year}\\)", "dialog": "Auto"}
     ],
     "play_episode": [
         "plugin://plugin.video.xstream-player/?mode=search_global&query={showname_url}&stype=series&profile_num=1",
-        {"label": "(?i).*{showname}.*", "dialog": "Auto"},
+        {"label": "(?i)^{showname}\\s*\\({year}\\)", "dialog": "Auto"},
         {"season": "^{season}$", "dialog": "Auto"},
         {"label": "(?i).*S0*{season}E0*{episode}\\b.*", "return": "true", "dialog": "Auto"}
     ],
     "search_episode": [
         "plugin://plugin.video.xstream-player/?mode=search_global&query={showname_url}&stype=series&profile_num=1",
-        {"label": "(?i).*{showname}.*", "dialog": "Auto"},
+        {"label": "(?i)^{showname}\\s*\\({year}\\)", "dialog": "Auto"},
         {"season": "^{season}$", "dialog": "Auto"},
         {"label": "(?i).*S0*{season}E0*{episode}\\b.*", "return": "true", "dialog": "Auto"}
     ]
@@ -132,15 +132,23 @@ Create the `players/` folder if it doesn't exist, and put this file in it:
   directly, no on-screen typing.
 - A route that looks like the obvious guess but does **not** exist:
   `mode=search`. It produces a Kodi log error and silently fails.
-- The trailing `{"dialog": "true"}` on the movie steps is required. The
-  helper add-on only substitutes placeholders like `{title_url}` when there's
-  a step *after* the URL — a single-element action list passes straight
-  through unmodified, so it would literally search for a movie named
-  `{title_url}` and always find nothing.
+- The trailing dialog step (`{"dialog": "true"}` or `{"label": ..., "dialog": "Auto"}`)
+  on the movie steps is required. The helper add-on only substitutes
+  placeholders like `{title_url}` when there's a step *after* the URL — a
+  single-element action list passes straight through unmodified, so it would
+  literally search for a movie named `{title_url}` and always find nothing.
+- The `^{title}\s*\({year}\)` / `^{showname}\s*\({year}\)` anchoring exists
+  because the plain substring search can return more than one real match —
+  e.g. a provider carrying both the 2005 US "The Office" and the 2024
+  Australian reboot under the same base name. Without the year check, a
+  naive regex matching just the name will silently grab whichever one comes
+  first in the results, which is wrong roughly as often as it's right.
+  Anchoring on the exact title+year auto-plays the correct one when it's
+  unique, and only falls back to the picker when it isn't.
 - The `play_episode`/`search_episode` chain is more involved because a naive
   version only matches the *show*, dumping you into XStream Player's own
-  season/episode browser to find the episode by hand. The 3-step chain
-  drills further: match the show name → match the season by its real season
+  season/episode browser to find the episode by hand. The chain drills
+  further: match the show name+year → match the season by its real season
   number (XStream Player does set this correctly) → match the specific
   episode by a `S0xE0x` pattern against its title text, because XStream
   Player does **not** set a real episode-number field on episode items
@@ -196,9 +204,14 @@ goes through to get movie/series data — right before its return statements:
 if stype in ("movie", "series"):
     for s in data:
         raw_name = s.get("name", "")
-        cleaned = _PROVIDER_PREFIX_RE.sub("", raw_name, count=1).strip()
-        if cleaned:
-            s["name"] = cleaned
+        m = _PROVIDER_PREFIX_RE.match(raw_name)
+        if m:
+            s["provider_tag"] = m.group(0).rstrip(": ").strip()
+            cleaned = raw_name[m.end():].strip()
+            if cleaned:
+                s["name"] = cleaned
+        else:
+            s["provider_tag"] = ""
 ```
 
 **Why this location:** cleaning at the one shared data-loading function means
@@ -212,6 +225,17 @@ colon looked like a tag. Verified against the *entire* real catalog
 (52,000+ titles): the uppercase-only version has **zero** false positives
 while still cleaning 98.6% of movies and 99.2% of series that do have a
 provider tag.
+
+**Stripping the tag everywhere has a side effect worth knowing:** the "Select
+Item" picker (shown when a search matches more than one item) used to show
+the tag as part of the title, which — confusingly — was the only thing
+telling apart otherwise-identical-looking entries (e.g. an `AR-SUBS` copy vs
+an `NF` copy of the same movie). Fixed by keeping the tag in a separate
+`s["provider_tag"]` field (set alongside the cleaned name in
+`_get_cached_xtream_streams()`) and appending it back **only** to the label
+shown in the picker (in `unified_search()`'s movie/series item-building code)
+— e.g. `"The Office (2005)  [AR-SUBS]"` — while every other screen (info
+dialogs, category browsing, etc.) still shows the plain clean title.
 
 **Episode titles need a separate fix** — they come from a different API call
 (`get_xtream_series_info`), not the function patched above, so they carry

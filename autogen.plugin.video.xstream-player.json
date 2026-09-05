@@ -19,13 +19,13 @@
     ],
     "play_episode": [
         "plugin://plugin.video.xstream-player/?mode=search_global&query={showname_url}&stype=series&profile_num=1",
-        {"label": "(?i).*{showname}.*", "dialog": "Auto"},
+        {"label": "(?i)^{showname}\\s*\\({year}\\)", "dialog": "Auto"},
         {"season": "^{season}$", "dialog": "Auto"},
         {"label": "(?i).*S0*{season}E0*{episode}\\b.*", "return": "true", "dialog": "Auto"}
     ],
     "search_episode": [
         "plugin://plugin.video.xstream-player/?mode=search_global&query={showname_url}&stype=series&profile_num=1",
-        {"label": "(?i).*{showname}.*", "dialog": "Auto"},
+        {"label": "(?i)^{showname}\\s*\\({year}\\)", "dialog": "Auto"},
         {"season": "^{season}$", "dialog": "Auto"},
         {"label": "(?i).*S0*{season}E0*{episode}\\b.*", "return": "true", "dialog": "Auto"}
     ]

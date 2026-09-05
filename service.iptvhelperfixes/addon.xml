@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="service.iptvhelperfixes" name="IPTV Helper Fixes" version="1.0.2" provider-name="ahmadashwah">
+<addon id="service.iptvhelperfixes" name="IPTV Helper Fixes" version="1.0.3" provider-name="ahmadashwah">
     <requires>
         <import addon="xbmc.python" version="3.0.0"/>
     </requires>
@@ -10,7 +10,8 @@
         <platform>all</platform>
         <license>MIT</license>
         <source>https://github.com/ahmadashwah/BenjiePatches</source>
-        <news>1.0.2 - Fixed a crash on Android when backing up/replacing addon.py (shutil.copy2's metadata copy is refused by Android's storage layer; switched to a plain content copy)
+        <news>1.0.3 - Fixed wrong-show matches for series with multiple regional/year variants sharing a name (e.g. "The Office" US 2005 vs the 2024 AU reboot) by requiring an exact showname+year match before falling back to a picker, same as the movie fix
+1.0.2 - Fixed a crash on Android when backing up/replacing addon.py (shutil.copy2's metadata copy is refused by Android's storage layer; switched to a plain content copy)
 1.0.1 - If the fix-check itself crashes, it now shows the full error directly on screen (no log file/uploader needed)
 1.0.0 - Initial release</news>
     </extension>
