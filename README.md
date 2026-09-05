@@ -45,6 +45,40 @@ phase below wires them together and fixes bugs that surfaced along the way.
 
 ---
 
+## Phase 3 onward — two ways to apply the fixes
+
+**Option A — Install the add-on (recommended, works on literally any device):**
+
+Download `service.iptvhelperfixes-1.0.0.zip` from this repo, then in Kodi:
+**Settings → Add-ons → Install from zip file** → pick the downloaded zip.
+
+That's it — no computer, no command prompt, no keyboard needed, works
+identically on Android TV, Fire TV, Google TV, Windows, macOS, or Linux,
+because it runs on Kodi's own built-in Python instead of an external one.
+It's a background service that checks itself every time Kodi starts:
+
+- Installs/updates the player config (Phase 3 below).
+- If XStream Player is installed and is exactly version 2.1.5, replaces its
+  `addon.py` with the pre-patched copy bundled in the add-on (Phases 4–6
+  below), keeping a timestamped backup of whatever was there first. If the
+  installed version doesn't match, it logs a warning and does nothing to
+  that file, rather than risk corrupting a different version's code.
+- Sets XStream Player as the default player (no "which app"/"which action"
+  chooser dialog every time you press Play).
+
+Every check is idempotent — it compares content first and only writes when
+something's actually different, so it's cheap and safe to leave running
+forever, including immediately re-fixing itself if it ever gets overwritten
+by an XStream Player update in the future.
+
+**Option B — Manual / Python script (desktop only):** the sections below
+document exactly what the add-on does and why, in case you want to apply
+individual patches by hand, understand the reasoning, or run
+`setup_xstream_fixes.py` directly on a Mac/Windows/Linux machine instead of
+installing the add-on.
+
+---
+
 ## Phase 3 — Player config file (wires Discover → XStream Player search)
 
 **File:** `<Kodi userdata>/addon_data/plugin.video.tmdb.bingie.helper/players/autogen.plugin.video.xstream-player.json`

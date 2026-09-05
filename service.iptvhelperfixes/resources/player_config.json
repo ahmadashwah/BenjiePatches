@@ -1,0 +1,32 @@
+{
+    "name": "Ahmad's IPTV Player",
+    "plugin": "plugin.video.xstream-player",
+    "priority": 100,
+    "is_resolvable": "true",
+    "assert": {
+        "play_movie": ["title"],
+        "search_movie": ["title"],
+        "play_episode": ["showname", "season", "episode"],
+        "search_episode": ["showname", "season", "episode"]
+    },
+    "play_movie": [
+        "plugin://plugin.video.xstream-player/?mode=search_global&query={title_url}&stype=movie&profile_num=1",
+        {"label": "(?i)^{title}\\s*\\({year}\\)", "dialog": "Auto"}
+    ],
+    "search_movie": [
+        "plugin://plugin.video.xstream-player/?mode=search_global&query={title_url}&stype=movie&profile_num=1",
+        {"label": "(?i)^{title}\\s*\\({year}\\)", "dialog": "Auto"}
+    ],
+    "play_episode": [
+        "plugin://plugin.video.xstream-player/?mode=search_global&query={showname_url}&stype=series&profile_num=1",
+        {"label": "(?i).*{showname}.*", "dialog": "Auto"},
+        {"season": "^{season}$", "dialog": "Auto"},
+        {"label": "(?i).*S0*{season}E0*{episode}\\b.*", "return": "true", "dialog": "Auto"}
+    ],
+    "search_episode": [
+        "plugin://plugin.video.xstream-player/?mode=search_global&query={showname_url}&stype=series&profile_num=1",
+        {"label": "(?i).*{showname}.*", "dialog": "Auto"},
+        {"season": "^{season}$", "dialog": "Auto"},
+        {"label": "(?i).*S0*{season}E0*{episode}\\b.*", "return": "true", "dialog": "Auto"}
+    ]
+}
