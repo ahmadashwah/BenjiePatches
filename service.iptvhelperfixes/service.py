@@ -216,4 +216,16 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception:
+        import traceback
+
+        tb = traceback.format_exc()
+        log(tb, xbmc.LOGERROR)
+        try:
+            import xbmcgui
+
+            xbmcgui.Dialog().textviewer("IPTV Helper Fixes - Error", tb)
+        except Exception as exc:
+            log(f"Could not even show the error dialog: {exc}", xbmc.LOGERROR)
