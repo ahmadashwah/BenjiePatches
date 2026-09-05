@@ -9,7 +9,7 @@
         <description lang="en_GB">Runs once at Kodi startup. Wires TMDb Bingie Helper's player config to XStream Player, patches known XStream Player bugs (series ID lookup, provider name-prefix cleanup, EPG notification spam), and sets XStream Player as the default player so Discover/search play directly without a chooser dialog. Safe to re-run — checks before changing anything, and will not touch a different XStream Player version than the one these patches were built against, to avoid corrupting it.</description>
         <platform>all</platform>
         <license>MIT</license>
-        <source>https://github.com/ahmadashwah/Benjie-patches</source>
+        <source>https://github.com/ahmadashwah/BenjiePatches</source>
         <news>1.0.0 - Initial release</news>
     </extension>
 </addon>

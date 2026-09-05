@@ -49,7 +49,7 @@ phase below wires them together and fixes bugs that surfaced along the way.
 
 **Option A — Install the add-on (recommended, works on literally any device):**
 
-Download `service.iptvhelperfixes-1.0.0.zip` from this repo, then in Kodi:
+Download `service.iptvhelperfixes.zip` from this repo, then in Kodi:
 **Settings → Add-ons → Install from zip file** → pick the downloaded zip.
 
 That's it — no computer, no command prompt, no keyboard needed, works
