@@ -53,7 +53,7 @@ In Kodi, add `https://ahmadashwah.github.io/BenjiePatches/` as a source
 (Settings → File Manager → Add source), then **Settings → Add-ons → Install
 from zip file** → pick that source → select the current zip listed on the
 page (the filename includes the version number, e.g.
-`service.iptvhelperfixes103.zip`, so each release has its own unique
+`service.iptvhelperfixes104.zip`, so each release has its own unique
 filename and never gets served stale from a cache).
 
 That's it — no computer, no command prompt, no keyboard needed, works
@@ -62,6 +62,15 @@ because it runs on Kodi's own built-in Python instead of an external one.
 It's a background service that checks itself every time Kodi starts:
 
 - Installs/updates the player config (Phase 3 below).
+- If XStream Player is installed, vendors the `defusedxml` library into its
+  lib folder. XStream Player's own `epg.py` already tries to use
+  `defusedxml` for safe XML parsing and only falls back to a much stricter
+  (and, it turns out, overly strict) parser if that library isn't present —
+  that fallback rejects any XMLTV guide feed containing a standard
+  `<!DOCTYPE>` declaration, which is normal and present in nearly every real
+  provider's feed, so the EPG/guide data (and PVR search, which searches
+  guide data) stayed permanently empty. Adding the library fixes this
+  without touching any of XStream Player's own code.
 - If XStream Player is installed and is exactly version 2.1.5, replaces its
   `addon.py` with the pre-patched copy bundled in the add-on (Phases 4–6
   below), keeping a timestamped backup of whatever was there first. If the
@@ -69,6 +78,9 @@ It's a background service that checks itself every time Kodi starts:
   that file, rather than risk corrupting a different version's code.
 - Sets XStream Player as the default player (no "which app"/"which action"
   chooser dialog every time you press Play).
+- Adds a **Live TV** shortcut to the Bingie skin's home menu (native Kodi
+  PVR channel list) if the skin's shortcuts are already set up and it isn't
+  there yet.
 
 Every check is idempotent — it compares content first and only writes when
 something's actually different, so it's cheap and safe to leave running

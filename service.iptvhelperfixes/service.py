@@ -7,14 +7,24 @@ install, terminal, or keyboard required.
 What it does, every time Kodi starts:
   1. Installs/updates the TMDb Bingie Helper player config that wires
      Discover/search into XStream Player.
-  2. If XStream Player is installed AND is the exact version these patches
+  2. If XStream Player is installed, vendors the "defusedxml" library into
+     its lib folder (pure Python, no compiled parts, safe on any platform).
+     This makes epg.py's own code take its normal-and-safer XML parsing
+     path instead of its no-defusedxml fallback, which rejects any XMLTV
+     feed containing a standard <!DOCTYPE> declaration -- including the
+     harmless, universal kind nearly every real provider sends -- leaving
+     the EPG permanently empty and PVR search/guide data unusable.
+  3. If XStream Player is installed AND is the exact version these patches
      were built against, replaces its addon.py with the pre-patched copy
      bundled in this add-on (with a timestamped backup kept alongside it).
      If the version doesn't match, it logs a warning and skips this step
      rather than risk corrupting a different version's code.
-  3. Sets XStream Player as TMDb Bingie Helper's default player, so
+  4. Sets XStream Player as TMDb Bingie Helper's default player, so
      playing/searching doesn't show a "which app" / "which action" chooser
      every time.
+  5. Adds a "Live TV" shortcut to the Bingie skin's home menu (native Kodi
+     PVR channel list) if the skin's shortcuts config exists and doesn't
+     already have one.
 
 Every step is idempotent: it compares against the current file/setting
 content first and only writes when something's actually different, so
@@ -57,6 +67,92 @@ def get_installed_version(addon_xml_path):
         return None
 
 
+def install_defusedxml(xstream_dir):
+    """Vendors the defusedxml library into XStream Player's lib folder. Pure
+    Python, no compiled parts, works on any platform/version — not gated on
+    EXPECTED_XSTREAM_VERSION since it only adds a file, never touches
+    XStream Player's own code."""
+    target_dir = os.path.join(xstream_dir, "resources", "lib", "defusedxml")
+    source_dir = os.path.join(ADDON_PATH, "resources", "defusedxml")
+
+    if not os.path.isdir(source_dir):
+        log(f"Bundled defusedxml missing at {source_dir} — add-on may be corrupt.", xbmc.LOGERROR)
+        return
+
+    changed = False
+    for filename in os.listdir(source_dir):
+        src_file = os.path.join(source_dir, filename)
+        if not os.path.isfile(src_file):
+            continue
+        dst_file = os.path.join(target_dir, filename)
+        with open(src_file, "rb") as f:
+            src_bytes = f.read()
+        dst_bytes = None
+        if os.path.isfile(dst_file):
+            with open(dst_file, "rb") as f:
+                dst_bytes = f.read()
+        if src_bytes != dst_bytes:
+            os.makedirs(target_dir, exist_ok=True)
+            shutil.copyfile(src_file, dst_file)
+            changed = True
+
+    if changed:
+        log("Installed/updated defusedxml (fixes EPG parsing for standard XMLTV feeds).")
+    else:
+        log("defusedxml already up to date.")
+
+
+def add_live_tv_shortcut():
+    """Adds a 'Live TV' home-menu shortcut (native Kodi PVR channel list) to
+    the Bingie skin's home menu, if the skin's shortcuts config exists and
+    doesn't already have one."""
+    shortcuts_path = os.path.join(
+        KODI_PROFILE, "addon_data", "script.skinshortcuts", "skin.bingie-mainmenu.DATA.xml"
+    )
+    if not os.path.isfile(shortcuts_path):
+        log("Skin shortcuts file not found — skipping Live TV shortcut (skin not set up yet).")
+        return
+
+    try:
+        tree = ET.parse(shortcuts_path)
+        root = tree.getroot()
+    except ET.ParseError as exc:
+        log(f"Could not parse skin shortcuts file, leaving it alone: {exc}", xbmc.LOGWARNING)
+        return
+
+    shortcuts = root.findall("shortcut")
+    for shortcut in shortcuts:
+        action_el = shortcut.find("action")
+        if action_el is not None and action_el.text and "TVChannels" in action_el.text:
+            log("Live TV shortcut already present.")
+            return
+
+    new_shortcut = ET.Element("shortcut")
+    ET.SubElement(new_shortcut, "defaultID")
+    ET.SubElement(new_shortcut, "label").text = "Live TV"
+    ET.SubElement(new_shortcut, "label2").text = "Custom item"
+    ET.SubElement(new_shortcut, "icon").text = "shortcuts/tv.png"
+    ET.SubElement(new_shortcut, "thumb").text = "thumb"
+    ET.SubElement(new_shortcut, "action").text = "ActivateWindow(TVChannels,return)"
+
+    insert_index = len(shortcuts)
+    for i, shortcut in enumerate(shortcuts):
+        default_id_el = shortcut.find("defaultID")
+        if default_id_el is not None and (default_id_el.text or "").strip() == "movies":
+            insert_index = i + 1
+            break
+
+    root.insert(insert_index, new_shortcut)
+
+    try:
+        ET.indent(tree, space="\t")
+    except AttributeError:
+        pass
+    tree.write(shortcuts_path, encoding="UTF-8", xml_declaration=False)
+    log("Added Live TV shortcut to home menu.")
+    notify("Live TV shortcut added to home menu")
+
+
 def patch_xstream_player():
     """Returns True if XStream Player is present and now matches the patched copy."""
     xstream_dir = os.path.join(KODI_HOME, "addons", "plugin.video.xstream-player")
@@ -64,6 +160,8 @@ def patch_xstream_player():
     if not os.path.isdir(xstream_dir):
         log("XStream Player not installed yet — skipping (will check again next startup).")
         return False
+
+    install_defusedxml(xstream_dir)
 
     version = get_installed_version(addon_xml)
     if version != EXPECTED_XSTREAM_VERSION:
@@ -205,6 +303,7 @@ def main():
     config_ok = install_player_config()
     patch_ok = patch_xstream_player()
     apply_default_player_settings()
+    add_live_tv_shortcut()
 
     if config_ok and patch_ok:
         marker_dir = os.path.join(KODI_PROFILE, "addon_data", ADDON_ID)
