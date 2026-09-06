@@ -53,7 +53,7 @@ In Kodi, add `https://ahmadashwah.github.io/BenjiePatches/` as a source
 (Settings → File Manager → Add source), then **Settings → Add-ons → Install
 from zip file** → pick that source → select the current zip listed on the
 page (the filename includes the version number, e.g.
-`service.iptvhelperfixes104.zip`, so each release has its own unique
+`service.iptvhelperfixes105.zip`, so each release has its own unique
 filename and never gets served stale from a cache).
 
 That's it — no computer, no command prompt, no keyboard needed, works
@@ -83,9 +83,12 @@ It's a background service that checks itself every time Kodi starts:
   there yet.
 
 Every check is idempotent — it compares content first and only writes when
-something's actually different, so it's cheap and safe to leave running
-forever, including immediately re-fixing itself if it ever gets overwritten
-by an XStream Player update in the future.
+something's actually different — and it repeats every 5 minutes for as long
+as Kodi is running, not just once at startup. That's what lets it
+immediately re-fix itself if something overwrites a file it manages later
+(an XStream Player update, or script.skinshortcuts resyncing its own
+shortcuts file and reverting the Live TV entry), instead of only catching it
+on the next reboot.
 
 **Option B — Manual / Python script (desktop only):** the sections below
 document exactly what the add-on does and why, in case you want to apply

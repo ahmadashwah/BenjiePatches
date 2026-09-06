@@ -27,8 +27,10 @@ What it does, every time Kodi starts:
      already have one.
 
 Every step is idempotent: it compares against the current file/setting
-content first and only writes when something's actually different, so
-re-running this on every single boot is cheap and safe.
+content first and only writes when something's actually different. All of
+this repeats every few minutes for as long as Kodi is running (not just once
+at startup), since other add-ons (e.g. script.skinshortcuts) manage some of
+the same files and can silently revert a fix shortly after boot.
 """
 
 import os
@@ -294,27 +296,54 @@ def apply_default_player_settings():
     log(f"Updated default player settings -> {settings_path}")
 
 
-def main():
-    monitor = xbmc.Monitor()
-    if monitor.waitForAbort(5):
-        return  # Kodi is already shutting down
+RECHECK_INTERVAL_SECONDS = 300
 
+
+def run_checks():
+    """One pass of all checks. Returns True if the core fixes (player config
+    + XStream Player patch) are in place."""
     log("Checking XStream Player + Bingie fixes...")
     config_ok = install_player_config()
     patch_ok = patch_xstream_player()
     apply_default_player_settings()
     add_live_tv_shortcut()
+    return config_ok and patch_ok
 
-    if config_ok and patch_ok:
-        marker_dir = os.path.join(KODI_PROFILE, "addon_data", ADDON_ID)
-        os.makedirs(marker_dir, exist_ok=True)
-        marker = os.path.join(marker_dir, "applied_once.flag")
-        if not os.path.isfile(marker):
-            with open(marker, "w") as f:
-                f.write("done")
-            notify("XStream Player fixes applied")
 
-    log("Done.")
+def main():
+    monitor = xbmc.Monitor()
+    if monitor.waitForAbort(5):
+        return  # Kodi is already shutting down
+
+    # Runs every RECHECK_INTERVAL_SECONDS for as long as Kodi is up, not just
+    # once at startup — script.skinshortcuts (and possibly other add-ons)
+    # manage some of the same files we touch (e.g. the skin shortcuts data)
+    # and can resync/overwrite them shortly after our own startup pass runs,
+    # silently undoing a fix. Rechecking periodically catches and re-applies
+    # anything that gets reverted, instead of only fixing it once per boot.
+    notified = False
+    while not monitor.abortRequested():
+        try:
+            core_ok = run_checks()
+        except Exception:
+            import traceback
+
+            log(traceback.format_exc(), xbmc.LOGERROR)
+            core_ok = False
+
+        if core_ok and not notified:
+            marker_dir = os.path.join(KODI_PROFILE, "addon_data", ADDON_ID)
+            os.makedirs(marker_dir, exist_ok=True)
+            marker = os.path.join(marker_dir, "applied_once.flag")
+            if not os.path.isfile(marker):
+                with open(marker, "w") as f:
+                    f.write("done")
+                notify("XStream Player fixes applied")
+            notified = True
+
+        log(f"Done. Re-checking in {RECHECK_INTERVAL_SECONDS}s.")
+        if monitor.waitForAbort(RECHECK_INTERVAL_SECONDS):
+            break
 
 
 if __name__ == "__main__":
