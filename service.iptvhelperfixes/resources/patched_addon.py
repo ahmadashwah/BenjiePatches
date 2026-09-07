@@ -7688,6 +7688,10 @@ def unified_search(query, stype=None):
                     art["icon"] = info["poster_url"]
                     art["thumb"] = info["poster_url"]
                     art["poster"] = info["poster_url"]
+                    # Xtream's API has no separate backdrop image, only a
+                    # poster -- reuse it as fanart so the info dialog isn't
+                    # blank, rather than leaving it with nothing at all.
+                    art["fanart"] = info["poster_url"]
                 else:
                     art["icon"] = "DefaultMovies.png"
                 li.setArt(art)
@@ -7728,9 +7732,21 @@ def unified_search(query, stype=None):
                 info_tag = li.getVideoInfoTag()
                 info_tag.setMediaType("tvshow")
                 info_tag.setTitle(name)
+                plot = s.get("plot") or s.get("description") or ""
+                if plot:
+                    info_tag.setPlot(plot)
                 if s.get("cover"):
                     li.setArt(
-                        {"icon": s["cover"], "thumb": s["cover"], "poster": s["cover"]}
+                        {
+                            "icon": s["cover"],
+                            "thumb": s["cover"],
+                            "poster": s["cover"],
+                            # Xtream's API has no separate backdrop image, only
+                            # a poster -- reuse it as fanart so the info
+                            # dialog isn't blank, rather than leaving it with
+                            # nothing at all.
+                            "fanart": s["cover"],
+                        }
                     )
                 li.addContextMenuItems(
                     _build_fav_ctx(

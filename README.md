@@ -53,7 +53,7 @@ In Kodi, add `https://ahmadashwah.github.io/BenjiePatches/` as a source
 (Settings → File Manager → Add source), then **Settings → Add-ons → Install
 from zip file** → pick that source → select the current zip listed on the
 page (the filename includes the version number, e.g.
-`service.iptvhelperfixes106.zip`, so each release has its own unique
+`service.iptvhelperfixes107.zip`, so each release has its own unique
 filename and never gets served stale from a cache).
 
 That's it — no computer, no command prompt, no keyboard needed, works

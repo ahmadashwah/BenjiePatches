@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="service.iptvhelperfixes" name="IPTV Helper Fixes" version="1.0.6" provider-name="ahmadashwah">
+<addon id="service.iptvhelperfixes" name="IPTV Helper Fixes" version="1.0.7" provider-name="ahmadashwah">
     <requires>
         <import addon="xbmc.python" version="3.0.0"/>
     </requires>
@@ -10,7 +10,8 @@
         <platform>all</platform>
         <license>MIT</license>
         <source>https://github.com/ahmadashwah/BenjiePatches</source>
-        <news>1.0.6 - Typing Arabic into the main search box now searches your IPTV catalog directly (movies, series, and live channels) instead of TMDb, since TMDb rarely has Arabic-language IPTV content indexed at all. English/Latin search is unchanged. Patches the Bingie skin's search include by exact content match, so it safely no-ops instead of risking corruption if a skin update changes that section.
+        <news>1.0.7 - Search result info screens (movies and series) were showing a blank backdrop and no plot/creator text, since XStream Player's own search never set a fanart image or series plot on result items. Now falls back to the poster as a backdrop (Xtream's API has no separate wide image) and fills in the plot text that was already being fetched but unused.
+1.0.6 - Typing Arabic into the main search box now searches your IPTV catalog directly (movies, series, and live channels) instead of TMDb, since TMDb rarely has Arabic-language IPTV content indexed at all. English/Latin search is unchanged. Patches the Bingie skin's search include by exact content match, so it safely no-ops instead of risking corruption if a skin update changes that section.
 1.0.5 - Fixed the Live TV home shortcut sometimes disappearing after a full restart (script.skinshortcuts can resync its own shortcuts file shortly after boot and silently undo our addition). All checks now recheck and self-heal every 5 minutes for the life of the Kodi session, not just once at startup.
 1.0.4 - Fixed Live TV guide/search always being empty: vendors the "defusedxml" library so epg.py's own safer XML parser is used instead of its fallback, which wrongly rejected any XMLTV feed with a standard DOCTYPE (nearly all of them). Also adds a "Live TV" home menu shortcut automatically if the skin's shortcuts are set up.
 1.0.3 - Fixed wrong-show matches for series with multiple regional/year variants sharing a name (e.g. "The Office" US 2005 vs the 2024 AU reboot) by requiring an exact showname+year match before falling back to a picker, same as the movie fix
