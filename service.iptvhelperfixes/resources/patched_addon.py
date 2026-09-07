@@ -667,6 +667,7 @@ def _enrich_movie_info(s, base_url=None, user=None, pwd=None):
     result = {
         "plot": "",
         "poster_url": "",
+        "backdrop_url": "",
         "rating": "",
         "year": "",
         "cast": [],
@@ -712,6 +713,9 @@ def _enrich_movie_info(s, base_url=None, user=None, pwd=None):
                     or info.get("stream_icon")
                     or result["poster_url"]
                 )
+                backdrops = info.get("info", {}).get("backdrop_path") or []
+                if backdrops:
+                    result["backdrop_url"] = backdrops[0]
             result["clean_name"] = (
                 info.get("info", {}).get("name")
                 or info.get("info", {}).get("o_name")
@@ -6947,6 +6951,7 @@ def xtream_season(series_id, season_num, profile_num=None):
     pwd = creds.get("xtream_password", "")
     info = IPTV.get_xtream_series_info(url, user, pwd, series_id)
     eps = info.get("episodes", {}).get(season_num, [])
+    show_poster = info.get("info", {}).get("cover", "")
     xbmcplugin.setContent(addon_handle, "episodes")
     we = WatchedEpisodes(addon, profile_num=pnum)
 
@@ -6987,8 +6992,12 @@ def xtream_season(series_id, season_num, profile_num=None):
                 _log(f"setDuration warning: {e}")
 
         movie_image = ep.get("info", {}).get("movie_image")
-        if use_prov_posters and movie_image:
-            li.setArt({"icon": movie_image, "thumb": movie_image})
+        # Xtream providers often have no per-episode still at all -- fall
+        # back to the show's own poster so episodes aren't left with a
+        # blank/generic thumbnail (in the list, favorites, and OSD alike).
+        art_image = movie_image or show_poster
+        if use_prov_posters and art_image:
+            li.setArt({"icon": art_image, "thumb": art_image})
         li.setProperty("IsPlayable", "true")
         _prepare_playback_item(li)
         play_url = IPTV.build_xtream_stream_url(url, user, pwd, ep, "series")
@@ -6998,7 +7007,7 @@ def xtream_season(series_id, season_num, profile_num=None):
             ep_id,
             title,
             "series",
-            movie_image or "",
+            art_image,
             play_url,
             epg_id="",
             profile_num=pnum,
@@ -7009,7 +7018,7 @@ def xtream_season(series_id, season_num, profile_num=None):
             "mode": "play_stream",
             "url": play_url,
             "name": title,
-            "icon": movie_image or "",
+            "icon": art_image,
             "stype": "series",
             "series_id": series_id,
             "season_num": season_num,
@@ -7688,10 +7697,11 @@ def unified_search(query, stype=None):
                     art["icon"] = info["poster_url"]
                     art["thumb"] = info["poster_url"]
                     art["poster"] = info["poster_url"]
-                    # Xtream's API has no separate backdrop image, only a
-                    # poster -- reuse it as fanart so the info dialog isn't
-                    # blank, rather than leaving it with nothing at all.
-                    art["fanart"] = info["poster_url"]
+                    # Prefer the real backdrop image when the on-demand VOD
+                    # info fetch found one; fall back to reusing the poster
+                    # only when no backdrop is available at all, rather than
+                    # leaving the info dialog blank.
+                    art["fanart"] = info.get("backdrop_url") or info["poster_url"]
                 else:
                     art["icon"] = "DefaultMovies.png"
                 li.setArt(art)
@@ -7736,16 +7746,17 @@ def unified_search(query, stype=None):
                 if plot:
                     info_tag.setPlot(plot)
                 if s.get("cover"):
+                    backdrops = s.get("backdrop_path") or []
                     li.setArt(
                         {
                             "icon": s["cover"],
                             "thumb": s["cover"],
                             "poster": s["cover"],
-                            # Xtream's API has no separate backdrop image, only
-                            # a poster -- reuse it as fanart so the info
-                            # dialog isn't blank, rather than leaving it with
-                            # nothing at all.
-                            "fanart": s["cover"],
+                            # The cached catalog already carries a real
+                            # backdrop list for series -- use it when present,
+                            # only falling back to the poster if it's missing,
+                            # rather than leaving the info dialog blank.
+                            "fanart": backdrops[0] if backdrops else s["cover"],
                         }
                     )
                 li.addContextMenuItems(
