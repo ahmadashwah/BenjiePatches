@@ -166,12 +166,19 @@ def patch_bingie_arabic_search():
     Arabic script -- most Arabic-language live channels/movies/series in an
     Xtream catalog aren't in TMDb's database at all, so TMDb search could
     never find them regardless of the term. English/Latin search is
-    untouched. Matches by exact content, not a version gate: safe no-op if
-    the skin's search include doesn't look like what this patch expects
-    (e.g. after a skin update changes that section)."""
+    untouched. Arabic results get their own dedicated Movies/Series rows
+    (mirroring how the skin already presents local-library search results)
+    rather than one row mixing all types together with plain-text section
+    dividers, which render as broken-looking tiles in this poster-grid
+    layout.
+
+    Spans four skin files, each patched independently and matched by exact
+    content (a list of acceptable "candidate" prior states per file, to
+    also cover upgrading from the older single-block patch), not a version
+    gate: safe no-op per file if that file's section doesn't look like what
+    this patch expects (e.g. after a skin update changes it)."""
     skin_dir = os.path.join(KODI_HOME, "addons", "skin.bingie")
-    target = os.path.join(skin_dir, "1080i", "IncludesBingieSearch.xml")
-    if not os.path.isfile(target):
+    if not os.path.isdir(skin_dir):
         log("Bingie skin not installed (or different skin) — skipping Arabic search patch.")
         return
 
@@ -180,31 +187,43 @@ def patch_bingie_arabic_search():
         log(f"Bundled Arabic search patch missing at {patch_file} — add-on may be corrupt.", xbmc.LOGERROR)
         return
     with open(patch_file, "r", encoding="utf-8") as f:
-        patch_data = json.load(f)
-    old_block = patch_data["old_block"]
-    new_block = patch_data["new_block"]
+        spec = json.load(f)
 
-    with open(target, "r", encoding="utf-8") as f:
-        content = f.read()
+    for rel_path, entry in spec.items():
+        target = os.path.join(skin_dir, "1080i", rel_path)
+        if not os.path.isfile(target):
+            log(f"Bingie skin file {rel_path} not found — skipping Arabic search patch for it.")
+            continue
 
-    if new_block in content:
-        log("Arabic IPTV search patch already applied.")
-        return
-    if old_block not in content:
-        log(
-            "Bingie skin's search include doesn't match the expected content "
-            "(skin may have been updated) — skipping Arabic search patch rather "
-            "than risk corrupting it.",
-            xbmc.LOGWARNING,
-        )
-        return
+        with open(target, "r", encoding="utf-8") as f:
+            content = f.read()
 
-    backup = target + f".bak-{time.strftime('%Y%m%d-%H%M%S')}"
-    shutil.copyfile(target, backup)
-    new_content = content.replace(old_block, new_block, 1)
-    with open(target, "w", encoding="utf-8") as f:
-        f.write(new_content)
-    log(f"Patched Bingie skin for Arabic IPTV search (backup saved as {os.path.basename(backup)}).")
+        new_block = entry["new_block"]
+        if new_block in content:
+            log(f"Arabic IPTV search patch already applied to {rel_path}.")
+            continue
+
+        matched_old_block = None
+        for candidate in entry["candidates"]:
+            if candidate in content:
+                matched_old_block = candidate
+                break
+
+        if matched_old_block is None:
+            log(
+                f"{rel_path} doesn't match the expected content (skin may have "
+                "been updated) — skipping Arabic search patch for it rather than "
+                "risk corrupting it.",
+                xbmc.LOGWARNING,
+            )
+            continue
+
+        backup = target + f".bak-{time.strftime('%Y%m%d-%H%M%S')}"
+        shutil.copyfile(target, backup)
+        new_content = content.replace(matched_old_block, new_block, 1)
+        with open(target, "w", encoding="utf-8") as f:
+            f.write(new_content)
+        log(f"Patched {rel_path} for Arabic IPTV search (backup saved as {os.path.basename(backup)}).")
 
 
 def patch_xstream_player():

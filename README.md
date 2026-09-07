@@ -53,7 +53,7 @@ In Kodi, add `https://ahmadashwah.github.io/BenjiePatches/` as a source
 (Settings → File Manager → Add source), then **Settings → Add-ons → Install
 from zip file** → pick that source → select the current zip listed on the
 page (the filename includes the version number, e.g.
-`service.iptvhelperfixes108.zip`, so each release has its own unique
+`service.iptvhelperfixes109.zip`, so each release has its own unique
 filename and never gets served stale from a cache).
 
 That's it — no computer, no command prompt, no keyboard needed, works
@@ -82,12 +82,12 @@ It's a background service that checks itself every time Kodi starts:
   PVR channel list) if the skin's shortcuts are already set up and it isn't
   there yet.
 - Reroutes the Bingie skin's main search box to XStream Player's own
-  catalog search (movies, series, and live channels) whenever the typed
-  term contains Arabic script, since TMDb rarely has Arabic-language IPTV
+  catalog search (dedicated Movies and Series rows) whenever the typed term
+  contains Arabic script, since TMDb rarely has Arabic-language IPTV
   content indexed at all — searching there could never find it regardless
   of the term. English/Latin search goes to TMDb exactly as before. This
-  patch matches the skin's search file by exact content, not by version
-  number, so it safely does nothing instead of risking corruption if a
+  patch matches four skin files by exact content, not by version number, so
+  it safely does nothing to a file instead of risking corruption if a
   future skin update changes that section.
 
 Every check is idempotent — it compares content first and only writes when
