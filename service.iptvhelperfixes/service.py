@@ -25,6 +25,10 @@ What it does, every time Kodi starts:
   5. Adds a "Live TV" shortcut to the Bingie skin's home menu (native Kodi
      PVR channel list) if the skin's shortcuts config exists and doesn't
      already have one.
+  6. Reroutes the Bingie skin's main search box to XStream Player's own
+     catalog search whenever the typed term contains Arabic script, since
+     TMDb rarely has Arabic-language IPTV content indexed at all. English
+     search is untouched.
 
 Every step is idempotent: it compares against the current file/setting
 content first and only writes when something's actually different. All of
@@ -33,6 +37,7 @@ at startup), since other add-ons (e.g. script.skinshortcuts) manage some of
 the same files and can silently revert a fix shortly after boot.
 """
 
+import json
 import os
 import shutil
 import time
@@ -153,6 +158,53 @@ def add_live_tv_shortcut():
     tree.write(shortcuts_path, encoding="UTF-8", xml_declaration=False)
     log("Added Live TV shortcut to home menu.")
     notify("Live TV shortcut added to home menu")
+
+
+def patch_bingie_arabic_search():
+    """Reroutes the Bingie skin's main search box to XStream Player's own
+    catalog search (instead of TMDb) whenever the typed term contains
+    Arabic script -- most Arabic-language live channels/movies/series in an
+    Xtream catalog aren't in TMDb's database at all, so TMDb search could
+    never find them regardless of the term. English/Latin search is
+    untouched. Matches by exact content, not a version gate: safe no-op if
+    the skin's search include doesn't look like what this patch expects
+    (e.g. after a skin update changes that section)."""
+    skin_dir = os.path.join(KODI_HOME, "addons", "skin.bingie")
+    target = os.path.join(skin_dir, "1080i", "IncludesBingieSearch.xml")
+    if not os.path.isfile(target):
+        log("Bingie skin not installed (or different skin) — skipping Arabic search patch.")
+        return
+
+    patch_file = os.path.join(ADDON_PATH, "resources", "bingie_arabic_search_patch.json")
+    if not os.path.isfile(patch_file):
+        log(f"Bundled Arabic search patch missing at {patch_file} — add-on may be corrupt.", xbmc.LOGERROR)
+        return
+    with open(patch_file, "r", encoding="utf-8") as f:
+        patch_data = json.load(f)
+    old_block = patch_data["old_block"]
+    new_block = patch_data["new_block"]
+
+    with open(target, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    if new_block in content:
+        log("Arabic IPTV search patch already applied.")
+        return
+    if old_block not in content:
+        log(
+            "Bingie skin's search include doesn't match the expected content "
+            "(skin may have been updated) — skipping Arabic search patch rather "
+            "than risk corrupting it.",
+            xbmc.LOGWARNING,
+        )
+        return
+
+    backup = target + f".bak-{time.strftime('%Y%m%d-%H%M%S')}"
+    shutil.copyfile(target, backup)
+    new_content = content.replace(old_block, new_block, 1)
+    with open(target, "w", encoding="utf-8") as f:
+        f.write(new_content)
+    log(f"Patched Bingie skin for Arabic IPTV search (backup saved as {os.path.basename(backup)}).")
 
 
 def patch_xstream_player():
@@ -307,6 +359,7 @@ def run_checks():
     patch_ok = patch_xstream_player()
     apply_default_player_settings()
     add_live_tv_shortcut()
+    patch_bingie_arabic_search()
     return config_ok and patch_ok
 
 
