@@ -10371,8 +10371,23 @@ def continue_watching_menu(only_stype=None):
         info_tag = li.getVideoInfoTag()
         info_tag.setMediaType("video")
         info_tag.setTitle(name)
+        if not icon and stype == "movie":
+            # Cheap fallback: check the small per-item VOD info cache (if
+            # already fetched elsewhere) rather than scanning the full
+            # movie catalog, which would be far too slow to do on every
+            # Home screen load.
+            m = re.search(r"/(\d+)\.[a-zA-Z0-9]+$", url)
+            if m:
+                cached_info = _cache_load(f"vod_info_{m.group(1)}")
+                if cached_info:
+                    icon = (
+                        cached_info.get("info", {}).get("movie_image")
+                        or cached_info.get("stream_icon", "")
+                    )
         if icon:
             li.setArt({"icon": icon, "thumb": icon})
+        else:
+            li.setArt({"icon": "DefaultMovies.png" if stype == "movie" else "DefaultTVShows.png"})
 
         q = {
             "mode": "play_stream",
@@ -10397,19 +10412,27 @@ def continue_watching_menu(only_stype=None):
             isFolder=False,
         )
 
+    # Only add a section divider when combining both types together --
+    # a caller that already asked for one specific type (e.g. a skin
+    # widget row already labelled "Movies" or "TV Shows") gets a plain
+    # list with no extra header tile.
+    show_dividers = only_stype is None and movies and series
+
     if movies:
-        sep = xbmcgui.ListItem(label=f"[COLOR gray]────── {_t(30004)} ──────[/COLOR]")
-        sep.setProperty("IsPlayable", "false")
-        sep.setArt({"icon": "DefaultMovies.png"})
-        xbmcplugin.addDirectoryItem(handle=addon_handle, url="", listitem=sep, isFolder=False)
+        if show_dividers:
+            sep = xbmcgui.ListItem(label=f"[COLOR gray]────── {_t(30004)} ──────[/COLOR]")
+            sep.setProperty("IsPlayable", "false")
+            sep.setArt({"icon": "DefaultMovies.png"})
+            xbmcplugin.addDirectoryItem(handle=addon_handle, url="", listitem=sep, isFolder=False)
         for item in movies:
             _render_item(item)
 
     if series:
-        sep = xbmcgui.ListItem(label=f"[COLOR gray]────── {_t(30005)} ──────[/COLOR]")
-        sep.setProperty("IsPlayable", "false")
-        sep.setArt({"icon": "DefaultTVShows.png"})
-        xbmcplugin.addDirectoryItem(handle=addon_handle, url="", listitem=sep, isFolder=False)
+        if show_dividers:
+            sep = xbmcgui.ListItem(label=f"[COLOR gray]────── {_t(30005)} ──────[/COLOR]")
+            sep.setProperty("IsPlayable", "false")
+            sep.setArt({"icon": "DefaultTVShows.png"})
+            xbmcplugin.addDirectoryItem(handle=addon_handle, url="", listitem=sep, isFolder=False)
         for item in series:
             _render_item(item)
 
