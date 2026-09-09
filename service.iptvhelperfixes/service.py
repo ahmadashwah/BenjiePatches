@@ -226,6 +226,65 @@ def patch_bingie_arabic_search():
         log(f"Patched {rel_path} for Arabic IPTV search (backup saved as {os.path.basename(backup)}).")
 
 
+def patch_bingie_continue_watching():
+    """Points the Bingie skin's existing "Movie Hub"/"TV Show Hub" home
+    screen rows at XStream Player's own continue-watching route when the
+    local Kodi library is empty (as it is for a plugin-only IPTV setup)
+    instead of generic TMDb "Trending" placeholder content -- those rows
+    already show real in-progress items when a scanned library exists, this
+    just gives an IPTV-only setup the equivalent using its own real watch
+    history. Matches by exact content, not a version gate: safe no-op per
+    block if the skin's paths file doesn't look like what this patch
+    expects (e.g. after a skin update changes that section)."""
+    skin_dir = os.path.join(KODI_HOME, "addons", "skin.bingie")
+    target = os.path.join(skin_dir, "1080i", "IncludesPaths.xml")
+    if not os.path.isfile(target):
+        log("Bingie skin not installed (or different skin) — skipping continue-watching patch.")
+        return
+
+    patch_file = os.path.join(ADDON_PATH, "resources", "bingie_continue_watching_patch.json")
+    if not os.path.isfile(patch_file):
+        log(f"Bundled continue-watching patch missing at {patch_file} — add-on may be corrupt.", xbmc.LOGERROR)
+        return
+    with open(patch_file, "r", encoding="utf-8") as f:
+        spec = json.load(f)
+
+    with open(target, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    changed = False
+    for i, entry in enumerate(spec["IncludesPaths.xml"]["patches"]):
+        new_block = entry["new_block"]
+        if new_block in content:
+            log(f"Continue-watching patch already applied (block {i}).")
+            continue
+
+        matched_old_block = None
+        for candidate in entry["candidates"]:
+            if candidate in content:
+                matched_old_block = candidate
+                break
+
+        if matched_old_block is None:
+            log(
+                f"IncludesPaths.xml block {i} doesn't match the expected content "
+                "(skin may have been updated) — skipping continue-watching patch "
+                "for it rather than risk corrupting it.",
+                xbmc.LOGWARNING,
+            )
+            continue
+
+        content = content.replace(matched_old_block, new_block, 1)
+        changed = True
+
+    if changed:
+        backup = target + f".bak-{time.strftime('%Y%m%d-%H%M%S')}"
+        shutil.copyfile(target, backup)
+        with open(target, "w", encoding="utf-8") as f:
+            f.write(content)
+        log(f"Patched IncludesPaths.xml for continue-watching home rows (backup saved as {os.path.basename(backup)}).")
+
+
 def patch_xstream_player():
     """Returns True if XStream Player is present and now matches the patched copy."""
     xstream_dir = os.path.join(KODI_HOME, "addons", "plugin.video.xstream-player")
@@ -379,6 +438,7 @@ def run_checks():
     apply_default_player_settings()
     add_live_tv_shortcut()
     patch_bingie_arabic_search()
+    patch_bingie_continue_watching()
     return config_ok and patch_ok
 
 

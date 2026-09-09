@@ -10216,8 +10216,12 @@ def recently_watched_by_type(stype, pnum=None):
     xbmcplugin.endOfDirectory(addon_handle)
 
 
-def continue_watching_menu():
-    """Show continue watching: movies and series from all profiles."""
+def continue_watching_menu(only_stype=None):
+    """Show continue watching: movies and series from all profiles. If
+    only_stype is "movie" or "series", only that type is included -- lets a
+    caller (e.g. a skin widget row already labelled "Movies" or "TV Shows")
+    show a single-type list with no section divider, instead of always
+    combining both types together."""
     all_movies = []
     all_series = []
     profile_dir = xbmcvfs.translatePath(addon.getAddonInfo("profile"))
@@ -10249,6 +10253,8 @@ def continue_watching_menu():
             url = wh_entry.get("url", "")
             stype = wh_entry.get("stype", "")
             if stype not in ("movie", "series"):
+                continue
+            if only_stype and stype != only_stype:
                 continue
             if not url or url in seen_urls:
                 continue
@@ -10287,6 +10293,8 @@ def continue_watching_menu():
             elif "/movie/" in url:
                 stype = "movie"
             else:
+                continue
+            if only_stype and stype != only_stype:
                 continue
             seen_urls.add(url)
             item = {
@@ -11111,7 +11119,8 @@ elif mode == "open_addon":
 elif mode == "empty_addon_group":
     empty_addon_group(args.get("group", ["1"])[0])
 elif mode == "continue_watching":
-    continue_watching_menu()
+    _cw_stype = args.get("stype", [None])[0]
+    continue_watching_menu(only_stype=_cw_stype if _cw_stype in ("movie", "series") else None)
 elif mode == "recently_watched_by_type":
     try:
         pnum = int(args.get("pnum", [pm.active])[0])
