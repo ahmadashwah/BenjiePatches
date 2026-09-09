@@ -53,7 +53,7 @@ In Kodi, add `https://ahmadashwah.github.io/BenjiePatches/` as a source
 (Settings → File Manager → Add source), then **Settings → Add-ons → Install
 from zip file** → pick that source → select the current zip listed on the
 page (the filename includes the version number, e.g.
-`service.iptvhelperfixes112.zip`, so each release has its own unique
+`service.iptvhelperfixes113.zip`, so each release has its own unique
 filename and never gets served stale from a cache).
 
 That's it — no computer, no command prompt, no keyboard needed, works
@@ -81,12 +81,14 @@ It's a background service that checks itself every time Kodi starts:
 - Adds a **Live TV** shortcut to the Bingie skin's home menu (native Kodi
   PVR channel list) if the skin's shortcuts are already set up and it isn't
   there yet.
-- Points the Bingie skin's "Movie Hub"/"TV Show Hub" home screen rows at
-  XStream Player's own **Continue Watching** data (movies and episodes with
-  real resume position, across all profiles) instead of generic TMDb
-  "Trending" placeholders, since those rows only show personal in-progress
-  content when Kodi's local library has content — which stays empty for a
-  plugin-only IPTV setup like this one.
+- Points the Bingie skin's real Home screen row, and its "Movie Hub"/"TV
+  Show Hub" category-page rows, at XStream Player's own **Continue
+  Watching** data (movies and episodes with real resume position, across
+  all profiles) instead of generic TMDb "Trending" placeholders — those
+  rows only show personal in-progress content when Kodi's local library has
+  content, which stays empty for a plugin-only IPTV setup like this one.
+  (The Home row and the category-page rows are two separate widget
+  mechanisms in this skin, patched independently.)
 - Reroutes the Bingie skin's main search box to XStream Player's own
   catalog search (dedicated Movies and Series rows) whenever the typed term
   contains Arabic script, since TMDb rarely has Arabic-language IPTV

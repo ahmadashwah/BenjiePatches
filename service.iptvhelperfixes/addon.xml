@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="service.iptvhelperfixes" name="IPTV Helper Fixes" version="1.1.2" provider-name="ahmadashwah">
+<addon id="service.iptvhelperfixes" name="IPTV Helper Fixes" version="1.1.3" provider-name="ahmadashwah">
     <requires>
         <import addon="xbmc.python" version="3.0.0"/>
     </requires>
@@ -10,7 +10,8 @@
         <platform>all</platform>
         <license>MIT</license>
         <source>https://github.com/ahmadashwah/BenjiePatches</source>
-        <news>1.1.2 - Fixed two Continue Watching issues: the single-type Movie/TV Show Hub rows were still showing an unnecessary "Movies"/"Series" section-divider tile meant only for a combined list, and items with no recorded icon (common for older watch-history entries) showed a blank generic placeholder instead of any thumbnail at all -- movies now check the small per-item info cache first, everything else falls back to a proper default icon.
+        <news>1.1.3 - The 1.1.0 Continue Watching fix only reached the Movies/TV Show category pages, not the actual Home screen -- those turned out to be a completely separate widget mechanism from Home's own. Home's real first row (already designed to show "in progress" content, same as the category-page rows) now points at XStream Player's combined continue-watching feed (movies and episodes together) when the local library is empty.
+1.1.2 - Fixed two Continue Watching issues: the single-type Movie/TV Show Hub rows were still showing an unnecessary "Movies"/"Series" section-divider tile meant only for a combined list, and items with no recorded icon (common for older watch-history entries) showed a blank generic placeholder instead of any thumbnail at all -- movies now check the small per-item info cache first, everything else falls back to a proper default icon.
 1.1.1 - Fixed a variable-shadowing bug in movie/series category browsing: a cast-list loop reused the same variable name as the item's own title, silently overwriting it with the last actor's name. This corrupted favorites labels, watch history, and even the played title/OSD for any movie/show with cast data, whenever it was opened by browsing a category (search results were unaffected). Fixes garbled entries like a cast list showing up as a "movie name" in Continue Watching.
 1.1.0 - Adds a real "Continue Watching" home screen banner. The Bingie skin's home page already has Movie/TV Show rows designed to show in-progress content, but they only read Kodi's local library, which stays empty for a plugin-only IPTV setup, so they fell back to generic TMDb "Trending" placeholders instead of anything personal. Those rows now use XStream Player's own continue-watching data (movies and episodes, with real resume position, across all profiles) so what's actually still-in-progress on the IPTV catalog shows up right on Home.
 1.0.9 - Arabic search results were showing broken-looking "Series"/"Live TV" tiles mixed into the poster grid -- those were the combined search's own section dividers, not designed for this grid layout. Arabic search now gets dedicated Movies and Series rows instead of one mixed list, matching how the skin already presents other search results. Migrates automatically from the 1.0.6 single-block patch.
