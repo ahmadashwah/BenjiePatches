@@ -6623,10 +6623,13 @@ def xtream_streams(stype, cat_id, page=1, adult="0", profile_num=None):
             if info.get("cast"):
                 cast_list = []
                 for idx, actor in enumerate(info["cast"][:10]):  # Top 10 actors
-                    name = actor.get("name", "")
+                    # Deliberately not named "name" -- this function's own
+                    # `name` (the movie/show's title) is still needed below,
+                    # for favorites, watch history, and the play URL.
+                    actor_name = actor.get("name", "")
                     role = actor.get("role", "")
                     thumbnail = actor.get("thumbnail", "")
-                    cast_list.append(xbmc.Actor(name, role, idx, thumbnail))
+                    cast_list.append(xbmc.Actor(actor_name, role, idx, thumbnail))
                 if cast_list:
                     info_tag.setCast(cast_list)
             art = {}
@@ -6704,10 +6707,13 @@ def xtream_streams(stype, cat_id, page=1, adult="0", profile_num=None):
             if info.get("cast"):
                 cast_list = []
                 for idx, actor in enumerate(info["cast"][:10]):  # Top 10 actors
-                    name = actor.get("name", "")
+                    # Deliberately not named "name" -- this function's own
+                    # `name` (the movie/show's title) is still needed below,
+                    # for favorites, watch history, and the play URL.
+                    actor_name = actor.get("name", "")
                     role = actor.get("role", "")
                     thumbnail = actor.get("thumbnail", "")
-                    cast_list.append(xbmc.Actor(name, role, idx, thumbnail))
+                    cast_list.append(xbmc.Actor(actor_name, role, idx, thumbnail))
                 if cast_list:
                     info_tag.setCast(cast_list)
             art = {}
