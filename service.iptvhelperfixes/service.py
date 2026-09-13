@@ -226,6 +226,62 @@ def patch_bingie_arabic_search():
         log(f"Patched {rel_path} for Arabic IPTV search (backup saved as {os.path.basename(backup)}).")
 
 
+def patch_bingie_continue_watching_progressbar():
+    """Adds a thin yellow progress bar to the shared poster tile layout,
+    driven by ListItem.PercentPlayed. Invisible on every row except
+    Continue Watching, since no other row sets that property on its items.
+    Matches by exact content, not a version gate: safe no-op if the skin's
+    poster layout doesn't look like what this patch expects (e.g. after a
+    skin update changes that section)."""
+    skin_dir = os.path.join(KODI_HOME, "addons", "skin.bingie")
+    if not os.path.isdir(skin_dir):
+        log("Bingie skin not installed (or different skin) — skipping continue-watching progress bar.")
+        return
+
+    patch_file = os.path.join(ADDON_PATH, "resources", "bingie_continue_watching_progressbar_patch.json")
+    if not os.path.isfile(patch_file):
+        log(f"Bundled progress bar patch missing at {patch_file} — add-on may be corrupt.", xbmc.LOGERROR)
+        return
+    with open(patch_file, "r", encoding="utf-8") as f:
+        spec = json.load(f)
+
+    for rel_path, entry in spec.items():
+        target = os.path.join(skin_dir, "1080i", rel_path)
+        if not os.path.isfile(target):
+            log(f"Bingie skin file {rel_path} not found — skipping continue-watching progress bar for it.")
+            continue
+
+        with open(target, "r", encoding="utf-8") as f:
+            content = f.read()
+
+        new_block = entry["new_block"]
+        if new_block in content:
+            log(f"Continue-watching progress bar already applied to {rel_path}.")
+            continue
+
+        matched_old_block = None
+        for candidate in entry["candidates"]:
+            if candidate in content:
+                matched_old_block = candidate
+                break
+
+        if matched_old_block is None:
+            log(
+                f"{rel_path} doesn't match the expected content (skin may have "
+                "been updated) — skipping continue-watching progress bar for it "
+                "rather than risk corrupting it.",
+                xbmc.LOGWARNING,
+            )
+            continue
+
+        backup = target + f".bak-{time.strftime('%Y%m%d-%H%M%S')}"
+        shutil.copyfile(target, backup)
+        new_content = content.replace(matched_old_block, new_block, 1)
+        with open(target, "w", encoding="utf-8") as f:
+            f.write(new_content)
+        log(f"Patched {rel_path} for continue-watching progress bar (backup saved as {os.path.basename(backup)}).")
+
+
 def patch_bingie_arabic_categories():
     """Repurposes the Home screen's 2nd/3rd widget rows (DefWidget1/2, right
     after Continue Watching) into "New Arabic Movies" and "New Arabic TV
@@ -504,6 +560,7 @@ def run_checks():
     add_live_tv_shortcut()
     patch_bingie_arabic_search()
     patch_bingie_continue_watching()
+    patch_bingie_continue_watching_progressbar()
     patch_bingie_arabic_categories()
     return config_ok and patch_ok
 

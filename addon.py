@@ -10331,11 +10331,11 @@ def continue_watching_menu(only_stype=None):
 
     all_movies = [m for m in all_movies if _has_meaningful_progress(m)]
     all_series = [s for s in all_series if _has_meaningful_progress(s)]
-    all_movies.sort(key=lambda x: x["timestamp"], reverse=True)
-    all_series.sort(key=lambda x: x["timestamp"], reverse=True)
-    movies = all_movies[:10]
-    series = all_series[:10]
-    combined = movies + series
+    # One chronological list, mixing movies and episodes freely by recency --
+    # not grouped/split by type -- so the most recently watched thing (of
+    # either type) always shows first, matching how Netflix-style continue
+    # watching rows work.
+    combined = sorted(all_movies + all_series, key=lambda x: x["timestamp"], reverse=True)[:20]
 
     if not combined:
         li = xbmcgui.ListItem(
@@ -10360,17 +10360,21 @@ def continue_watching_menu(only_stype=None):
         ep_id = item["ep_id"]
         has_resume = item.get("has_resume", False)
 
+        # Displayed as a plain progress bar on the tile, not text -- and
+        # deliberately approximate rather than exact (clamped so the bar
+        # never looks empty or finished), matching a Netflix-style
+        # continue-watching row rather than showing a precise percentage.
         if has_resume and duration > 0:
-            progress_pct = int((position / duration) * 100)
-            label = f"{name}  [COLOR gray]({progress_pct}%)[/COLOR]"
+            display_pct = max(10, min(90, int((position / duration) * 100)))
         else:
-            label = name
+            display_pct = 40
 
-        li = xbmcgui.ListItem(label=label)
+        li = xbmcgui.ListItem(label="")
         li.setProperty("IsPlayable", "true")
         info_tag = li.getVideoInfoTag()
         info_tag.setMediaType("video")
         info_tag.setTitle(name)
+        info_tag.setResumePoint(display_pct, 100)
         if not icon and stype == "movie":
             # Cheap fallback: check the small per-item VOD info cache (if
             # already fetched elsewhere) rather than scanning the full
@@ -10412,29 +10416,10 @@ def continue_watching_menu(only_stype=None):
             isFolder=False,
         )
 
-    # Only add a section divider when combining both types together --
-    # a caller that already asked for one specific type (e.g. a skin
-    # widget row already labelled "Movies" or "TV Shows") gets a plain
-    # list with no extra header tile.
-    show_dividers = only_stype is None and movies and series
-
-    if movies:
-        if show_dividers:
-            sep = xbmcgui.ListItem(label=f"[COLOR gray]────── {_t(30004)} ──────[/COLOR]")
-            sep.setProperty("IsPlayable", "false")
-            sep.setArt({"icon": "DefaultMovies.png"})
-            xbmcplugin.addDirectoryItem(handle=addon_handle, url="", listitem=sep, isFolder=False)
-        for item in movies:
-            _render_item(item)
-
-    if series:
-        if show_dividers:
-            sep = xbmcgui.ListItem(label=f"[COLOR gray]────── {_t(30005)} ──────[/COLOR]")
-            sep.setProperty("IsPlayable", "false")
-            sep.setArt({"icon": "DefaultTVShows.png"})
-            xbmcplugin.addDirectoryItem(handle=addon_handle, url="", listitem=sep, isFolder=False)
-        for item in series:
-            _render_item(item)
+    # No section dividers -- movies and episodes are mixed freely by
+    # recency (see the sort above), not grouped/split by type.
+    for item in combined:
+        _render_item(item)
 
     xbmcplugin.endOfDirectory(addon_handle)
 
