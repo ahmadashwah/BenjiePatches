@@ -53,7 +53,7 @@ In Kodi, add `https://ahmadashwah.github.io/BenjiePatches/` as a source
 (Settings → File Manager → Add source), then **Settings → Add-ons → Install
 from zip file** → pick that source → select the current zip listed on the
 page (the filename includes the version number, e.g.
-`service.iptvhelperfixes113.zip`, so each release has its own unique
+`service.iptvhelperfixes114.zip`, so each release has its own unique
 filename and never gets served stale from a cache).
 
 That's it — no computer, no command prompt, no keyboard needed, works
@@ -89,6 +89,10 @@ It's a background service that checks itself every time Kodi starts:
   content, which stays empty for a plugin-only IPTV setup like this one.
   (The Home row and the category-page rows are two separate widget
   mechanisms in this skin, patched independently.)
+- Adds two more Home screen rows, "New Arabic Movies" and "New Arabic TV
+  Shows", pulling directly from specific catalog categories, positioned
+  right after Continue Watching. The category IDs are specific to this
+  setup's provider, hardcoded into the patch.
 - Reroutes the Bingie skin's main search box to XStream Player's own
   catalog search (dedicated Movies and Series rows) whenever the typed term
   contains Arabic script, since TMDb rarely has Arabic-language IPTV

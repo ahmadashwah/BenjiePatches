@@ -226,6 +226,63 @@ def patch_bingie_arabic_search():
         log(f"Patched {rel_path} for Arabic IPTV search (backup saved as {os.path.basename(backup)}).")
 
 
+def patch_bingie_arabic_categories():
+    """Adds two new Home screen rows -- "New Arabic Movies" and "New Arabic
+    TV Shows" -- pulling directly from specific XStream Player catalog
+    categories (cat_id 155 and 1 respectively, on this setup's provider),
+    positioned right after the Continue Watching row. Matches by exact
+    content, not a version gate: safe no-op per file if the skin's widget
+    template doesn't look like what this patch expects (e.g. after a skin
+    update changes that section)."""
+    skin_dir = os.path.join(KODI_HOME, "addons", "skin.bingie")
+    if not os.path.isdir(skin_dir):
+        log("Bingie skin not installed (or different skin) — skipping Arabic category rows.")
+        return
+
+    patch_file = os.path.join(ADDON_PATH, "resources", "bingie_arabic_categories_patch.json")
+    if not os.path.isfile(patch_file):
+        log(f"Bundled Arabic categories patch missing at {patch_file} — add-on may be corrupt.", xbmc.LOGERROR)
+        return
+    with open(patch_file, "r", encoding="utf-8") as f:
+        spec = json.load(f)
+
+    for rel_path, entry in spec.items():
+        target = os.path.join(skin_dir, "1080i", rel_path)
+        if not os.path.isfile(target):
+            log(f"Bingie skin file {rel_path} not found — skipping Arabic category rows for it.")
+            continue
+
+        with open(target, "r", encoding="utf-8") as f:
+            content = f.read()
+
+        new_block = entry["new_block"]
+        if new_block in content:
+            log(f"Arabic category rows already applied to {rel_path}.")
+            continue
+
+        matched_old_block = None
+        for candidate in entry["candidates"]:
+            if candidate in content:
+                matched_old_block = candidate
+                break
+
+        if matched_old_block is None:
+            log(
+                f"{rel_path} doesn't match the expected content (skin may have "
+                "been updated) — skipping Arabic category rows for it rather "
+                "than risk corrupting it.",
+                xbmc.LOGWARNING,
+            )
+            continue
+
+        backup = target + f".bak-{time.strftime('%Y%m%d-%H%M%S')}"
+        shutil.copyfile(target, backup)
+        new_content = content.replace(matched_old_block, new_block, 1)
+        with open(target, "w", encoding="utf-8") as f:
+            f.write(new_content)
+        log(f"Patched {rel_path} for Arabic category rows (backup saved as {os.path.basename(backup)}).")
+
+
 def patch_bingie_continue_watching():
     """Points the Bingie skin's existing "Movie Hub"/"TV Show Hub" home
     screen rows at XStream Player's own continue-watching route when the
@@ -439,6 +496,7 @@ def run_checks():
     add_live_tv_shortcut()
     patch_bingie_arabic_search()
     patch_bingie_continue_watching()
+    patch_bingie_arabic_categories()
     return config_ok and patch_ok
 
 
