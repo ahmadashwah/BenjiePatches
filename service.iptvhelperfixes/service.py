@@ -292,6 +292,64 @@ def patch_bingie_continue_watching_progressbar():
             log(f"Patched {rel_path} for continue-watching progress bar (backup saved as {os.path.basename(backup)}).")
 
 
+def patch_bingie_focus_frame():
+    """Removes the "!String.IsEmpty(ListItem.Label)" requirement from the
+    Home screen's fixed focus-frame (the white selector border around the
+    currently-focused tile) visibility conditions. Continue Watching tiles
+    intentionally have an empty label (no title text shown), which made the
+    focus border disappear specifically on that row, inconsistent with
+    every other row. Matches by exact content, not a version gate: safe
+    no-op if the skin's focus-frame block doesn't look like what this patch
+    expects (e.g. after a skin update changes that section)."""
+    skin_dir = os.path.join(KODI_HOME, "addons", "skin.bingie")
+    if not os.path.isdir(skin_dir):
+        log("Bingie skin not installed (or different skin) — skipping focus frame fix.")
+        return
+
+    patch_file = os.path.join(ADDON_PATH, "resources", "bingie_focus_frame_patch.json")
+    if not os.path.isfile(patch_file):
+        log(f"Bundled focus frame patch missing at {patch_file} — add-on may be corrupt.", xbmc.LOGERROR)
+        return
+    with open(patch_file, "r", encoding="utf-8") as f:
+        spec = json.load(f)
+
+    for rel_path, entry in spec.items():
+        target = os.path.join(skin_dir, "1080i", rel_path)
+        if not os.path.isfile(target):
+            log(f"Bingie skin file {rel_path} not found — skipping focus frame fix for it.")
+            continue
+
+        with open(target, "r", encoding="utf-8") as f:
+            content = f.read()
+
+        new_block = entry["new_block"]
+        if new_block in content:
+            log(f"Focus frame fix already applied to {rel_path}.")
+            continue
+
+        matched_old_block = None
+        for candidate in entry["candidates"]:
+            if candidate in content:
+                matched_old_block = candidate
+                break
+
+        if matched_old_block is None:
+            log(
+                f"{rel_path} doesn't match the expected content (skin may have "
+                "been updated) — skipping focus frame fix for it rather than "
+                "risk corrupting it.",
+                xbmc.LOGWARNING,
+            )
+            continue
+
+        backup = target + f".bak-{time.strftime('%Y%m%d-%H%M%S')}"
+        shutil.copyfile(target, backup)
+        new_content = content.replace(matched_old_block, new_block, 1)
+        with open(target, "w", encoding="utf-8") as f:
+            f.write(new_content)
+        log(f"Patched {rel_path} for the focus frame fix (backup saved as {os.path.basename(backup)}).")
+
+
 def patch_bingie_arabic_categories():
     """Repurposes the Home screen's 2nd/3rd widget rows (DefWidget1/2, right
     after Continue Watching) into "New Arabic Movies" and "New Arabic TV
@@ -571,6 +629,7 @@ def run_checks():
     patch_bingie_arabic_search()
     patch_bingie_continue_watching()
     patch_bingie_continue_watching_progressbar()
+    patch_bingie_focus_frame()
     patch_bingie_arabic_categories()
     return config_ok and patch_ok
 
