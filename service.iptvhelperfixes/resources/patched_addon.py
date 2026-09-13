@@ -10347,8 +10347,26 @@ def continue_watching_menu(only_stype=None):
         xbmcplugin.endOfDirectory(addon_handle)
         return
 
+    _series_lookup_cache = {}
+
+    def _get_series_lookup(pnum):
+        # Cache-only, keyed per profile: never triggers a live fetch (which
+        # _get_cached_xtream_streams would do on a stale/missing cache) --
+        # Continue Watching runs on every Home load, so it must stay fast
+        # even if that means occasionally missing a clean name.
+        if pnum not in _series_lookup_cache:
+            cached = _cache_load("xtream_streams_series")
+            data = cached.get("_data") if isinstance(cached, dict) else None
+            _series_lookup_cache[pnum] = (
+                {str(s.get("series_id")): s for s in data} if data else {}
+            )
+        return _series_lookup_cache[pnum]
+
     def _render_item(item):
-        name = item["name"]
+        # Cheap baseline cleanup that needs no lookup at all: strip the
+        # provider name-prefix (e.g. "AR-SUBS:", "4K-AR:") so anything
+        # without a cache hit below still looks better than the raw name.
+        name = _PROVIDER_PREFIX_RE.sub("", item["name"], count=1).strip() or item["name"]
         url = item["url"]
         pnum = item["profile_num"]
         stype = item["stype"]
@@ -10359,6 +10377,27 @@ def continue_watching_menu(only_stype=None):
         season_num = item["season_num"]
         ep_id = item["ep_id"]
         has_resume = item.get("has_resume", False)
+
+        # Prefer clean TMDb/provider-metadata names and posters over the raw
+        # (often messy) provider name saved at play time -- cache-only, so
+        # this only helps for content whose info was already fetched
+        # elsewhere (browsing, search, a prior play), never blocking on a
+        # fresh network call.
+        if stype == "movie":
+            m = re.search(r"/(\d+)\.[a-zA-Z0-9]+$", url)
+            if m:
+                info = _enrich_movie_info({"stream_id": m.group(1), "name": name})
+                if info.get("clean_name"):
+                    name = info["clean_name"]
+                if not icon and info.get("poster_url"):
+                    icon = info["poster_url"]
+        elif stype == "series" and series_id:
+            match = _get_series_lookup(pnum).get(str(series_id))
+            if match:
+                if match.get("name"):
+                    name = _PROVIDER_PREFIX_RE.sub("", match["name"], count=1).strip() or match["name"]
+                if not icon and match.get("cover"):
+                    icon = match["cover"]
 
         # Displayed as a plain progress bar on the tile, not text -- and
         # deliberately approximate rather than exact (clamped so the bar
