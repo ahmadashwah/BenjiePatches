@@ -227,12 +227,16 @@ def patch_bingie_arabic_search():
 
 
 def patch_bingie_continue_watching_progressbar():
-    """Adds a thin yellow progress bar to the shared poster tile layout,
-    driven by ListItem.PercentPlayed. Invisible on every row except
-    Continue Watching, since no other row sets that property on its items.
-    Matches by exact content, not a version gate: safe no-op if the skin's
-    poster layout doesn't look like what this patch expects (e.g. after a
-    skin update changes that section)."""
+    """Adds a thin progress bar (colored to match the skin's own
+    BingieProgressBarColor setting) to the shared poster tile layout,
+    driven by ListItem.PercentPlayed, and suppresses the title-panel
+    overlay's background when there's no label text to show (Continue
+    Watching tiles are intentionally unlabelled). Invisible/inert on every
+    other row, since nothing else sets PercentPlayed or an empty label.
+    Matches by exact content per block, not a version gate: safe no-op per
+    block if the skin's layout doesn't look like what this patch expects
+    (e.g. after a skin update changes that section). Each file may have
+    multiple independent patch blocks."""
     skin_dir = os.path.join(KODI_HOME, "addons", "skin.bingie")
     if not os.path.isdir(skin_dir):
         log("Bingie skin not installed (or different skin) — skipping continue-watching progress bar.")
@@ -254,32 +258,38 @@ def patch_bingie_continue_watching_progressbar():
         with open(target, "r", encoding="utf-8") as f:
             content = f.read()
 
-        new_block = entry["new_block"]
-        if new_block in content:
-            log(f"Continue-watching progress bar already applied to {rel_path}.")
-            continue
+        patches = entry["patches"] if "patches" in entry else [entry]
+        changed = False
+        for i, block_entry in enumerate(patches):
+            new_block = block_entry["new_block"]
+            if new_block in content:
+                log(f"Continue-watching progress bar already applied to {rel_path} (block {i}).")
+                continue
 
-        matched_old_block = None
-        for candidate in entry["candidates"]:
-            if candidate in content:
-                matched_old_block = candidate
-                break
+            matched_old_block = None
+            for candidate in block_entry["candidates"]:
+                if candidate in content:
+                    matched_old_block = candidate
+                    break
 
-        if matched_old_block is None:
-            log(
-                f"{rel_path} doesn't match the expected content (skin may have "
-                "been updated) — skipping continue-watching progress bar for it "
-                "rather than risk corrupting it.",
-                xbmc.LOGWARNING,
-            )
-            continue
+            if matched_old_block is None:
+                log(
+                    f"{rel_path} block {i} doesn't match the expected content "
+                    "(skin may have been updated) — skipping continue-watching "
+                    "progress bar for it rather than risk corrupting it.",
+                    xbmc.LOGWARNING,
+                )
+                continue
 
-        backup = target + f".bak-{time.strftime('%Y%m%d-%H%M%S')}"
-        shutil.copyfile(target, backup)
-        new_content = content.replace(matched_old_block, new_block, 1)
-        with open(target, "w", encoding="utf-8") as f:
-            f.write(new_content)
-        log(f"Patched {rel_path} for continue-watching progress bar (backup saved as {os.path.basename(backup)}).")
+            content = content.replace(matched_old_block, new_block, 1)
+            changed = True
+
+        if changed:
+            backup = target + f".bak-{time.strftime('%Y%m%d-%H%M%S')}"
+            shutil.copyfile(target, backup)
+            with open(target, "w", encoding="utf-8") as f:
+                f.write(content)
+            log(f"Patched {rel_path} for continue-watching progress bar (backup saved as {os.path.basename(backup)}).")
 
 
 def patch_bingie_arabic_categories():
