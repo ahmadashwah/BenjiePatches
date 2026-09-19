@@ -7009,6 +7009,17 @@ def xtream_season(series_id, season_num, profile_num=None):
         play_url = IPTV.build_xtream_stream_url(url, user, pwd, ep, "series")
         if we.is_watched(series_id, season_num, ep_id):
             info_tag.setPlaycount(1)
+        else:
+            # Mid-episode progress, shown as a strip on the tile via
+            # ListItem.PercentPlayed (same mechanism used for Continue
+            # Watching) -- real position/duration here, not approximate,
+            # since this is looked up directly rather than reconstructed
+            # from watch history.
+            resume_entry = _resume_db(pnum).get_entry(title, play_url)
+            if resume_entry and resume_entry.get("duration"):
+                info_tag.setResumePoint(
+                    resume_entry.get("position", 0), resume_entry["duration"]
+                )
         ctx = _build_fav_ctx(
             ep_id,
             title,

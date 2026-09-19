@@ -474,8 +474,19 @@ def patch_bingie_continue_watching():
         log(f"Patched IncludesPaths.xml for continue-watching home rows (backup saved as {os.path.basename(backup)}).")
 
 
+# (target filename under resources/lib/, bundled source filename under
+# resources/) pairs -- every file XStream Player's own codebase that we ship
+# a fully-patched replacement for, all gated by the same version check
+# since they're patched together against one specific XStream Player release.
+_XSTREAM_PATCHED_FILES = [
+    ("addon.py", "patched_addon.py"),
+    ("history.py", "patched_history.py"),
+]
+
+
 def patch_xstream_player():
-    """Returns True if XStream Player is present and now matches the patched copy."""
+    """Returns True if XStream Player is present and all patched files now
+    match the bundled copies."""
     xstream_dir = os.path.join(KODI_HOME, "addons", "plugin.video.xstream-player")
     addon_xml = os.path.join(xstream_dir, "addon.xml")
     if not os.path.isdir(xstream_dir):
@@ -494,32 +505,37 @@ def patch_xstream_player():
         )
         return False
 
-    target = os.path.join(xstream_dir, "resources", "lib", "addon.py")
-    source = os.path.join(ADDON_PATH, "resources", "patched_addon.py")
-    if not os.path.isfile(target):
-        log(f"Expected XStream Player's addon.py at {target} but it's not there.", xbmc.LOGWARNING)
-        return False
-    if not os.path.isfile(source):
-        log(f"Bundled patched addon.py missing at {source} — add-on may be corrupt.", xbmc.LOGERROR)
-        return False
+    all_ok = True
+    for target_name, source_name in _XSTREAM_PATCHED_FILES:
+        target = os.path.join(xstream_dir, "resources", "lib", target_name)
+        source = os.path.join(ADDON_PATH, "resources", source_name)
+        if not os.path.isfile(target):
+            log(f"Expected XStream Player's {target_name} at {target} but it's not there.", xbmc.LOGWARNING)
+            all_ok = False
+            continue
+        if not os.path.isfile(source):
+            log(f"Bundled patched {target_name} missing at {source} — add-on may be corrupt.", xbmc.LOGERROR)
+            all_ok = False
+            continue
 
-    with open(target, "rb") as f:
-        current = f.read()
-    with open(source, "rb") as f:
-        patched = f.read()
+        with open(target, "rb") as f:
+            current = f.read()
+        with open(source, "rb") as f:
+            patched = f.read()
 
-    if current == patched:
-        log("XStream Player addon.py already up to date.")
-        return True
+        if current == patched:
+            log(f"XStream Player {target_name} already up to date.")
+            continue
 
-    backup = target + f".bak-{time.strftime('%Y%m%d-%H%M%S')}"
-    # copyfile() (not copy2()/copy()) — Android's storage layer often refuses
-    # the permission/timestamp metadata copy those do, even though a plain
-    # content copy works fine.
-    shutil.copyfile(target, backup)
-    shutil.copyfile(source, target)
-    log(f"Patched XStream Player addon.py (backup saved as {os.path.basename(backup)}).")
-    return True
+        backup = target + f".bak-{time.strftime('%Y%m%d-%H%M%S')}"
+        # copyfile() (not copy2()/copy()) — Android's storage layer often
+        # refuses the permission/timestamp metadata copy those do, even
+        # though a plain content copy works fine.
+        shutil.copyfile(target, backup)
+        shutil.copyfile(source, target)
+        log(f"Patched XStream Player {target_name} (backup saved as {os.path.basename(backup)}).")
+
+    return all_ok
 
 
 def install_player_config():
