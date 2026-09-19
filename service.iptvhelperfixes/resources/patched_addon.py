@@ -10373,11 +10373,14 @@ def continue_watching_menu(only_stype=None):
             )
         return _series_lookup_cache[pnum]
 
+    _EP_NUM_RE = re.compile(r"[Ss](\d{1,3})[Ee](\d{1,3})")
+
     def _render_item(item):
+        raw_name = item["name"]
         # Cheap baseline cleanup that needs no lookup at all: strip the
         # provider name-prefix (e.g. "AR-SUBS:", "4K-AR:") so anything
         # without a cache hit below still looks better than the raw name.
-        name = _PROVIDER_PREFIX_RE.sub("", item["name"], count=1).strip() or item["name"]
+        name = _PROVIDER_PREFIX_RE.sub("", raw_name, count=1).strip() or raw_name
         url = item["url"]
         pnum = item["profile_num"]
         stype = item["stype"]
@@ -10389,25 +10392,33 @@ def continue_watching_menu(only_stype=None):
         ep_id = item["ep_id"]
         has_resume = item.get("has_resume", False)
 
+        # The raw provider name for an episode is usually
+        # "Show - S01E04 - Episode Title", which is exactly why we clean it
+        # up for display below -- but that means the season/episode numbers
+        # would otherwise be lost entirely, leaving no way to tell which
+        # episode this tile actually is. Pull them out before cleaning
+        # (free: no lookup, the raw name always carries this).
+        ep_match = _EP_NUM_RE.search(raw_name)
+
         # Prefer clean TMDb/provider-metadata names and posters over the raw
-        # (often messy) provider name saved at play time -- cache-only, so
-        # this only helps for content whose info was already fetched
-        # elsewhere (browsing, search, a prior play), never blocking on a
-        # fresh network call.
+        # (often messy, sometimes an odd episode still rather than a proper
+        # poster) data saved at play time -- cache-only, so this only helps
+        # for content whose info was already fetched elsewhere (browsing,
+        # search, a prior play), never blocking on a fresh network call.
         if stype == "movie":
             m = re.search(r"/(\d+)\.[a-zA-Z0-9]+$", url)
             if m:
                 info = _enrich_movie_info({"stream_id": m.group(1), "name": name})
                 if info.get("clean_name"):
                     name = info["clean_name"]
-                if not icon and info.get("poster_url"):
+                if info.get("poster_url"):
                     icon = info["poster_url"]
         elif stype == "series" and series_id:
             match = _get_series_lookup(pnum).get(str(series_id))
             if match:
                 if match.get("name"):
                     name = _PROVIDER_PREFIX_RE.sub("", match["name"], count=1).strip() or match["name"]
-                if not icon and match.get("cover"):
+                if match.get("cover"):
                     icon = match["cover"]
 
         # Displayed as a plain progress bar on the tile, not text -- and
@@ -10422,7 +10433,17 @@ def continue_watching_menu(only_stype=None):
         li = xbmcgui.ListItem(label="")
         li.setProperty("IsPlayable", "true")
         info_tag = li.getVideoInfoTag()
-        info_tag.setMediaType("video")
+        if ep_match:
+            # mediatype "episode" (matching what real episode listings use)
+            # activates the skin's existing season/episode sub-label, so the
+            # hero panel shows e.g. "Season 3 - Episode 5" instead of the
+            # clean show title alone leaving no way to tell which episode
+            # this tile actually is.
+            info_tag.setMediaType("episode")
+            info_tag.setSeason(int(ep_match.group(1)))
+            info_tag.setEpisode(int(ep_match.group(2)))
+        else:
+            info_tag.setMediaType("video")
         info_tag.setTitle(name)
         info_tag.setResumePoint(display_pct, 100)
         if not icon and stype == "movie":
