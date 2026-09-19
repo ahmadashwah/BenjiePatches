@@ -2032,6 +2032,7 @@ def play_stream(
         li.setProperty("TotalTime", str(int(resume_pos * 1.1)))
     xbmcplugin.setResolvedUrl(addon_handle, True, listitem=li)
     upnext_data = None
+    autoplay_data = None
     # Prepare next episode data for autoplay and/or Up Next
     autoplay_next = addon.getSetting("series_autoplay_next").lower() == "true"
     upnext_enabled = addon.getSetting("series_upnext_enabled").lower() == "true"
@@ -2089,9 +2090,13 @@ def play_stream(
                             }
                         )
                         if autoplay_next:
-                            playlist = xbmc.PlayList(xbmc.PLAYLIST_VIDEO)
-                            playlist.add(next_url, next_li)
-                            _log(f"Queued next episode: {next_title}")
+                            # Launched directly by the playback-monitor thread
+                            # once this episode ends naturally, rather than
+                            # relying on Kodi's own PLAYLIST_VIDEO auto-advance
+                            # -- that queueing approach didn't reliably
+                            # continue for plugin-resolved playback here.
+                            autoplay_data = {"url": next_url, "title": next_title}
+                            _log(f"Prepared next episode for autoplay: {next_title}")
                         if upnext_enabled:
                             upnext_data = {
                                 "current_episode": {
@@ -2136,10 +2141,20 @@ def play_stream(
 
     _watch_history(pnum).add(name, play_url, icon=icon, stype=stype, extra=extra)
     # Monitor playback for resume saving and error recovery
-    _monitor_playback(name, play_url, stype, profile_num=pnum, upnext_data=upnext_data, stream_id=stream_id)
+    _monitor_playback(
+        name,
+        play_url,
+        stype,
+        profile_num=pnum,
+        upnext_data=upnext_data,
+        stream_id=stream_id,
+        autoplay_data=autoplay_data,
+    )
 
 
-def _monitor_playback(name, url, stype="live", profile_num=None, upnext_data=None, stream_id=""):
+def _monitor_playback(
+    name, url, stype="live", profile_num=None, upnext_data=None, stream_id="", autoplay_data=None
+):
     """Background thread to save resume position, detect stream failures, and notify Up Next."""
     pnum = profile_num if profile_num is not None else pm.active
 
@@ -2165,6 +2180,7 @@ def _monitor_playback(name, url, stype="live", profile_num=None, upnext_data=Non
             return
         upnext_sent = False
         cached_dur = 0
+        cached_pos = 0
         upnext_dur_warned = False
         while player.isPlaying():
             try:
@@ -2172,6 +2188,7 @@ def _monitor_playback(name, url, stype="live", profile_num=None, upnext_data=Non
                 dur = player.getTotalTime()
                 if dur > 0:
                     cached_dur = dur
+                    cached_pos = pos
                     _resume_db(pnum).save_position(name, url, pos, dur)
                     if stream_id:
                         _save_playback_duration(stream_id, dur)
@@ -2209,6 +2226,23 @@ def _monitor_playback(name, url, stype="live", profile_num=None, upnext_data=Non
             except Exception as e:
                 _log(f"Playback monitoring error: {e}")
             xbmc.sleep(5000)
+
+        # Playback stopped. If it reached (near) the end rather than being
+        # stopped early by the user, and a next episode was prepared, start
+        # it -- same profile/credentials as this episode, since it's built
+        # from the same series lookup.
+        if (
+            autoplay_data
+            and cached_dur > 0
+            and cached_pos >= cached_dur * 0.90
+        ):
+            xbmc.sleep(1000)
+            if not xbmc.Player().isPlaying():
+                try:
+                    xbmc.executebuiltin(f"RunPlugin({autoplay_data['url']})")
+                    _log(f"Autoplay: starting next episode: {autoplay_data['title']}")
+                except Exception as e:
+                    _log(f"Autoplay next-episode error: {e}")
 
     t = threading.Thread(target=_worker)
     t.daemon = True
