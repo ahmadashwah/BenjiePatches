@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<settings>
+    <category label="Cross-Device Sync">
+        <setting type="lsep" label="Syncs TV/movie watch progress (resume points, finished items, watched status) across every device you run this add-on on. Stored in a private GitHub Gist under your own GitHub account -- nothing shared with anyone else, nothing hosted by the add-on's developer."/>
+        <setting label="Enable cross-device sync" type="bool" id="github_sync_enabled" default="false"/>
+        <setting label="GitHub personal access token (gist scope)" type="text" id="github_sync_token" default="" option="hidden"/>
+        <setting type="lsep" label="Use the SAME token on every device you want synced together. Leave the field below blank -- it fills in on its own once sync runs successfully."/>
+        <setting label="Gist ID (auto-detected)" type="text" id="github_sync_gist_id" default=""/>
+    </category>
+</settings>

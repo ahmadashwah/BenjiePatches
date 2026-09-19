@@ -53,7 +53,7 @@ In Kodi, add `https://ahmadashwah.github.io/BenjiePatches/` as a source
 (Settings → File Manager → Add source), then **Settings → Add-ons → Install
 from zip file** → pick that source → select the current zip listed on the
 page (the filename includes the version number, e.g.
-`service.iptvhelperfixes125.zip`, so each release has its own unique
+`service.iptvhelperfixes130.zip`, so each release has its own unique
 filename and never gets served stale from a cache).
 
 That's it — no computer, no command prompt, no keyboard needed, works
@@ -392,6 +392,29 @@ feature that already exists:
 3. On the Search screen, press **Up** from the on-screen keyboard grid — this
    opens Kodi's real native keyboard (which supports the layout switch from
    step 1), instead of Bingie's custom Latin-only on-screen grid.
+
+---
+
+## Optional — sync watch progress across devices
+
+If you run this on more than one device (phone, TV box, another computer),
+`service.iptvhelperfixes` can keep resume points, finished shows/movies, and
+watch history in sync between all of them. It's off by default and stores
+your data in a private GitHub Gist under *your own* GitHub account — nothing
+shared with anyone else, nothing hosted by this project.
+
+1. Create a free GitHub account if you don't have one.
+2. Create a Personal Access Token scoped to just **gist**
+   (github.com → Settings → Developer settings → Fine-grained tokens, or
+   classic tokens → select only the `gist` scope).
+3. On each device: Add-ons → **IPTV Helper Fixes** → Settings → Cross-Device
+   Sync → enable it, paste that **same token** in.
+4. The first device to sync creates the Gist automatically; every other
+   device using the same token finds and joins the existing one on its own
+   — no need to copy a Gist ID around manually.
+
+Syncs on the existing 5-minute recheck cycle, merging by each entry's own
+timestamp so whichever device watched something most recently wins.
 
 ---
 

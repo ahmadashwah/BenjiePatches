@@ -47,6 +47,8 @@ import xbmc
 import xbmcaddon
 import xbmcvfs
 
+import github_sync
+
 ADDON = xbmcaddon.Addon()
 ADDON_ID = ADDON.getAddonInfo("id")
 ADDON_PATH = xbmcvfs.translatePath(ADDON.getAddonInfo("path"))
@@ -657,6 +659,12 @@ def run_checks():
     patch_bingie_continue_watching_progressbar()
     patch_bingie_focus_frame()
     patch_bingie_arabic_categories()
+    try:
+        github_sync.run_sync()
+    except Exception:
+        import traceback
+
+        log(traceback.format_exc(), xbmc.LOGERROR)
     return config_ok and patch_ok
 
 
