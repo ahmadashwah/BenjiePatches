@@ -387,32 +387,42 @@ def patch_bingie_arabic_categories():
         with open(target, "r", encoding="utf-8") as f:
             content = f.read()
 
-        new_block = entry["new_block"]
-        if new_block in content:
-            log(f"Arabic category rows already applied to {rel_path}.")
-            continue
+        # Each of the 4 widget variables (Content/Name x 2 slots) is matched
+        # and patched independently, rather than as one combined block --
+        # so a mismatch in any single one (e.g. from a slightly different
+        # skin build) doesn't silently block the other three too.
+        patches = entry["patches"] if "patches" in entry else [entry]
+        changed = False
+        for i, block_entry in enumerate(patches):
+            new_block = block_entry["new_block"]
+            if new_block in content:
+                log(f"Arabic category rows already applied to {rel_path} (block {i}).")
+                continue
 
-        matched_old_block = None
-        for candidate in entry["candidates"]:
-            if candidate in content:
-                matched_old_block = candidate
-                break
+            matched_old_block = None
+            for candidate in block_entry["candidates"]:
+                if candidate in content:
+                    matched_old_block = candidate
+                    break
 
-        if matched_old_block is None:
-            log(
-                f"{rel_path} doesn't match the expected content (skin may have "
-                "been updated) — skipping Arabic category rows for it rather "
-                "than risk corrupting it.",
-                xbmc.LOGWARNING,
-            )
-            continue
+            if matched_old_block is None:
+                log(
+                    f"{rel_path} block {i} doesn't match the expected content "
+                    "(skin may have been updated) — skipping Arabic category "
+                    "rows for it rather than risk corrupting it.",
+                    xbmc.LOGWARNING,
+                )
+                continue
 
-        backup = target + f".bak-{time.strftime('%Y%m%d-%H%M%S')}"
-        shutil.copyfile(target, backup)
-        new_content = content.replace(matched_old_block, new_block, 1)
-        with open(target, "w", encoding="utf-8") as f:
-            f.write(new_content)
-        log(f"Patched {rel_path} for Arabic category rows (backup saved as {os.path.basename(backup)}).")
+            content = content.replace(matched_old_block, new_block, 1)
+            changed = True
+
+        if changed:
+            backup = target + f".bak-{time.strftime('%Y%m%d-%H%M%S')}"
+            shutil.copyfile(target, backup)
+            with open(target, "w", encoding="utf-8") as f:
+                f.write(content)
+            log(f"Patched {rel_path} for Arabic category rows (backup saved as {os.path.basename(backup)}).")
 
 
 def patch_bingie_continue_watching():
