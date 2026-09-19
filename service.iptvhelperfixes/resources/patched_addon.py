@@ -2231,18 +2231,39 @@ def _monitor_playback(
         # stopped early by the user, and a next episode was prepared, start
         # it -- same profile/credentials as this episode, since it's built
         # from the same series lookup.
-        if (
-            autoplay_data
-            and cached_dur > 0
-            and cached_pos >= cached_dur * 0.90
-        ):
-            xbmc.sleep(1000)
-            if not xbmc.Player().isPlaying():
-                try:
-                    xbmc.executebuiltin(f"RunPlugin({autoplay_data['url']})")
-                    _log(f"Autoplay: starting next episode: {autoplay_data['title']}")
-                except Exception as e:
-                    _log(f"Autoplay next-episode error: {e}")
+        if autoplay_data:
+            if cached_dur > 0 and cached_pos >= cached_dur * 0.90:
+                xbmc.sleep(1000)
+                if not xbmc.Player().isPlaying():
+                    try:
+                        xbmc.executebuiltin(f"RunPlugin({autoplay_data['url']})")
+                        _log(f"Autoplay: starting next episode: {autoplay_data['title']}")
+                        xbmcgui.Dialog().notification(
+                            "Autoplay",
+                            f"Playing next: {autoplay_data['title']}",
+                            xbmcgui.NOTIFICATION_INFO,
+                            4000,
+                        )
+                    except Exception as e:
+                        _log(f"Autoplay next-episode error: {e}")
+                        xbmcgui.Dialog().notification(
+                            "Autoplay error", str(e)[:60], xbmcgui.NOTIFICATION_ERROR, 6000
+                        )
+            else:
+                # Temporary diagnostic -- shows on every series episode end
+                # (including ones stopped early on purpose) so the actual
+                # pos/dur values causing autoplay to skip are visible right
+                # on screen, without needing log access. Remove once the
+                # real cause on affected devices is confirmed.
+                _log(
+                    f"Autoplay: not triggering (cached_pos={cached_pos}, cached_dur={cached_dur})"
+                )
+                xbmcgui.Dialog().notification(
+                    "Autoplay debug",
+                    f"pos={int(cached_pos)} dur={int(cached_dur)} -- not near end",
+                    xbmcgui.NOTIFICATION_WARNING,
+                    6000,
+                )
 
     t = threading.Thread(target=_worker)
     t.daemon = True
