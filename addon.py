@@ -10249,6 +10249,7 @@ def continue_watching_menu(only_stype=None):
             continue
         rp_path = os.path.join(profile_dir, f"resume_points_p{pnum}.json")
         wh_path = os.path.join(profile_dir, f"watch_history_p{pnum}.json")
+        finished_path = os.path.join(profile_dir, f"finished_p{pnum}.json")
         try:
             with open(rp_path, "r", encoding="utf-8") as f:
                 rp_data = json.load(f)
@@ -10259,6 +10260,11 @@ def continue_watching_menu(only_stype=None):
                 wh_list = json.load(f)
         except Exception:
             wh_list = []
+        try:
+            with open(finished_path, "r", encoding="utf-8") as f:
+                finished_keys = set(json.load(f).keys())
+        except Exception:
+            finished_keys = set()
         if not isinstance(rp_data, dict):
             rp_data = {}
         if not isinstance(wh_list, list):
@@ -10295,6 +10301,7 @@ def continue_watching_menu(only_stype=None):
                 "season_num": wh_entry.get("season_num", ""),
                 "ep_id": wh_entry.get("ep_id", ""),
                 "has_resume": bool(rp_entry),
+                "is_finished": f"{wh_entry.get('name', '')}||{url}" in finished_keys,
             }
             if stype == "movie":
                 all_movies.append(item)
@@ -10327,6 +10334,7 @@ def continue_watching_menu(only_stype=None):
                 "season_num": "",
                 "ep_id": "",
                 "has_resume": True,
+                "is_finished": False,
             }
             if stype == "movie":
                 all_movies.append(item)
@@ -10334,6 +10342,8 @@ def continue_watching_menu(only_stype=None):
                 all_series.append(item)
 
     def _has_meaningful_progress(item):
+        if item["is_finished"]:
+            return False
         position = item["position"]
         duration = item["duration"]
         if item["has_resume"] and duration > 0:

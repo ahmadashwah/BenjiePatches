@@ -124,25 +124,31 @@ class ResumePoints:
         else:
             pnum = profile_num
         self._path = os.path.join(profile, f"resume_points_p{pnum}.json")
-        self._data = self._load()
+        self._finished_path = os.path.join(profile, f"finished_p{pnum}.json")
+        self._data = self._load(self._path)
+        # Separate store: which (name, url) pairs were watched to
+        # (near-)completion. Kept apart from resume-point data so a
+        # finished marker never gets misread as an active, resumable
+        # position/duration by callers like get_entry().
+        self._finished = self._load(self._finished_path)
 
-    def _load(self):
+    def _load(self, path):
         try:
-            with open(self._path, "r", encoding="utf-8") as f:
+            with open(path, "r", encoding="utf-8") as f:
                 return json.load(f)
         except (FileNotFoundError, json.JSONDecodeError):
             return {}
 
-    def _save(self):
-        tmp_file = self._path + ".tmp"
+    def _save(self, path, data):
+        tmp_file = path + ".tmp"
         with open(tmp_file, "w", encoding="utf-8") as f:
-            json.dump(self._data, f, ensure_ascii=False)
+            json.dump(data, f, ensure_ascii=False)
             try:
                 f.flush()
                 os.fsync(f.fileno())
             except OSError:
                 pass
-        os.replace(tmp_file, self._path)
+        os.replace(tmp_file, path)
 
     def _key(self, name, url):
         return f"{name}||{url}"
@@ -151,19 +157,27 @@ class ResumePoints:
         """Save playback position. Only saves if >60s in and not near the end."""
         if position < 60 or duration < 120:
             return
+        key = self._key(name, url)
         if position > duration * 0.93:
             # Near end — mark as finished, remove resume point
-            self._data.pop(self._key(name, url), None)
-            self._save()
+            self._data.pop(key, None)
+            self._save(self._path, self._data)
+            self._finished[key] = {"name": name, "url": url, "timestamp": time.time()}
+            self._save(self._finished_path, self._finished)
             return
-        self._data[self._key(name, url)] = {
+        self._data[key] = {
             "name": name,
             "url": url,
             "position": position,
             "duration": duration,
             "timestamp": time.time(),
         }
-        self._save()
+        self._save(self._path, self._data)
+        if key in self._finished:
+            # Rewatching something previously finished — let it show as
+            # in-progress again instead of staying hidden forever.
+            self._finished.pop(key, None)
+            self._save(self._finished_path, self._finished)
 
     def get_position(self, name, url):
         """Return saved position in seconds, or 0 if none."""
@@ -178,13 +192,20 @@ class ResumePoints:
         duration, needed to compute a percentage-played for display."""
         return self._data.get(self._key(name, url))
 
+    def is_finished(self, name, url):
+        """Return True if this (name, url) was watched to (near-)completion
+        and hasn't been rewatched since."""
+        return self._key(name, url) in self._finished
+
     def remove(self, name, url):
         self._data.pop(self._key(name, url), None)
-        self._save()
+        self._save(self._path, self._data)
 
     def clear(self):
         self._data = {}
-        self._save()
+        self._save(self._path, self._data)
+        self._finished = {}
+        self._save(self._finished_path, self._finished)
 
 
 class WatchedMovies:
