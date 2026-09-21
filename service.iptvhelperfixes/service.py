@@ -56,6 +56,7 @@ KODI_HOME = xbmcvfs.translatePath("special://home/")
 KODI_PROFILE = xbmcvfs.translatePath("special://profile/")
 
 EXPECTED_XSTREAM_VERSION = "2.1.5"
+EXPECTED_TMDB_HELPER_VERSION = "1.0.3"
 LOG_PREFIX = "[IPTV Helper Fixes]"
 
 
@@ -674,6 +675,57 @@ def patch_xstream_player():
     return all_ok
 
 
+def patch_tmdb_bingie_helper():
+    """Replaces TMDb Bingie Helper's own items/trakt.py with a patched copy
+    that checks XStream Player's real watch history (via a new
+    discover_watch_export mode, cross-addon Files.GetDirectory call, cached
+    per show) before falling through to its original Trakt-based lookups
+    for get_playcount/set_playprogress on episode items -- so Discover's
+    episode tiles show real watched/progress status instead of always
+    appearing unwatched, since nothing in this setup scrobbles to Trakt.
+    Version-gated like patch_xstream_player(): skips rather than risk
+    corrupting a different version's code."""
+    helper_dir = os.path.join(KODI_HOME, "addons", "plugin.video.tmdb.bingie.helper")
+    addon_xml = os.path.join(helper_dir, "addon.xml")
+    if not os.path.isdir(helper_dir):
+        log("TMDb Bingie Helper not installed yet — skipping (will check again next startup).")
+        return False
+
+    version = get_installed_version(addon_xml)
+    if version != EXPECTED_TMDB_HELPER_VERSION:
+        log(
+            f"TMDb Bingie Helper is version {version}, but this patch was built "
+            f"against {EXPECTED_TMDB_HELPER_VERSION} — skipping rather than risk "
+            "corrupting a different version's code.",
+            xbmc.LOGWARNING,
+        )
+        return False
+
+    target = os.path.join(helper_dir, "resources", "tmdbbingiehelper", "lib", "items", "trakt.py")
+    source = os.path.join(ADDON_PATH, "resources", "patched_tmdb_trakt.py")
+    if not os.path.isfile(target):
+        log(f"Expected TMDb Bingie Helper's trakt.py at {target} but it's not there.", xbmc.LOGWARNING)
+        return False
+    if not os.path.isfile(source):
+        log(f"Bundled patched trakt.py missing at {source} — add-on may be corrupt.", xbmc.LOGERROR)
+        return False
+
+    with open(target, "rb") as f:
+        current = f.read()
+    with open(source, "rb") as f:
+        patched = f.read()
+
+    if current == patched:
+        log("TMDb Bingie Helper trakt.py already up to date.")
+        return True
+
+    backup = target + f".bak-{time.strftime('%Y%m%d-%H%M%S')}"
+    shutil.copyfile(target, backup)
+    shutil.copyfile(source, target)
+    log(f"Patched TMDb Bingie Helper trakt.py (backup saved as {os.path.basename(backup)}).")
+    return True
+
+
 def install_backbutton_keymap():
     """Installs a keymap that repoints the Back/Escape key during
     fullscreen video playback: for a series episode played through
@@ -814,6 +866,7 @@ def run_checks():
     apply_default_player_settings()
     add_live_tv_shortcut()
     install_backbutton_keymap()
+    patch_tmdb_bingie_helper()
     patch_bingie_arabic_search()
     patch_bingie_continue_watching()
     patch_bingie_continue_watching_progressbar()

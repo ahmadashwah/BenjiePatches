@@ -7206,6 +7206,82 @@ def xtream_series(series_id, profile_num=None):
     xbmcplugin.endOfDirectory(addon_handle)
 
 
+def discover_watch_export(showname, profile_num=None):
+    """Returns a single, non-playable directory item whose label is a
+    JSON-encoded per-episode watch-status export for the given show:
+    {season_num: {episode_num: {"playcount": 1} or {"percent": X}}},
+    aggregated across every provider-language variant of that show
+    matched by name for this profile.
+
+    Called by a patch to TMDb Bingie Helper's own trakt.py (via
+    Files.GetDirectory, the same cross-addon technique
+    _resolve_discover_season_path already uses) so Discover's episode
+    tiles can show real watched/progress status instead of Trakt's --
+    which this setup never feeds, since nothing here scrobbles to it.
+    Meant to be called once per show per episode-listing view and cached
+    there, not once per episode; this function itself makes one live
+    get_xtream_series_info call per matching provider variant, the same
+    cost as browsing to that show directly in XStream Player."""
+    pnum = profile_num or pm.active
+    creds = _get_credentials_for_profile(pnum)
+    url = creds.get("xtream_url", "")
+    user = creds.get("xtream_username", "")
+    pwd = creds.get("xtream_password", "")
+
+    all_series = _get_cached_xtream_streams(url, user, pwd, "series")
+    showname_lower = (showname or "").strip().lower()
+    candidates = [
+        s
+        for s in all_series
+        if (
+            _PROVIDER_PREFIX_RE.sub("", s.get("name", ""), count=1).strip()
+            or s.get("name", "")
+        )
+        .lower()
+        .startswith(showname_lower)
+    ]
+
+    export = {}
+    if candidates:
+        we = WatchedEpisodes(addon, profile_num=pnum)
+        resume_db = _resume_db(pnum)
+        for cand in candidates:
+            series_id = str(cand.get("series_id", ""))
+            try:
+                info = IPTV.get_xtream_series_info(url, user, pwd, series_id)
+            except Exception as e:
+                _log(f"discover_watch_export: series info error for {series_id}: {e}")
+                continue
+            episodes = info.get("episodes", {})
+            for season_num, eps in episodes.items():
+                for ep in eps:
+                    try:
+                        ep_num = int(ep.get("episode_num", 0) or 0)
+                    except (ValueError, TypeError):
+                        continue
+                    if not ep_num:
+                        continue
+                    ep_id = str(ep.get("id", ""))
+                    season_key = str(season_num)
+                    if we.is_watched(series_id, season_num, ep_id):
+                        export.setdefault(season_key, {})[str(ep_num)] = {"playcount": 1}
+                        continue
+                    title = ep.get("title") or ""
+                    clean_title = _PROVIDER_PREFIX_RE.sub("", title, count=1).strip() or title
+                    play_url = IPTV.build_xtream_stream_url(url, user, pwd, ep, "series")
+                    resume_entry = resume_db.get_entry(clean_title, play_url)
+                    if resume_entry and resume_entry.get("duration"):
+                        percent = int(
+                            (resume_entry.get("position", 0) / resume_entry["duration"]) * 100
+                        )
+                        if percent >= 1:
+                            export.setdefault(season_key, {})[str(ep_num)] = {"percent": percent}
+
+    li = xbmcgui.ListItem(label=json.dumps(export))
+    xbmcplugin.addDirectoryItem(handle=addon_handle, url="", listitem=li, isFolder=False)
+    xbmcplugin.endOfDirectory(addon_handle)
+
+
 def xtream_next_up(showname, year="", profile_num=None):
     """Single-item directory used to replace Discover's Trakt-driven "next
     up" lookup (plugin.video.tmdb.bingie.helper's info=trakt_upnext), which
@@ -10958,6 +11034,12 @@ elif mode == "xtream_next_up":
     except (ValueError, TypeError):
         pnum = None
     xtream_next_up(args.get("showname", [""])[0], args.get("year", [""])[0], pnum)
+elif mode == "discover_watch_export":
+    try:
+        pnum = int(args.get("profile_num", [0])[0])
+    except (ValueError, TypeError):
+        pnum = None
+    discover_watch_export(args.get("showname", [""])[0], pnum)
 elif mode == "xtream_season":
     try:
         pnum = int(args.get("profile_num", [0])[0])
