@@ -2011,6 +2011,10 @@ def play_stream(
     back_win = xbmcgui.Window(10000)
     back_win.clearProperty("XStreamNowPlaying.ShowName")
     back_win.clearProperty("XStreamNowPlaying.SeasonNum")
+    _log(
+        f"Back-button tracking: stype={stype!r} series_id={series_id!r} "
+        f"season_num={season_num!r}"
+    )
     if stype == "series" and series_id and season_num:
         try:
             creds_bw = _get_credentials_for_profile(pnum)
@@ -2028,6 +2032,9 @@ def play_stream(
                 if show_name:
                     back_win.setProperty("XStreamNowPlaying.ShowName", show_name)
                     back_win.setProperty("XStreamNowPlaying.SeasonNum", str(season_num))
+                    _log(f"Back-button tracking: set show_name={show_name!r}")
+            else:
+                _log(f"Back-button tracking: no catalog match for series_id={series_id!r}")
         except Exception as e:
             _log(f"Back-button show tracking error: {e}")
 
@@ -5112,16 +5119,23 @@ def relaunch_kodi_action():
 
 
 def _resolve_discover_season_path(show_name, season_num):
-    """Given a show name and season number, find that season's browsing
-    path within Discover (plugin.video.tmdb.bingie.helper) by reusing its
-    own search -- the same mechanism its search box uses -- then locating
-    the matching season within that show's own listing. Two chained
-    Files.GetDirectory calls; returns None on any failure or no match, so
-    callers can fall back to just leaving the video stopped."""
+    """Given a show name and season number, find that show's own Discover
+    page path (all seasons) and that specific season's path within
+    Discover (plugin.video.tmdb.bingie.helper), by reusing its own search
+    -- the same mechanism its search box uses. Returns (show_path,
+    season_path) -- season_path falls back to show_path if that season
+    isn't found in the listing. Returns (None, None) on any failure or no
+    match, so callers can fall back to just leaving the video stopped."""
     try:
+        # show_name is the IPTV catalog's own display name, which often
+        # embeds a year/region suffix for disambiguation (e.g. "The Office
+        # (2005) (US)") that TMDb's search doesn't expect -- strip any
+        # trailing "(...)" groups to get back to a plain, TMDb-searchable
+        # title ("The Office") before searching Discover.
+        clean_name = re.sub(r"(\s*\([^)]*\))+\s*$", "", show_name).strip() or show_name
         search_url = (
             "plugin://plugin.video.tmdb.bingie.helper?info=search&tmdb_type=tv"
-            f"&nextpage=false&query={urllib.parse.quote(show_name)}"
+            f"&nextpage=false&query={urllib.parse.quote(clean_name)}"
         )
         payload = {
             "jsonrpc": "2.0",
@@ -5130,10 +5144,11 @@ def _resolve_discover_season_path(show_name, season_num):
             "params": {"directory": search_url, "media": "video", "properties": ["file"]},
         }
         result = json.loads(xbmc.executeJSONRPC(json.dumps(payload)))
+        _log(f"_resolve_discover_season_path: search {clean_name!r} -> {result}")
         files = result.get("result", {}).get("files", []) or []
         show_path = files[0].get("file") if files else None
         if not show_path:
-            return None
+            return None, None
 
         payload2 = {
             "jsonrpc": "2.0",
@@ -5142,16 +5157,17 @@ def _resolve_discover_season_path(show_name, season_num):
             "params": {"directory": show_path, "media": "video", "properties": ["file", "season"]},
         }
         result2 = json.loads(xbmc.executeJSONRPC(json.dumps(payload2)))
+        _log(f"_resolve_discover_season_path: seasons for {show_path!r} -> {result2}")
         seasons = result2.get("result", {}).get("files", []) or []
         for s in seasons:
             if str(s.get("season", "")) == str(season_num):
-                return s.get("file")
+                return show_path, s.get("file")
         # Season not found in that listing (e.g. it wasn't broken out by
         # season) -- land on the show page itself rather than nothing.
-        return show_path
+        return show_path, show_path
     except Exception as e:
         _log(f"_resolve_discover_season_path error: {e}")
-        return None
+        return None, None
 
 
 def handle_playback_back():
@@ -5167,15 +5183,26 @@ def handle_playback_back():
     season_num = win.getProperty("XStreamNowPlaying.SeasonNum")
     win.clearProperty("XStreamNowPlaying.ShowName")
     win.clearProperty("XStreamNowPlaying.SeasonNum")
+    _log(f"handle_back: fired, show_name={show_name!r} season_num={season_num!r}")
 
     if not show_name or not season_num:
         xbmc.executebuiltin("PlayerControl(Stop)")
         return
 
     xbmc.Player().stop()
-    season_path = _resolve_discover_season_path(show_name, season_num)
-    if season_path:
-        xbmc.executebuiltin(f"ActivateWindow(Videos,{season_path},return)")
+    show_path, season_path = _resolve_discover_season_path(show_name, season_num)
+    _log(f"handle_back: resolved show_path={show_path!r} season_path={season_path!r}")
+    if show_path:
+        # Visit the show's own "all seasons" page first, then drill into
+        # the season -- rather than jumping straight to the season -- so
+        # Kodi's own container history has the seasons page as the
+        # parent. That makes a second Back press (from the season's
+        # episode list) naturally go up to "all seasons" instead of
+        # exiting straight back out, exactly like normal folder browsing.
+        xbmc.executebuiltin(f"ActivateWindow(Videos,{show_path},return)")
+        if season_path and season_path != show_path:
+            xbmc.sleep(300)
+            xbmc.executebuiltin(f"Container.Update({season_path})")
     # else: playback is already stopped; Kodi returns to the previous
     # window on its own, same as the default behavior for other content.
 
