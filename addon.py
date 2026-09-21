@@ -7019,8 +7019,13 @@ def xtream_season(series_id, season_num, profile_num=None):
     _log(
         f"xtream_season: series_id={series_id} season_num={season_num!r} "
         f"profile_num={pnum} available_season_keys={list(info.get('episodes', {}).keys())} "
-        f"eps_returned={len(eps)} ep_ids={[e.get('id') for e in eps]}"
+        f"eps_returned={len(eps)}"
     )
+    for _i, _e in enumerate(eps):
+        _log(
+            f"xtream_season ep[{_i}]: id={_e.get('id')} episode_num={_e.get('episode_num')} "
+            f"title={_e.get('title')!r}"
+        )
     show_poster = info.get("info", {}).get("cover", "")
     xbmcplugin.setContent(addon_handle, "episodes")
     we = WatchedEpisodes(addon, profile_num=pnum)
