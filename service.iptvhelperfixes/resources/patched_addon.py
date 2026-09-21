@@ -6909,6 +6909,94 @@ def xtream_series(series_id, profile_num=None):
         except (ValueError, TypeError):
             ep_run_time = 0
 
+    # If this series already has watch history, offer a one-tap "Resume
+    # SxEy" (or "Play Next" once that episode is finished) shortcut before
+    # the season list, instead of always starting from Season 1 -- lets
+    # searching/browsing back to a show you're already partway through
+    # jump straight back in, the same way Continue Watching does.
+    series_wh = [
+        e
+        for e in _watch_history(pnum).get_all("series")
+        if str(e.get("series_id", "")) == str(series_id)
+    ]
+    if series_wh:
+        latest = max(series_wh, key=lambda e: e.get("timestamp", 0))
+        latest_url = latest.get("url", "")
+        latest_name = latest.get("name", "")
+        latest_season = latest.get("season_num", "")
+        latest_ep_id = latest.get("ep_id", "")
+        is_finished = _resume_db(pnum).is_finished(latest_name, latest_url)
+        target_ep = None
+        target_season = latest_season
+        resume_entry = None
+        season_eps = episodes.get(latest_season, [])
+        if not is_finished:
+            target_ep = next(
+                (e for e in season_eps if str(e.get("id", "")) == str(latest_ep_id)), None
+            )
+            resume_entry = _resume_db(pnum).get_entry(latest_name, latest_url)
+        else:
+            idx = next(
+                (i for i, e in enumerate(season_eps) if str(e.get("id", "")) == str(latest_ep_id)),
+                None,
+            )
+            if idx is not None and idx + 1 < len(season_eps):
+                target_ep = season_eps[idx + 1]
+            else:
+                try:
+                    next_season_num = str(int(latest_season) + 1)
+                except (TypeError, ValueError):
+                    next_season_num = None
+                if next_season_num and episodes.get(next_season_num):
+                    target_season = next_season_num
+                    target_ep = episodes[next_season_num][0]
+
+        if target_ep:
+            target_title = target_ep.get("title") or _t(30542, target_ep.get("episode_num", "?"))
+            target_title = _PROVIDER_PREFIX_RE.sub("", target_title, count=1).strip() or target_title
+            target_ep_id = str(target_ep.get("id", ""))
+            target_play_url = IPTV.build_xtream_stream_url(url, user, pwd, target_ep, "series")
+            action_label = "Play Next" if is_finished else "Resume"
+            try:
+                ep_num_display = int(target_ep.get("episode_num", 0) or 0)
+            except (ValueError, TypeError):
+                ep_num_display = target_ep.get("episode_num", "?")
+            li = xbmcgui.ListItem(
+                label=f"[COLOR gold]▶ {action_label}: S{target_season}E{ep_num_display} - {target_title}[/COLOR]"
+            )
+            info_tag = li.getVideoInfoTag()
+            info_tag.setMediaType("episode")
+            info_tag.setTitle(target_title)
+            try:
+                info_tag.setSeason(int(target_season))
+            except (ValueError, TypeError):
+                pass
+            try:
+                info_tag.setEpisode(int(target_ep.get("episode_num", 0) or 0))
+            except (ValueError, TypeError):
+                pass
+            target_icon = target_ep.get("info", {}).get("movie_image") or series_cover
+            if target_icon:
+                li.setArt({"icon": target_icon, "thumb": target_icon})
+            li.setProperty("IsPlayable", "true")
+            _prepare_playback_item(li)
+            if resume_entry and resume_entry.get("duration"):
+                info_tag.setResumePoint(resume_entry.get("position", 0), resume_entry["duration"])
+            q = {
+                "mode": "play_stream",
+                "url": target_play_url,
+                "name": target_title,
+                "icon": target_icon,
+                "stype": "series",
+                "series_id": series_id,
+                "season_num": target_season,
+                "ep_id": target_ep_id,
+                "profile_num": pnum,
+            }
+            xbmcplugin.addDirectoryItem(
+                handle=addon_handle, url=build_url(q), listitem=li, isFolder=False
+            )
+
     show_counts = addon.getSetting("show_content_counts").lower() == "true"
     for season_num in sorted(
         episodes.keys(), key=lambda x: (0, int(x)) if str(x).isdigit() else (1, str(x))
