@@ -674,6 +674,41 @@ def patch_xstream_player():
     return all_ok
 
 
+def install_backbutton_keymap():
+    """Installs a keymap that repoints the Back/Escape key during
+    fullscreen video playback: for a series episode played through
+    XStream Player, it now jumps to that show's season in Discover
+    instead of just returning to whatever screen was open before
+    playback started. Everything else (movies, live TV) is unaffected --
+    XStream Player's own handler falls back to a plain stop, the same as
+    Kodi's own default Back-during-playback behavior, whenever it isn't
+    tracking a series episode as currently playing."""
+    keymaps_dir = os.path.join(KODI_PROFILE, "keymaps")
+    os.makedirs(keymaps_dir, exist_ok=True)
+    target = os.path.join(keymaps_dir, "xstream_backbutton.xml")
+    source = os.path.join(ADDON_PATH, "resources", "xstream_backbutton.xml")
+
+    if not os.path.isfile(source):
+        log(f"Bundled back-button keymap missing at {source} — add-on may be corrupt.", xbmc.LOGERROR)
+        return
+
+    with open(source, "r", encoding="utf-8") as f:
+        desired = f.read()
+
+    current = None
+    if os.path.isfile(target):
+        with open(target, "r", encoding="utf-8") as f:
+            current = f.read()
+
+    if current == desired:
+        log("Back-button keymap already up to date.")
+        return
+
+    with open(target, "w", encoding="utf-8") as f:
+        f.write(desired)
+    log("Installed/updated back-button keymap — takes effect after Kodi restarts.")
+
+
 def install_player_config():
     """Returns True if TMDb Bingie Helper is present and the player config is up to date."""
     helper_dir = os.path.join(KODI_HOME, "addons", "plugin.video.tmdb.bingie.helper")
@@ -778,6 +813,7 @@ def run_checks():
     patch_ok = patch_xstream_player()
     apply_default_player_settings()
     add_live_tv_shortcut()
+    install_backbutton_keymap()
     patch_bingie_arabic_search()
     patch_bingie_continue_watching()
     patch_bingie_continue_watching_progressbar()

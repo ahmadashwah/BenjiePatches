@@ -2002,6 +2002,35 @@ def play_stream(
     stream_ref="",
 ):
     pnum = profile_num if profile_num is not None else pm.active
+
+    # Remember what's playing (series only) so the FullscreenVideo Back
+    # button (wired via a bundled keymap) can jump to the right show/season
+    # in Discover instead of just backing out to the previous window.
+    # Always cleared first so a later movie/live-TV play never inherits a
+    # stale show name from an earlier episode.
+    back_win = xbmcgui.Window(10000)
+    back_win.clearProperty("XStreamNowPlaying.ShowName")
+    back_win.clearProperty("XStreamNowPlaying.SeasonNum")
+    if stype == "series" and series_id and season_num:
+        try:
+            creds_bw = _get_credentials_for_profile(pnum)
+            series_list = _get_cached_xtream_streams(
+                creds_bw.get("xtream_url", ""),
+                creds_bw.get("xtream_username", ""),
+                creds_bw.get("xtream_password", ""),
+                "series",
+            )
+            show_entry = next(
+                (s for s in series_list if str(s.get("series_id", "")) == str(series_id)), None
+            )
+            if show_entry:
+                show_name = _PROVIDER_PREFIX_RE.sub("", show_entry.get("name", ""), count=1).strip()
+                if show_name:
+                    back_win.setProperty("XStreamNowPlaying.ShowName", show_name)
+                    back_win.setProperty("XStreamNowPlaying.SeasonNum", str(season_num))
+        except Exception as e:
+            _log(f"Back-button show tracking error: {e}")
+
     li = xbmcgui.ListItem(path=play_url)
     li.setProperty("IsPlayable", "true")
     info_tag = li.getVideoInfoTag()
@@ -5091,6 +5120,75 @@ def relaunch_kodi_action():
         dialog.ok("XStream Player", _t(30569))
     else:
         xbmc.executebuiltin("RestartApp")
+
+
+def _resolve_discover_season_path(show_name, season_num):
+    """Given a show name and season number, find that season's browsing
+    path within Discover (plugin.video.tmdb.bingie.helper) by reusing its
+    own search -- the same mechanism its search box uses -- then locating
+    the matching season within that show's own listing. Two chained
+    Files.GetDirectory calls; returns None on any failure or no match, so
+    callers can fall back to just leaving the video stopped."""
+    try:
+        search_url = (
+            "plugin://plugin.video.tmdb.bingie.helper?info=search&tmdb_type=tv"
+            f"&nextpage=false&query={urllib.parse.quote(show_name)}"
+        )
+        payload = {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "Files.GetDirectory",
+            "params": {"directory": search_url, "media": "video", "properties": ["file"]},
+        }
+        result = json.loads(xbmc.executeJSONRPC(json.dumps(payload)))
+        files = result.get("result", {}).get("files", []) or []
+        show_path = files[0].get("file") if files else None
+        if not show_path:
+            return None
+
+        payload2 = {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "Files.GetDirectory",
+            "params": {"directory": show_path, "media": "video", "properties": ["file", "season"]},
+        }
+        result2 = json.loads(xbmc.executeJSONRPC(json.dumps(payload2)))
+        seasons = result2.get("result", {}).get("files", []) or []
+        for s in seasons:
+            if str(s.get("season", "")) == str(season_num):
+                return s.get("file")
+        # Season not found in that listing (e.g. it wasn't broken out by
+        # season) -- land on the show page itself rather than nothing.
+        return show_path
+    except Exception as e:
+        _log(f"_resolve_discover_season_path error: {e}")
+        return None
+
+
+def handle_playback_back():
+    """Bound to the Back/Escape key during fullscreen video playback (see
+    the bundled keymap). If a series episode from this add-on is playing,
+    stops it and jumps to that show's season in Discover instead of just
+    backing out to whatever window was active before playback started.
+    For anything else (movies, live TV, or if the show/season lookup
+    fails), replicates Kodi's own default behavior: stop and let the
+    window stack return to the previous screen on its own."""
+    win = xbmcgui.Window(10000)
+    show_name = win.getProperty("XStreamNowPlaying.ShowName")
+    season_num = win.getProperty("XStreamNowPlaying.SeasonNum")
+    win.clearProperty("XStreamNowPlaying.ShowName")
+    win.clearProperty("XStreamNowPlaying.SeasonNum")
+
+    if not show_name or not season_num:
+        xbmc.executebuiltin("PlayerControl(Stop)")
+        return
+
+    xbmc.Player().stop()
+    season_path = _resolve_discover_season_path(show_name, season_num)
+    if season_path:
+        xbmc.executebuiltin(f"ActivateWindow(Videos,{season_path},return)")
+    # else: playback is already stopped; Kodi returns to the previous
+    # window on its own, same as the default behavior for other content.
 
 
 def install_upnext():
@@ -11529,6 +11627,12 @@ elif mode == "relaunch_kodi":
         relaunch_kodi_action()
     except Exception as e:
         _log(f"Relaunch Kodi error: {e}")
+elif mode == "handle_back":
+    try:
+        handle_playback_back()
+    except Exception as e:
+        _log(f"handle_back error: {e}")
+        xbmc.executebuiltin("PlayerControl(Stop)")
 elif mode == "install_upnext":
     try:
         install_upnext()

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<keymap>
+  <FullscreenVideo>
+    <keyboard>
+      <backspace>RunPlugin(plugin://plugin.video.xstream-player/?mode=handle_back)</backspace>
+      <escape>RunPlugin(plugin://plugin.video.xstream-player/?mode=handle_back)</escape>
+    </keyboard>
+    <remote>
+      <back>RunPlugin(plugin://plugin.video.xstream-player/?mode=handle_back)</back>
+    </remote>
+    <gamepad>
+      <back>RunPlugin(plugin://plugin.video.xstream-player/?mode=handle_back)</back>
+    </gamepad>
+  </FullscreenVideo>
+</keymap>
