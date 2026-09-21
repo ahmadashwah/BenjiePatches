@@ -2279,19 +2279,8 @@ def _monitor_playback(
                             "Autoplay error", str(e)[:60], xbmcgui.NOTIFICATION_ERROR, 6000
                         )
             else:
-                # Temporary diagnostic -- shows on every series episode end
-                # (including ones stopped early on purpose) so the actual
-                # pos/dur values causing autoplay to skip are visible right
-                # on screen, without needing log access. Remove once the
-                # real cause on affected devices is confirmed.
                 _log(
                     f"Autoplay: not triggering (cached_pos={cached_pos}, cached_dur={cached_dur})"
-                )
-                xbmcgui.Dialog().notification(
-                    "Autoplay debug",
-                    f"pos={int(cached_pos)} dur={int(cached_dur)} -- not near end",
-                    xbmcgui.NOTIFICATION_WARNING,
-                    6000,
                 )
 
     t = threading.Thread(target=_worker)
