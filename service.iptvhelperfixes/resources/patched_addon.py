@@ -2002,6 +2002,20 @@ def play_stream(
     stream_ref="",
 ):
     pnum = profile_num if profile_num is not None else pm.active
+    if stype == "series":
+        # Temporary diagnostic: shows exactly what was requested (title +
+        # episode id + stream url's numeric id) right as playback starts,
+        # to tell apart "the app asked for the wrong episode" from "the
+        # app asked correctly and the provider served the wrong content"
+        # -- reported as an episode consistently playing the one before it.
+        m = re.search(r"/(\d+)\.[a-zA-Z0-9]+$", play_url)
+        stream_num = m.group(1) if m else "?"
+        xbmcgui.Dialog().notification(
+            "Requesting",
+            f"{title or name} (ep_id={ep_id}, stream={stream_num})",
+            xbmcgui.NOTIFICATION_INFO,
+            6000,
+        )
     li = xbmcgui.ListItem(path=play_url)
     li.setProperty("IsPlayable", "true")
     info_tag = li.getVideoInfoTag()
