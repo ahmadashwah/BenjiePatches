@@ -352,6 +352,68 @@ def patch_bingie_focus_frame():
         log(f"Patched {rel_path} for the focus frame fix (backup saved as {os.path.basename(backup)}).")
 
 
+def patch_bingie_continue_watching_click():
+    """Continue Watching tiles led to a TMDb Bingie Helper show-info screen
+    on click instead of playing/resuming directly. Root cause: Bingie's
+    shared ContainerShowInfoOnclick include (used by every Home widget row)
+    shows Action(info) whenever a clicked item's ListItem.AddonName is
+    non-empty -- true for anything from any add-on, including XStream
+    Player's own directly-playable Continue Watching entries. Excludes
+    items whose path is one of XStream Player's own direct play_stream
+    URLs, leaving show-info-first behavior intact for every other row
+    (Trending, New Arabic TV Shows, etc.) where browsing into a show first
+    still makes sense. Matches by exact content, not a version gate: safe
+    no-op if the skin's onclick block doesn't look like what this patch
+    expects (e.g. after a skin update changes that section)."""
+    skin_dir = os.path.join(KODI_HOME, "addons", "skin.bingie")
+    if not os.path.isdir(skin_dir):
+        log("Bingie skin not installed (or different skin) — skipping continue-watching click fix.")
+        return
+
+    patch_file = os.path.join(ADDON_PATH, "resources", "bingie_continue_watching_click_patch.json")
+    if not os.path.isfile(patch_file):
+        log(f"Bundled continue-watching click patch missing at {patch_file} — add-on may be corrupt.", xbmc.LOGERROR)
+        return
+    with open(patch_file, "r", encoding="utf-8") as f:
+        spec = json.load(f)
+
+    for rel_path, entry in spec.items():
+        target = os.path.join(skin_dir, "1080i", rel_path)
+        if not os.path.isfile(target):
+            log(f"Bingie skin file {rel_path} not found — skipping continue-watching click fix for it.")
+            continue
+
+        with open(target, "r", encoding="utf-8") as f:
+            content = f.read()
+
+        new_block = entry["new_block"]
+        if new_block in content:
+            log(f"Continue-watching click fix already applied to {rel_path}.")
+            continue
+
+        matched_old_block = None
+        for candidate in entry["candidates"]:
+            if candidate in content:
+                matched_old_block = candidate
+                break
+
+        if matched_old_block is None:
+            log(
+                f"{rel_path} doesn't match the expected content (skin may have "
+                "been updated) — skipping continue-watching click fix for it "
+                "rather than risk corrupting it.",
+                xbmc.LOGWARNING,
+            )
+            continue
+
+        backup = target + f".bak-{time.strftime('%Y%m%d-%H%M%S')}"
+        shutil.copyfile(target, backup)
+        new_content = content.replace(matched_old_block, new_block, 1)
+        with open(target, "w", encoding="utf-8") as f:
+            f.write(new_content)
+        log(f"Patched {rel_path} for the continue-watching click fix (backup saved as {os.path.basename(backup)}).")
+
+
 def patch_bingie_arabic_categories():
     """Repurposes the Home screen's 2nd/3rd widget rows (DefWidget1/2, right
     after Continue Watching) into "New Arabic Movies" and "New Arabic TV
@@ -659,6 +721,7 @@ def run_checks():
     patch_bingie_continue_watching_progressbar()
     patch_bingie_focus_frame()
     patch_bingie_arabic_categories()
+    patch_bingie_continue_watching_click()
     try:
         github_sync.run_sync()
     except Exception:

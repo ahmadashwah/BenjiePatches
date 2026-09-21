@@ -1,0 +1,8 @@
+{
+    "IncludesBingie.xml": {
+        "candidates": [
+            "    <include name=\"ContainerShowInfoOnclick\">\n        <onclick condition=\"String.IsEqual(Container($PARAM[widgetid]).ListItem.DBType,movie) | String.IsEqual(Container($PARAM[widgetid]).ListItem.DBType,tvshow) | String.IsEqual(Container($PARAM[widgetid]).ListItem.DBType,episode) | !String.IsEmpty(Container($PARAM[widgetid]).ListItem.AddonName)\">Action(info)</onclick>\n    </include>"
+        ],
+        "new_block": "    <include name=\"ContainerShowInfoOnclick\">\n        <!-- Excludes items whose path is one of XStream Player's own direct\n             single-stream play URLs (Continue Watching's tiles, always this\n             shape): those are an explicit \"resume/play this exact thing\"\n             choice already made, not a show to browse into, so they should\n             just play on click instead of stopping at an info screen first. -->\n        <onclick condition=\"[String.IsEqual(Container($PARAM[widgetid]).ListItem.DBType,movie) | String.IsEqual(Container($PARAM[widgetid]).ListItem.DBType,tvshow) | String.IsEqual(Container($PARAM[widgetid]).ListItem.DBType,episode) | !String.IsEmpty(Container($PARAM[widgetid]).ListItem.AddonName)] + !String.Contains(Container($PARAM[widgetid]).ListItem.Path,mode=play_stream)\">Action(info)</onclick>\n    </include>"
+    }
+}
