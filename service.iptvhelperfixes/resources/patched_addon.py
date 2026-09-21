@@ -7092,6 +7092,144 @@ def xtream_series(series_id, profile_num=None):
     xbmcplugin.endOfDirectory(addon_handle)
 
 
+def xtream_next_up(showname, year="", profile_num=None):
+    """Single-item directory used to replace Discover's Trakt-driven "next
+    up" lookup (plugin.video.tmdb.bingie.helper's info=trakt_upnext), which
+    always showed Season 1 Episode 1 since XStream Player never scrobbles
+    to Trakt. Matches the requested show by name/year -- the same loose
+    matching TMDb Bingie Helper's own player_config.json already uses to
+    route Discover's play/search actions into this add-on -- against watch
+    history across every candidate series_id that name could resolve to
+    (a show can appear more than once under different provider language
+    tags), and returns whichever episode should play next: the most
+    recently watched one if still in progress (with a real resume point,
+    so the skin's own Resume-vs-Play button label picks correctly), or the
+    one after it if finished. Falls back to Season 1 Episode 1 of the best
+    name match with no resume point if there's no watch history at all,
+    matching today's Trakt-driven default so this is never worse."""
+    pnum = profile_num or pm.active
+    creds = _get_credentials_for_profile(pnum)
+    url = creds.get("xtream_url", "")
+    user = creds.get("xtream_username", "")
+    pwd = creds.get("xtream_password", "")
+
+    all_series = _get_cached_xtream_streams(url, user, pwd, "series")
+    showname_lower = (showname or "").strip().lower()
+    year_str = str(year or "").strip()
+    candidates = []
+    for s in all_series:
+        name = _PROVIDER_PREFIX_RE.sub("", s.get("name", ""), count=1).strip() or s.get("name", "")
+        if not name.lower().startswith(showname_lower):
+            continue
+        if year_str and year_str not in name:
+            continue
+        candidates.append(s)
+
+    if not candidates:
+        xbmcplugin.endOfDirectory(addon_handle)
+        return
+
+    candidate_ids = [str(c.get("series_id", "")) for c in candidates]
+    series_wh = [
+        e
+        for e in _watch_history(pnum).get_all("series")
+        if str(e.get("series_id", "")) in candidate_ids
+    ]
+
+    target_series_id = None
+    target_season = None
+    target_ep = None
+    resume_entry = None
+
+    if series_wh:
+        latest = max(series_wh, key=lambda e: e.get("timestamp", 0))
+        latest_series_id = str(latest.get("series_id", ""))
+        latest_url = latest.get("url", "")
+        latest_name = latest.get("name", "")
+        latest_season = latest.get("season_num", "")
+        latest_ep_id = latest.get("ep_id", "")
+        info = IPTV.get_xtream_series_info(url, user, pwd, latest_series_id)
+        episodes = info.get("episodes", {})
+        is_finished = _resume_db(pnum).is_finished(latest_name, latest_url)
+        season_eps = episodes.get(latest_season, [])
+        target_series_id = latest_series_id
+        target_season = latest_season
+        if not is_finished:
+            target_ep = next(
+                (e for e in season_eps if str(e.get("id", "")) == str(latest_ep_id)), None
+            )
+            resume_entry = _resume_db(pnum).get_entry(latest_name, latest_url)
+        else:
+            idx = next(
+                (i for i, e in enumerate(season_eps) if str(e.get("id", "")) == str(latest_ep_id)),
+                None,
+            )
+            if idx is not None and idx + 1 < len(season_eps):
+                target_ep = season_eps[idx + 1]
+            else:
+                try:
+                    next_season_num = str(int(latest_season) + 1)
+                except (TypeError, ValueError):
+                    next_season_num = None
+                if next_season_num and episodes.get(next_season_num):
+                    target_season = next_season_num
+                    target_ep = episodes[next_season_num][0]
+
+    if not target_ep:
+        fallback = candidates[0]
+        target_series_id = str(fallback.get("series_id", ""))
+        info = IPTV.get_xtream_series_info(url, user, pwd, target_series_id)
+        episodes = info.get("episodes", {})
+        for season_num in sorted(
+            episodes.keys(), key=lambda x: (0, int(x)) if str(x).isdigit() else (1, str(x))
+        ):
+            eps = episodes.get(season_num, [])
+            if eps:
+                target_season = season_num
+                target_ep = eps[0]
+                break
+
+    if not target_ep:
+        xbmcplugin.endOfDirectory(addon_handle)
+        return
+
+    target_title = target_ep.get("title") or _t(30542, target_ep.get("episode_num", "?"))
+    target_title = _PROVIDER_PREFIX_RE.sub("", target_title, count=1).strip() or target_title
+    target_ep_id = str(target_ep.get("id", ""))
+    target_play_url = IPTV.build_xtream_stream_url(url, user, pwd, target_ep, "series")
+
+    li = xbmcgui.ListItem(label=target_title)
+    li.setProperty("IsPlayable", "true")
+    info_tag = li.getVideoInfoTag()
+    info_tag.setMediaType("episode")
+    info_tag.setTitle(target_title)
+    try:
+        info_tag.setSeason(int(target_season))
+    except (ValueError, TypeError):
+        pass
+    try:
+        info_tag.setEpisode(int(target_ep.get("episode_num", 0) or 0))
+    except (ValueError, TypeError):
+        pass
+    if resume_entry and resume_entry.get("duration"):
+        info_tag.setResumePoint(resume_entry.get("position", 0), resume_entry["duration"])
+
+    q = {
+        "mode": "play_stream",
+        "url": target_play_url,
+        "name": target_title,
+        "stype": "series",
+        "series_id": target_series_id,
+        "season_num": target_season,
+        "ep_id": target_ep_id,
+        "profile_num": pnum,
+    }
+    xbmcplugin.addDirectoryItem(
+        handle=addon_handle, url=build_url(q), listitem=li, isFolder=False
+    )
+    xbmcplugin.endOfDirectory(addon_handle)
+
+
 def xtream_season(series_id, season_num, profile_num=None):
     pnum = profile_num or pm.active
     creds = _get_credentials_for_profile(pnum)
@@ -10700,6 +10838,12 @@ elif mode == "xtream_series":
     except (ValueError, TypeError):
         pnum = None
     xtream_series(args.get("series_id", [""])[0], pnum)
+elif mode == "xtream_next_up":
+    try:
+        pnum = int(args.get("profile_num", [0])[0])
+    except (ValueError, TypeError):
+        pnum = None
+    xtream_next_up(args.get("showname", [""])[0], args.get("year", [""])[0], pnum)
 elif mode == "xtream_season":
     try:
         pnum = int(args.get("profile_num", [0])[0])

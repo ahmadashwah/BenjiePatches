@@ -414,6 +414,68 @@ def patch_bingie_continue_watching_click():
         log(f"Patched {rel_path} for the continue-watching click fix (backup saved as {os.path.basename(backup)}).")
 
 
+def patch_bingie_next_up():
+    """Discover's TV show info screen showed "Play Season 1: Episode 1" as
+    its default action no matter how much of a show had actually been
+    watched, because its data source (plugin.video.tmdb.bingie.helper's
+    info=trakt_upnext) needs Trakt scrobbling to know anything, and XStream
+    Player never scrobbles there. Repoints that lookup at a new XStream
+    Player mode (xtream_next_up) that uses its own real watch history
+    instead, showing a genuine "Resume SxEy" (or the next episode, if
+    finished) when one exists -- falling back to the same Season 1 Episode
+    1 default otherwise, so this is never worse than before. Matches by
+    exact content, not a version gate: safe no-op if the skin's next-up
+    content variable doesn't look like what this patch expects (e.g. after
+    a skin update changes that section)."""
+    skin_dir = os.path.join(KODI_HOME, "addons", "skin.bingie")
+    if not os.path.isdir(skin_dir):
+        log("Bingie skin not installed (or different skin) — skipping next-up fix.")
+        return
+
+    patch_file = os.path.join(ADDON_PATH, "resources", "bingie_next_up_patch.json")
+    if not os.path.isfile(patch_file):
+        log(f"Bundled next-up patch missing at {patch_file} — add-on may be corrupt.", xbmc.LOGERROR)
+        return
+    with open(patch_file, "r", encoding="utf-8") as f:
+        spec = json.load(f)
+
+    for rel_path, entry in spec.items():
+        target = os.path.join(skin_dir, "1080i", rel_path)
+        if not os.path.isfile(target):
+            log(f"Bingie skin file {rel_path} not found — skipping next-up fix for it.")
+            continue
+
+        with open(target, "r", encoding="utf-8") as f:
+            content = f.read()
+
+        new_block = entry["new_block"]
+        if new_block in content:
+            log(f"Next-up fix already applied to {rel_path}.")
+            continue
+
+        matched_old_block = None
+        for candidate in entry["candidates"]:
+            if candidate in content:
+                matched_old_block = candidate
+                break
+
+        if matched_old_block is None:
+            log(
+                f"{rel_path} doesn't match the expected content (skin may have "
+                "been updated) — skipping next-up fix for it rather than risk "
+                "corrupting it.",
+                xbmc.LOGWARNING,
+            )
+            continue
+
+        backup = target + f".bak-{time.strftime('%Y%m%d-%H%M%S')}"
+        shutil.copyfile(target, backup)
+        new_content = content.replace(matched_old_block, new_block, 1)
+        with open(target, "w", encoding="utf-8") as f:
+            f.write(new_content)
+        log(f"Patched {rel_path} for the next-up fix (backup saved as {os.path.basename(backup)}).")
+
+
 def patch_bingie_arabic_categories():
     """Repurposes the Home screen's 2nd/3rd widget rows (DefWidget1/2, right
     after Continue Watching) into "New Arabic Movies" and "New Arabic TV
@@ -722,6 +784,7 @@ def run_checks():
     patch_bingie_focus_frame()
     patch_bingie_arabic_categories()
     patch_bingie_continue_watching_click()
+    patch_bingie_next_up()
     try:
         github_sync.run_sync()
     except Exception:
