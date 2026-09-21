@@ -7012,6 +7012,15 @@ def xtream_season(series_id, season_num, profile_num=None):
     pwd = creds.get("xtream_password", "")
     info = IPTV.get_xtream_series_info(url, user, pwd, series_id)
     eps = info.get("episodes", {}).get(season_num, [])
+    # Temporary diagnostic for a reported bug where episodes are missing
+    # and/or the wrong content plays when this is reached via Discover
+    # (TMDb Bingie Helper's JSON-RPC-driven drill-down) vs browsing this
+    # add-on directly -- logs every call so the two paths can be compared.
+    _log(
+        f"xtream_season: series_id={series_id} season_num={season_num!r} "
+        f"profile_num={pnum} available_season_keys={list(info.get('episodes', {}).keys())} "
+        f"eps_returned={len(eps)} ep_ids={[e.get('id') for e in eps]}"
+    )
     show_poster = info.get("info", {}).get("cover", "")
     xbmcplugin.setContent(addon_handle, "episodes")
     we = WatchedEpisodes(addon, profile_num=pnum)
