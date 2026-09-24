@@ -1,0 +1,8 @@
+{
+  "IncludesPaths.xml": {
+    "candidates": [
+      "\t<variable name=\"Path_MyList\">\n        <value condition=\"!Skin.HasSetting(AddToFavorites) + [Library.HasContent(Movies) | Library.HasContent(TVShows)]\">plugin://script.bingie.widgets/?action=mylist&amp;mediatype=media&amp;limit=100&amp;reload=$INFO[Window(Home).Property(widgetreload)]</value>\n\t\t<value condition=\"Skin.HasSetting(AddToFavorites) | !Library.HasContent(Movies) + !Library.HasContent(TVShows)\">plugin://plugin.video.tmdb.bingie.helper?info=trakt_favorites&amp;tmdb_type=both&amp;widget=true&amp;sort_by=added&amp;sort_how=desc&amp;reload=$INFO[Window(Home).Property(TMDbBingieHelper.Widgets.Reload)])</value>\n    </variable>"
+    ],
+    "new_block": "\t<variable name=\"Path_MyList\">\n\t\t<value condition=\"System.HasAddon(plugin.video.xstream-player)\">plugin://script.bingie.widgets/?action=mylist&amp;mediatype=media&amp;limit=100&amp;reload=$INFO[Window(Home).Property(widgetreload)]</value>\n        <value condition=\"!Skin.HasSetting(AddToFavorites) + [Library.HasContent(Movies) | Library.HasContent(TVShows)]\">plugin://script.bingie.widgets/?action=mylist&amp;mediatype=media&amp;limit=100&amp;reload=$INFO[Window(Home).Property(widgetreload)]</value>\n\t\t<value condition=\"Skin.HasSetting(AddToFavorites) | !Library.HasContent(Movies) + !Library.HasContent(TVShows)\">plugin://plugin.video.tmdb.bingie.helper?info=trakt_favorites&amp;tmdb_type=both&amp;widget=true&amp;sort_by=added&amp;sort_how=desc&amp;reload=$INFO[Window(Home).Property(TMDbBingieHelper.Widgets.Reload)])</value>\n    </variable>"
+  }
+}

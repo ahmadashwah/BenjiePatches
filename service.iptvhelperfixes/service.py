@@ -481,6 +481,68 @@ def patch_bingie_next_up():
         log(f"Patched {rel_path} for the next-up fix (backup saved as {os.path.basename(backup)}).")
 
 
+def patch_bingie_mylist():
+    """Home's "My List" widget was never actually reaching the
+    script.bingie.widgets patch from 1.5.9/1.6.0: the skin's own
+    Path_MyList variable only uses that widget when
+    Library.HasContent(Movies)|Library.HasContent(TVShows) is true, and
+    falls back to plugin.video.tmdb.bingie.helper's info=trakt_favorites
+    (a Trakt-favorites list, needing Trakt sync data this setup never has)
+    whenever the local Kodi library is empty -- which it always is here,
+    a pure plugin-source IPTV setup with nothing scanned into it. So the
+    script.bingie.widgets branch was unreachable no matter what got
+    favorited. Adds a new first branch (gated on XStream Player being
+    installed, not on library content) so Home's My List always uses the
+    already-working script.bingie.widgets patch instead, keeping the
+    original two conditions as a fallback for a non-XStream-Player setup.
+    Matches by exact content, not a version gate: safe no-op if the skin's
+    Path_MyList block doesn't look like what this patch expects (e.g.
+    after a skin update changes that section)."""
+    skin_dir = os.path.join(KODI_HOME, "addons", "skin.bingie")
+    target = os.path.join(skin_dir, "1080i", "IncludesPaths.xml")
+    if not os.path.isfile(target):
+        log("Bingie skin not installed (or different skin) — skipping My List patch.")
+        return
+
+    patch_file = os.path.join(ADDON_PATH, "resources", "bingie_mylist_patch.json")
+    if not os.path.isfile(patch_file):
+        log(f"Bundled My List patch missing at {patch_file} — add-on may be corrupt.", xbmc.LOGERROR)
+        return
+    with open(patch_file, "r", encoding="utf-8") as f:
+        spec = json.load(f)
+
+    with open(target, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    entry = spec["IncludesPaths.xml"]
+    new_block = entry["new_block"]
+    if new_block in content:
+        log("My List patch already applied.")
+        return
+
+    matched_old_block = None
+    for candidate in entry["candidates"]:
+        if candidate in content:
+            matched_old_block = candidate
+            break
+
+    if matched_old_block is None:
+        log(
+            "IncludesPaths.xml's Path_MyList block doesn't match the expected "
+            "content (skin may have been updated) — skipping My List patch "
+            "rather than risk corrupting it.",
+            xbmc.LOGWARNING,
+        )
+        return
+
+    backup = target + f".bak-{time.strftime('%Y%m%d-%H%M%S')}"
+    shutil.copyfile(target, backup)
+    new_content = content.replace(matched_old_block, new_block, 1)
+    with open(target, "w", encoding="utf-8") as f:
+        f.write(new_content)
+    log(f"Patched IncludesPaths.xml so Home's My List uses XStream Player's own favorites (backup saved as {os.path.basename(backup)}).")
+
+
 def patch_bingie_arabic_categories():
     """Repurposes the Home screen's 2nd/3rd widget rows (DefWidget1/2, right
     after Continue Watching) into "New Arabic Movies" and "New Arabic TV
@@ -935,6 +997,7 @@ def run_checks():
     install_backbutton_keymap()
     patch_tmdb_bingie_helper()
     patch_bingie_widgets_mylist()
+    patch_bingie_mylist()
     patch_bingie_arabic_search()
     patch_bingie_continue_watching()
     patch_bingie_continue_watching_progressbar()
