@@ -29,6 +29,9 @@ What it does, every time Kodi starts:
      catalog search whenever the typed term contains Arabic script, since
      TMDb rarely has Arabic-language IPTV content indexed at all. English
      search is untouched.
+  7. If Bingie Widgets is installed AND is the exact version this patch was
+     built against, patches its "My List" widget to read XStream Player's
+     own favorites instead of Kodi's always-empty video library.
 
 Every step is idempotent: it compares against the current file/setting
 content first and only writes when something's actually different. All of
@@ -57,6 +60,7 @@ KODI_PROFILE = xbmcvfs.translatePath("special://profile/")
 
 EXPECTED_XSTREAM_VERSION = "2.1.5"
 EXPECTED_TMDB_HELPER_VERSION = "1.0.3"
+EXPECTED_BINGIE_WIDGETS_VERSION = "1.0.1"
 LOG_PREFIX = "[IPTV Helper Fixes]"
 
 
@@ -726,6 +730,69 @@ def patch_tmdb_bingie_helper():
     return True
 
 
+_BINGIE_WIDGETS_PATCHED_FILES = [
+    ("media.py", "patched_widgets_media.py"),
+    ("tvshows.py", "patched_widgets_tvshows.py"),
+]
+
+
+def patch_bingie_widgets_mylist():
+    """Replaces script.bingie.widgets' media.py/tvshows.py mylist() methods
+    with patched copies that read XStream Player's own favorites (via a new
+    favorites_widget_export mode, cross-addon Files.GetDirectory call)
+    instead of only querying Kodi's own video library -- which is always
+    empty on this setup (pure plugin-source content, nothing scanned into
+    it), so the Home screen's "My List" widget never showed anything no
+    matter what got favorited. Falls back to the untouched original library
+    query if XStream Player isn't installed or returns nothing, so this is
+    never worse than before. Version-gated like patch_xstream_player():
+    skips rather than risk corrupting a different version's code."""
+    widgets_dir = os.path.join(KODI_HOME, "addons", "script.bingie.widgets")
+    addon_xml = os.path.join(widgets_dir, "addon.xml")
+    if not os.path.isdir(widgets_dir):
+        log("Bingie Widgets not installed yet — skipping (will check again next startup).")
+        return False
+
+    version = get_installed_version(addon_xml)
+    if version != EXPECTED_BINGIE_WIDGETS_VERSION:
+        log(
+            f"Bingie Widgets is version {version}, but this patch was built "
+            f"against {EXPECTED_BINGIE_WIDGETS_VERSION} — skipping rather than "
+            "risk corrupting a different version's code.",
+            xbmc.LOGWARNING,
+        )
+        return False
+
+    all_ok = True
+    for target_name, source_name in _BINGIE_WIDGETS_PATCHED_FILES:
+        target = os.path.join(widgets_dir, "resources", "lib", target_name)
+        source = os.path.join(ADDON_PATH, "resources", source_name)
+        if not os.path.isfile(target):
+            log(f"Expected Bingie Widgets' {target_name} at {target} but it's not there.", xbmc.LOGWARNING)
+            all_ok = False
+            continue
+        if not os.path.isfile(source):
+            log(f"Bundled patched {target_name} missing at {source} — add-on may be corrupt.", xbmc.LOGERROR)
+            all_ok = False
+            continue
+
+        with open(target, "rb") as f:
+            current = f.read()
+        with open(source, "rb") as f:
+            patched = f.read()
+
+        if current == patched:
+            log(f"Bingie Widgets {target_name} already up to date.")
+            continue
+
+        backup = target + f".bak-{time.strftime('%Y%m%d-%H%M%S')}"
+        shutil.copyfile(target, backup)
+        shutil.copyfile(source, target)
+        log(f"Patched Bingie Widgets {target_name} (backup saved as {os.path.basename(backup)}).")
+
+    return all_ok
+
+
 def install_backbutton_keymap():
     """Installs a keymap that repoints the Back/Escape key during
     fullscreen video playback: for a series episode played through
@@ -867,6 +934,7 @@ def run_checks():
     add_live_tv_shortcut()
     install_backbutton_keymap()
     patch_tmdb_bingie_helper()
+    patch_bingie_widgets_mylist()
     patch_bingie_arabic_search()
     patch_bingie_continue_watching()
     patch_bingie_continue_watching_progressbar()

@@ -7322,6 +7322,105 @@ def discover_watch_export(showname, profile_num=None):
     xbmcplugin.endOfDirectory(addon_handle)
 
 
+def favorites_widget_export(profile_num=None):
+    """Returns a single, non-playable directory item whose label is a
+    JSON-encoded export of this profile's favorited movies/series, shaped
+    for script.bingie.widgets' "My List" widget -- which otherwise only
+    reads Kodi's own video library (empty here, since this whole setup is
+    plugin-source content, nothing scanned into it). Called by a patch to
+    script.bingie.widgets' media.py/tvshows.py mylist() methods via
+    Files.GetDirectory, the same cross-addon technique
+    discover_watch_export already uses.
+
+    Movie favorites already store their own direct playback URL, so those
+    map straight across to a play_stream link. Series favorites are only
+    ever added from Continue Watching, keyed by episode id but labelled
+    with the show's own clean title -- grouped here by that title (one
+    tile per show, not per favorited episode) and resolved to a
+    series_id via the same catalog name-matching discover_watch_export
+    uses, to build a folder link into this add-on's own season listing."""
+    pnum = profile_num or pm.active
+    profile_fav = _get_profile_fav(pnum)
+    items = profile_fav.get_all()
+
+    movies = []
+    for it in items:
+        if it.get("stype") != "movie" or not it.get("url"):
+            continue
+        movies.append(
+            {
+                "label": it.get("name", ""),
+                "icon": it.get("icon", ""),
+                "type": "movie",
+                "isFolder": False,
+                "extraproperties": {"IsPlayable": "true"},
+                "file": build_url(
+                    {
+                        "mode": "play_stream",
+                        "url": it["url"],
+                        "name": it.get("name", ""),
+                        "stype": "movie",
+                        "profile_num": pnum,
+                        "icon": it.get("icon", ""),
+                    }
+                ),
+            }
+        )
+
+    series_names = {}
+    for it in items:
+        if it.get("stype") != "series":
+            continue
+        name = (it.get("name") or "").strip()
+        if name:
+            series_names.setdefault(name.lower(), (name, it.get("icon", "")))
+
+    tvshows = []
+    if series_names:
+        creds = _get_credentials_for_profile(pnum)
+        url = creds.get("xtream_url", "")
+        user = creds.get("xtream_username", "")
+        pwd = creds.get("xtream_password", "")
+        all_series = _get_cached_xtream_streams(url, user, pwd, "series")
+        for name_lower, (name, icon) in series_names.items():
+            match = next(
+                (
+                    s
+                    for s in all_series
+                    if (
+                        _PROVIDER_PREFIX_RE.sub("", s.get("name", ""), count=1).strip()
+                        or s.get("name", "")
+                    )
+                    .lower()
+                    .startswith(name_lower)
+                ),
+                None,
+            )
+            if not match:
+                continue
+            series_id = str(match.get("series_id", ""))
+            tvshows.append(
+                {
+                    "label": name,
+                    "icon": icon or match.get("stream_icon", ""),
+                    "type": "tvshow",
+                    "isFolder": True,
+                    "extraproperties": {},
+                    "file": build_url(
+                        {
+                            "mode": "xtream_series",
+                            "series_id": series_id,
+                            "profile_num": pnum,
+                        }
+                    ),
+                }
+            )
+
+    li = xbmcgui.ListItem(label=json.dumps({"movies": movies, "tvshows": tvshows}))
+    xbmcplugin.addDirectoryItem(handle=addon_handle, url="", listitem=li, isFolder=False)
+    xbmcplugin.endOfDirectory(addon_handle)
+
+
 def xtream_next_up(showname, year="", profile_num=None):
     """Single-item directory used to replace Discover's Trakt-driven "next
     up" lookup (plugin.video.tmdb.bingie.helper's info=trakt_upnext), which
@@ -11149,6 +11248,12 @@ elif mode == "discover_watch_export":
     except (ValueError, TypeError):
         pnum = None
     discover_watch_export(args.get("showname", [""])[0], pnum)
+elif mode == "favorites_widget_export":
+    try:
+        pnum = int(args.get("profile_num", [0])[0])
+    except (ValueError, TypeError):
+        pnum = None
+    favorites_widget_export(pnum)
 elif mode == "xtream_season":
     try:
         pnum = int(args.get("profile_num", [0])[0])
