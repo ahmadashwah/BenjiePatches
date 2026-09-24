@@ -197,6 +197,22 @@ class ResumePoints:
         and hasn't been rewatched since."""
         return self._key(name, url) in self._finished
 
+    def toggle_finished(self, name, url):
+        """Manually flip the finished marker for a (name, url) pair, same
+        one save_position() sets automatically near the end of playback.
+        For Continue Watching items with no series_id/season_num/ep_id to
+        toggle WatchedEpisodes with (a resume point saved with no matching
+        watch-history entry) -- this is keyed the same way resume points
+        themselves are, so it always applies regardless of that gap."""
+        key = self._key(name, url)
+        if key in self._finished:
+            self._finished.pop(key, None)
+        else:
+            self._finished[key] = {"name": name, "url": url, "timestamp": time.time()}
+            self._data.pop(key, None)
+            self._save(self._path, self._data)
+        self._save(self._finished_path, self._finished)
+
     def remove(self, name, url):
         self._data.pop(self._key(name, url), None)
         self._save(self._path, self._data)

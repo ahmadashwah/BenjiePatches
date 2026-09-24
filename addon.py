@@ -9281,6 +9281,20 @@ def toggle_episode_watched(series_id, season_num, episode_id, profile_num=None):
     _bump_widget_reload()
 
 
+def toggle_continue_watching_finished(name, url, profile_num=None):
+    """Mark-as-watched fallback for Continue Watching items with no
+    series_id/season_num/ep_id to toggle WatchedEpisodes with -- a resume
+    point saved with no matching watch-history entry (its "extra" episode
+    metadata never got recorded). Toggles the same name/url-keyed
+    "finished" marker save_position() already sets automatically near the
+    end of playback, which continue_watching_menu()'s own filtering
+    already checks -- so this works even without episode-level IDs."""
+    pnum = profile_num or pm.active
+    _resume_db(pnum).toggle_finished(name, url)
+    xbmc.executebuiltin("Container.Refresh")
+    _bump_widget_reload()
+
+
 def switch_profile():
     """Change the PVR profile and prompt for restart."""
     current = addon.getSetting("active_pvr_profile") or "Profile 1"
@@ -11033,6 +11047,19 @@ def continue_watching_menu(only_stype=None):
                 movie_id = movie_id_match.group(1)
                 ctx.extend(_watched_ctx_movie(movie_id, profile_num=pnum))
                 ctx.extend(_build_fav_ctx(movie_id, name, "movie", icon, url, profile_num=pnum))
+        if stype == "series" and not ctx:
+            # Resume point with no matching watch-history entry (the
+            # "fallback pass" above) -- no series_id/season_num/ep_id to
+            # toggle WatchedEpisodes with, so use the name/url-keyed
+            # "finished" marker instead. No favorite entry here either,
+            # for the same reason: nothing to file it under.
+            watched_label = _t(30806) if item["is_finished"] else _t(30805)
+            ctx.append(
+                (
+                    watched_label,
+                    f"RunPlugin({build_url({'mode': 'toggle_continue_watching_finished', 'name': name, 'url': url, 'profile_num': pnum})})",
+                )
+            )
         if ctx:
             # replaceItems=True: without it, these get appended alongside
             # Kodi's own default "Mark as watched" / "Add to favourites"
@@ -11352,6 +11379,13 @@ elif mode == "toggle_episode_watched":
         args.get("series_id", [""])[0],
         args.get("season_num", [""])[0],
         args.get("episode_id", [""])[0],
+        int(pnum) if pnum else None,
+    )
+elif mode == "toggle_continue_watching_finished":
+    pnum = args.get("profile_num", [""])[0]
+    toggle_continue_watching_finished(
+        args.get("name", [""])[0],
+        args.get("url", [""])[0],
         int(pnum) if pnum else None,
     )
 elif mode == "refresh_data":
