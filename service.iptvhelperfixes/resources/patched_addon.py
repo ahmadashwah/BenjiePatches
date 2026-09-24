@@ -11014,7 +11014,14 @@ def continue_watching_menu(only_stype=None):
                 ctx.extend(_watched_ctx_movie(movie_id, profile_num=pnum))
                 ctx.extend(_build_fav_ctx(movie_id, name, "movie", icon, url, profile_num=pnum))
         if ctx:
-            li.addContextMenuItems(ctx)
+            # replaceItems=True: without it, these get appended alongside
+            # Kodi's own default "Mark as watched" / "Add to favourites"
+            # entries (same wording), leaving two visually-identical
+            # items in the menu where only one actually does anything --
+            # easy to click the wrong one and see no effect. Replacing
+            # removes Kodi's non-functional native entries for this
+            # add-on-sourced content along with the ambiguity.
+            li.addContextMenuItems(ctx, replaceItems=True)
 
         xbmcplugin.addDirectoryItem(
             handle=addon_handle,
