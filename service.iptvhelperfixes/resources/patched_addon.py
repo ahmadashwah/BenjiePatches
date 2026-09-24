@@ -373,6 +373,24 @@ def _log(msg):
     xbmc.log(f"[XStream Player] {safe_msg}", xbmc.LOGINFO)
 
 
+def _bump_widget_reload():
+    """Bingie's Home widgets (Continue Watching among them) embed
+    Window(Home).Property(widgetreload) directly in their own content
+    URL, so Kodi caches by that exact URL and a plain Container.Refresh
+    doesn't make a widget re-fetch -- only actually changing this
+    property's value does, since that changes the URL itself. Same
+    mechanism/format script.bingie.widgets' own kodi_monitor.py already
+    uses elsewhere. Called after anything that should make a Home widget
+    (not just the currently open folder) reflect new data immediately,
+    e.g. toggling watched status removing an item from Continue Watching."""
+    try:
+        xbmcgui.Window(10000).setProperty(
+            "widgetreload", time.strftime("%Y%m%d%H%M%S", time.gmtime())
+        )
+    except Exception as e:
+        _log(f"_bump_widget_reload error: {e}")
+
+
 def _restart_or_prompt():
     """Platform-aware restart. RestartApp is a no-op on Android (Shield, Fire TV);
     on those devices we instruct the user to fully close and reopen Kodi."""
@@ -9208,6 +9226,7 @@ def toggle_movie_watched(movie_id, profile_num=None):
     else:
         wm.mark_watched(movie_id)
     xbmc.executebuiltin("Container.Refresh")
+    _bump_widget_reload()
 
 
 def toggle_series_watched(series_id, profile_num=None):
@@ -9259,6 +9278,7 @@ def toggle_episode_watched(series_id, season_num, episode_id, profile_num=None):
     else:
         we.mark_watched(series_id, season_num, episode_id)
     xbmc.executebuiltin("Container.Refresh")
+    _bump_widget_reload()
 
 
 def switch_profile():
