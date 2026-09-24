@@ -10837,6 +10837,19 @@ def continue_watching_menu(only_stype=None):
     def _has_meaningful_progress(item):
         if item["is_finished"]:
             return False
+        # "Mark as watched" (from this row's own context menu) writes to
+        # WatchedMovies/WatchedEpisodes, a separate manual marker from the
+        # auto-detected "is_finished" above -- check it too, so marking
+        # something watched actually drops it from this row.
+        if item["stype"] == "movie":
+            m = re.search(r"/(\d+)\.[a-zA-Z0-9]+$", item["url"])
+            if m and WatchedMovies(addon, profile_num=item["profile_num"]).is_watched(m.group(1)):
+                return False
+        elif item["stype"] == "series" and item["series_id"] and item["season_num"] and item["ep_id"]:
+            if WatchedEpisodes(addon, profile_num=item["profile_num"]).is_watched(
+                item["series_id"], item["season_num"], item["ep_id"]
+            ):
+                return False
         position = item["position"]
         duration = item["duration"]
         if item["has_resume"] and duration > 0:
@@ -10982,6 +10995,26 @@ def continue_watching_menu(only_stype=None):
             q["ep_id"] = ep_id
         if icon:
             q["icon"] = icon
+
+        # Kodi's own default context menu (long-press) offers native
+        # "Mark as watched" / "Add to favourites" entries, but those write
+        # to Kodi's own library/favourites system, not this add-on's own
+        # data -- so neither did anything meaningful (an item marked
+        # watched that way never actually left this row). Attaching our
+        # own entries here makes both work against the data this row and
+        # the rest of the add-on actually reads.
+        ctx = []
+        if stype == "series" and series_id and season_num and ep_id:
+            ctx.extend(_watched_ctx_episode(series_id, season_num, ep_id, profile_num=pnum))
+            ctx.extend(_build_fav_ctx(ep_id, name, "series", icon, url, profile_num=pnum))
+        elif stype == "movie":
+            movie_id_match = re.search(r"/(\d+)\.[a-zA-Z0-9]+$", url)
+            if movie_id_match:
+                movie_id = movie_id_match.group(1)
+                ctx.extend(_watched_ctx_movie(movie_id, profile_num=pnum))
+                ctx.extend(_build_fav_ctx(movie_id, name, "movie", icon, url, profile_num=pnum))
+        if ctx:
+            li.addContextMenuItems(ctx)
 
         xbmcplugin.addDirectoryItem(
             handle=addon_handle,
