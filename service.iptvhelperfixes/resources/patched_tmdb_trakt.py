@@ -14,8 +14,10 @@ _XSTREAM_WATCH_CACHE = {}
 
 
 def _xstream_show_watch_data(showname):
+    import xbmc
     key = (showname or '').strip().lower()
     if not key:
+        xbmc.log("[IPTV Helper Fixes] _xstream_show_watch_data: empty showname, skipping", xbmc.LOGINFO)
         return {}
     if key in _XSTREAM_WATCH_CACHE:
         return _XSTREAM_WATCH_CACHE[key]
@@ -23,7 +25,6 @@ def _xstream_show_watch_data(showname):
     try:
         import json
         import urllib.parse
-        import xbmc
         search_url = (
             "plugin://plugin.video.xstream-player/?mode=discover_watch_export"
             f"&showname={urllib.parse.quote(showname)}&profile_num=1"
@@ -35,10 +36,12 @@ def _xstream_show_watch_data(showname):
             "params": {"directory": search_url, "media": "video", "properties": ["label"]},
         }
         result = json.loads(xbmc.executeJSONRPC(json.dumps(payload)))
+        xbmc.log(f"[IPTV Helper Fixes] _xstream_show_watch_data: showname={showname!r} rpc_result={result}", xbmc.LOGINFO)
         files = result.get("result", {}).get("files", []) or []
         if files:
             data = json.loads(files[0].get("label", "{}")) or {}
-    except Exception:
+    except Exception as e:
+        xbmc.log(f"[IPTV Helper Fixes] _xstream_show_watch_data error: {e}", xbmc.LOGINFO)
         data = {}
     _XSTREAM_WATCH_CACHE[key] = data
     return data
@@ -157,6 +160,13 @@ class TraktPlayData():
 
     @is_sync
     def get_playcount(self, li):
+        import xbmc
+        xbmc.log(
+            f"[IPTV Helper Fixes] get_playcount called: mediatype={li.infolabels.get('mediatype')!r} "
+            f"tvshowtitle={li.infolabels.get('tvshowtitle')!r} season={li.infolabels.get('season')!r} "
+            f"episode={li.infolabels.get('episode')!r} watchedindicators={self._watchedindicators!r}",
+            xbmc.LOGINFO,
+        )
         if not self._watchedindicators:
             return
 
