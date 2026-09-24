@@ -5200,9 +5200,20 @@ def handle_playback_back():
         xbmc.executebuiltin("PlayerControl(Stop)")
         return
 
-    xbmc.Player().stop()
+    # Resolve BEFORE stopping playback (video keeps playing during this,
+    # rather than showing a stopped/black screen). This matters for
+    # timing: stopping playback triggers Kodi's own near-instant "return
+    # to whatever window was active before playback started" (Home, or
+    # wherever this episode was launched from). Resolving first means our
+    # own ActivateWindow call fires immediately after stop(), right back
+    # to back, instead of arriving 1-2 seconds late (network round trips)
+    # after the user is already looking at that native destination --
+    # which was landing there first and needing an extra Back press to
+    # reach the season list.
     show_path, season_path = _resolve_discover_season_path(show_name, season_num)
     _log(f"handle_back: resolved show_path={show_path!r} season_path={season_path!r}")
+
+    xbmc.Player().stop()
     if show_path:
         # Visit the show's own "all seasons" page first, then drill into
         # the season -- rather than jumping straight to the season -- so
