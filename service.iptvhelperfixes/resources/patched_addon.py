@@ -2028,11 +2028,22 @@ def play_stream(
                 (s for s in series_list if str(s.get("series_id", "")) == str(series_id)), None
             )
             if show_entry:
-                show_name = _PROVIDER_PREFIX_RE.sub("", show_entry.get("name", ""), count=1).strip()
+                raw_name = show_entry.get("name", "")
+                show_name = _PROVIDER_PREFIX_RE.sub("", raw_name, count=1).strip()
                 if show_name:
                     back_win.setProperty("XStreamNowPlaying.ShowName", show_name)
                     back_win.setProperty("XStreamNowPlaying.SeasonNum", str(season_num))
                     _log(f"Back-button tracking: set show_name={show_name!r}")
+                # When the same show exists under more than one provider
+                # source/language tag (e.g. AR-SUBS vs FR), search resolves
+                # to whichever one comes first silently -- show which one,
+                # since there's otherwise no way to tell.
+                tag_match = _PROVIDER_PREFIX_RE.match(raw_name)
+                if tag_match:
+                    source_tag = tag_match.group(0).rstrip(": ").strip()
+                    xbmcgui.Dialog().notification(
+                        "Source", source_tag, xbmcgui.NOTIFICATION_INFO, 3000
+                    )
             else:
                 _log(f"Back-button tracking: no catalog match for series_id={series_id!r}")
         except Exception as e:
