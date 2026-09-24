@@ -106,7 +106,7 @@ class Media(object):
                 "jsonrpc": "2.0", "id": 1, "method": "Files.GetDirectory",
                 "params": {
                     "directory": "plugin://plugin.video.xstream-player/?mode=favorites_widget_export",
-                    "media": "video", "properties": ["label"],
+                    "media": "video",
                 },
             }
             result = _json.loads(xbmc.executeJSONRPC(_json.dumps(payload)))

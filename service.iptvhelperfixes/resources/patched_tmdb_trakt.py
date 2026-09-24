@@ -33,7 +33,7 @@ def _xstream_show_watch_data(showname):
             "jsonrpc": "2.0",
             "id": 1,
             "method": "Files.GetDirectory",
-            "params": {"directory": search_url, "media": "video", "properties": ["label"]},
+            "params": {"directory": search_url, "media": "video"},
         }
         result = json.loads(xbmc.executeJSONRPC(json.dumps(payload)))
         xbmc.log(f"[IPTV Helper Fixes] _xstream_show_watch_data: showname={showname!r} rpc_result={result}", xbmc.LOGINFO)
