@@ -11095,8 +11095,18 @@ def continue_watching_menu(only_stype=None):
     # group when the most-recent one lacks one (purely cosmetic -- never
     # mixes series_id/season/episode across variants, which could point
     # "Mark as watched"/"Go to Season" at the wrong provider's data).
+    _SHOW_NAME_TRUNC_RE = re.compile(r"\s*-\s*[Ss]\d{1,3}[Ee]\d{1,3}.*$")
+
     def _clean_show_name(raw_name):
-        cleaned = _PROVIDER_PREFIX_RE.sub("", raw_name or "", count=1).strip()
+        # item["name"] is the full raw title saved at play time, e.g.
+        # "The Office (2005) (US) - S05E06 - Customer Survey" -- every
+        # episode has a different subtitle, so grouping on the provider-
+        # prefix-stripped name alone (what a first attempt at this did)
+        # never actually matched anything: every episode looked like its
+        # own show. Truncate at the "- SxxExx" marker to get back to just
+        # the show's own name before grouping.
+        cleaned = _PROVIDER_PREFIX_RE.sub("", raw_name or "", count=1).strip() or (raw_name or "")
+        cleaned = _SHOW_NAME_TRUNC_RE.sub("", cleaned).strip()
         return (cleaned or raw_name or "").lower()
 
     show_groups = {}
@@ -11214,8 +11224,14 @@ def continue_watching_menu(only_stype=None):
                     icon = match["cover"]
             if not icon:
                 # No series_id (fallback pass) or the ID lookup had no
-                # cover -- try again by the show's own cleaned name.
-                name_match = _get_series_lookup_by_name(pnum).get(name.lower())
+                # cover -- try again by the show's own cleaned name. name
+                # here may still carry "- SxxExx - Episode Title" (the raw
+                # saved title, when there was no series_id match above to
+                # replace it with the catalog's own clean show name), so
+                # truncate at the episode marker the same way the Continue
+                # Watching dedup step above does before matching.
+                show_name = _SHOW_NAME_TRUNC_RE.sub("", name).strip() or name
+                name_match = _get_series_lookup_by_name(pnum).get(show_name.lower())
                 if name_match and name_match.get("cover"):
                     icon = name_match["cover"]
 
