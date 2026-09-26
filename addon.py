@@ -7421,6 +7421,84 @@ def favorites_widget_export(profile_num=None):
     xbmcplugin.endOfDirectory(addon_handle)
 
 
+def goto_show_season(series_id, season_num, profile_num=None):
+    """RunPlugin action for a new "Go to Season" context menu entry: jumps
+    straight to this add-on's own season/episode list for a known
+    series_id/season_num. Used wherever a context menu already has these
+    IDs on hand (Continue Watching's main watch-history pass), giving a
+    direct way back to "where I left off" that doesn't depend on playback
+    having just happened, unlike the Back-button-during-playback feature."""
+    pnum = profile_num or pm.active
+    show_path = build_url({"mode": "xtream_series", "series_id": series_id, "profile_num": pnum})
+    season_path = build_url(
+        {"mode": "xtream_season", "series_id": series_id, "season_num": season_num, "profile_num": pnum}
+    )
+    xbmc.executebuiltin(f"ActivateWindow(Videos,{show_path},return)")
+    xbmc.sleep(300)
+    xbmc.executebuiltin(f"Container.Update({season_path})")
+
+
+def goto_show_season_by_name(showname, year="", profile_num=None):
+    """RunPlugin action counterpart to goto_show_season() for contexts with
+    only a show name on hand (Continue Watching's fallback pass, missing
+    series_id/season_num). Matches the show the same way xtream_next_up
+    already does, landing on whichever season contains the most recently
+    watched episode -- falling back to the first season with any episodes
+    if there's no watch history yet -- so there's always a way back to
+    "where I left off" even without direct IDs."""
+    pnum = profile_num or pm.active
+    creds = _get_credentials_for_profile(pnum)
+    url = creds.get("xtream_url", "")
+    user = creds.get("xtream_username", "")
+    pwd = creds.get("xtream_password", "")
+
+    all_series = _get_cached_xtream_streams(url, user, pwd, "series")
+    showname_lower = (showname or "").strip().lower()
+    year_str = str(year or "").strip()
+    candidates = []
+    for s in all_series:
+        cname = _PROVIDER_PREFIX_RE.sub("", s.get("name", ""), count=1).strip() or s.get("name", "")
+        if not cname.lower().startswith(showname_lower):
+            continue
+        if year_str and year_str not in cname:
+            continue
+        candidates.append(s)
+
+    if not candidates:
+        xbmcgui.Dialog().notification("XStream Player", "Show not found")
+        return
+
+    candidate_ids = [str(c.get("series_id", "")) for c in candidates]
+    series_wh = [
+        e
+        for e in _watch_history(pnum).get_all("series")
+        if str(e.get("series_id", "")) in candidate_ids
+    ]
+
+    target_series_id = str(candidates[0].get("series_id", ""))
+    target_season = None
+    if series_wh:
+        latest = max(series_wh, key=lambda e: e.get("timestamp", 0))
+        target_series_id = str(latest.get("series_id", ""))
+        target_season = latest.get("season_num", "")
+
+    if not target_season:
+        info = IPTV.get_xtream_series_info(url, user, pwd, target_series_id)
+        episodes = info.get("episodes", {})
+        for season_num in sorted(
+            episodes.keys(), key=lambda x: (0, int(x)) if str(x).isdigit() else (1, str(x))
+        ):
+            if episodes.get(season_num):
+                target_season = season_num
+                break
+
+    if not target_season:
+        xbmcgui.Dialog().notification("XStream Player", "Show not found")
+        return
+
+    goto_show_season(target_series_id, target_season, pnum)
+
+
 def xtream_next_up(showname, year="", profile_num=None):
     """Single-item directory used to replace Discover's Trakt-driven "next
     up" lookup (plugin.video.tmdb.bingie.helper's info=trakt_upnext), which
@@ -11140,6 +11218,12 @@ def continue_watching_menu(only_stype=None):
         if stype == "series" and series_id and season_num and ep_id:
             ctx.extend(_watched_ctx_episode(series_id, season_num, ep_id, profile_num=pnum))
             ctx.extend(_build_fav_ctx(ep_id, name, "series", icon, url, profile_num=pnum))
+            ctx.append(
+                (
+                    "Go to Season",
+                    f"RunPlugin({build_url({'mode': 'goto_show_season', 'series_id': series_id, 'season_num': season_num, 'profile_num': pnum})})",
+                )
+            )
         elif stype == "movie":
             movie_id_match = re.search(r"/(\d+)\.[a-zA-Z0-9]+$", url)
             if movie_id_match:
@@ -11157,6 +11241,12 @@ def continue_watching_menu(only_stype=None):
                 (
                     watched_label,
                     f"RunPlugin({build_url({'mode': 'toggle_continue_watching_finished', 'name': name, 'url': url, 'profile_num': pnum})})",
+                )
+            )
+            ctx.append(
+                (
+                    "Go to Season",
+                    f"RunPlugin({build_url({'mode': 'goto_show_season_by_name', 'showname': name, 'profile_num': pnum})})",
                 )
             )
         if ctx:
@@ -11254,6 +11344,18 @@ elif mode == "favorites_widget_export":
     except (ValueError, TypeError):
         pnum = None
     favorites_widget_export(pnum)
+elif mode == "goto_show_season":
+    try:
+        pnum = int(args.get("profile_num", [0])[0])
+    except (ValueError, TypeError):
+        pnum = None
+    goto_show_season(args.get("series_id", [""])[0], args.get("season_num", [""])[0], pnum)
+elif mode == "goto_show_season_by_name":
+    try:
+        pnum = int(args.get("profile_num", [0])[0])
+    except (ValueError, TypeError):
+        pnum = None
+    goto_show_season_by_name(args.get("showname", [""])[0], args.get("year", [""])[0], pnum)
 elif mode == "xtream_season":
     try:
         pnum = int(args.get("profile_num", [0])[0])
