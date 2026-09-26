@@ -6871,7 +6871,7 @@ def xtream_streams(stype, cat_id, page=1, adult="0", profile_num=None):
                 "name": name,
                 "title": name,
                 "plot": plot,
-                "icon": s.get("stream_icon", ""),
+                "icon": info.get("poster_url") or s.get("stream_icon", ""),
                 "stype": "movie",
                 "profile_num": pnum,
             }
@@ -8477,7 +8477,7 @@ def unified_search(query, stype=None):
                     "name": name,
                     "title": name,
                     "plot": plot,
-                    "icon": s.get("stream_icon", ""),
+                    "icon": info.get("poster_url") or s.get("stream_icon", ""),
                     "stype": "movie",
                     "profile_num": pm.active,
                 }
