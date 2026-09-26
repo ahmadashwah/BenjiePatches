@@ -2214,11 +2214,12 @@ def play_stream(
         upnext_data=upnext_data,
         stream_id=stream_id,
         autoplay_data=autoplay_data,
+        icon=icon,
     )
 
 
 def _monitor_playback(
-    name, url, stype="live", profile_num=None, upnext_data=None, stream_id="", autoplay_data=None
+    name, url, stype="live", profile_num=None, upnext_data=None, stream_id="", autoplay_data=None, icon=""
 ):
     """Background thread to save resume position, detect stream failures, and notify Up Next."""
     pnum = profile_num if profile_num is not None else pm.active
@@ -2254,7 +2255,7 @@ def _monitor_playback(
                 if dur > 0:
                     cached_dur = dur
                     cached_pos = pos
-                    _resume_db(pnum).save_position(name, url, pos, dur)
+                    _resume_db(pnum).save_position(name, url, pos, dur, icon=icon)
                     if stream_id:
                         _save_playback_duration(stream_id, dur)
                 if (
@@ -11081,7 +11082,7 @@ def continue_watching_menu(only_stype=None):
                 "timestamp": rp_entry.get("timestamp", 0),
                 "stype": stype,
                 "profile_num": pnum,
-                "icon": "",
+                "icon": rp_entry.get("icon", ""),
                 "series_id": "",
                 "season_num": "",
                 "ep_id": "",

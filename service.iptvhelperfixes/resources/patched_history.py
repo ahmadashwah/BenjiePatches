@@ -153,8 +153,15 @@ class ResumePoints:
     def _key(self, name, url):
         return f"{name}||{url}"
 
-    def save_position(self, name, url, position, duration):
-        """Save playback position. Only saves if >60s in and not near the end."""
+    def save_position(self, name, url, position, duration, icon=""):
+        """Save playback position. Only saves if >60s in and not near the end.
+
+        icon is stored alongside so Continue Watching still has a poster
+        for this item even if its watch-history entry (which normally
+        supplies the icon) later gets evicted by WatchHistory's own
+        MAX_HISTORY cap -- previously resume points carried no icon at
+        all, so anything that fell out of watch history that way lost its
+        thumbnail permanently."""
         if position < 60 or duration < 120:
             return
         key = self._key(name, url)
@@ -165,13 +172,20 @@ class ResumePoints:
             self._finished[key] = {"name": name, "url": url, "timestamp": time.time()}
             self._save(self._finished_path, self._finished)
             return
-        self._data[key] = {
+        entry = {
             "name": name,
             "url": url,
             "position": position,
             "duration": duration,
             "timestamp": time.time(),
         }
+        if icon:
+            entry["icon"] = icon
+        elif key in self._data and self._data[key].get("icon"):
+            # Keep whatever icon a previous save already had rather than
+            # dropping it just because this particular call didn't pass one.
+            entry["icon"] = self._data[key]["icon"]
+        self._data[key] = entry
         self._save(self._path, self._data)
         if key in self._finished:
             # Rewatching something previously finished — let it show as
