@@ -11086,23 +11086,33 @@ def continue_watching_menu(only_stype=None):
 
     # One tile per show, not one per episode: keep only the most recently
     # watched episode for each show (movies are already unique per movie,
-    # so they're untouched). Grouped by series_id when known; the
-    # fallback pass's items have none, so those group by show name
-    # instead -- imperfect if a show ever fully lacks a series_id AND has
-    # an ambiguous name, but that's the same fallback-only limitation the
-    # rest of Continue Watching already has for those entries.
-    def _series_group_key(item):
-        if item["series_id"]:
-            return f"series:{item['series_id']}"
-        return f"name:{item['name'].strip().lower()}"
+    # so they're untouched). Grouped by the show's own cleaned name
+    # (provider prefix stripped, same cleanup _render_item does), not
+    # series_id -- the same show commonly exists under more than one
+    # series_id (one per provider-language variant, e.g. AR-SUBS vs FR),
+    # so an ID-based key left duplicate tiles for a show watched under two
+    # variants. Only the icon is backfilled from another entry in the same
+    # group when the most-recent one lacks one (purely cosmetic -- never
+    # mixes series_id/season/episode across variants, which could point
+    # "Mark as watched"/"Go to Season" at the wrong provider's data).
+    def _clean_show_name(raw_name):
+        cleaned = _PROVIDER_PREFIX_RE.sub("", raw_name or "", count=1).strip()
+        return (cleaned or raw_name or "").lower()
 
-    most_recent_by_show = {}
+    show_groups = {}
     for s in all_series:
-        key = _series_group_key(s)
-        existing = most_recent_by_show.get(key)
-        if not existing or s["timestamp"] > existing["timestamp"]:
-            most_recent_by_show[key] = s
-    all_series = list(most_recent_by_show.values())
+        show_groups.setdefault(_clean_show_name(s["name"]), []).append(s)
+
+    merged_series = []
+    for entries in show_groups.values():
+        most_recent = max(entries, key=lambda e: e["timestamp"])
+        if not most_recent.get("icon"):
+            for e in entries:
+                if e.get("icon"):
+                    most_recent = dict(most_recent, icon=e["icon"])
+                    break
+        merged_series.append(most_recent)
+    all_series = merged_series
 
     all_movies = [m for m in all_movies if _has_meaningful_progress(m)]
     all_series = [s for s in all_series if _has_meaningful_progress(s)]
@@ -11136,6 +11146,24 @@ def continue_watching_menu(only_stype=None):
                 {str(s.get("series_id")): s for s in data} if data else {}
             )
         return _series_lookup_cache[pnum]
+
+    _series_name_lookup_cache = {}
+
+    def _get_series_lookup_by_name(pnum):
+        # Same cache-only data as _get_series_lookup(), indexed by cleaned
+        # name instead of series_id -- for fallback-pass items (resume
+        # points with no matching watch-history entry) that never got a
+        # series_id at all, so the ID-based lookup above can't help them.
+        if pnum not in _series_name_lookup_cache:
+            cached = _cache_load("xtream_streams_series")
+            data = cached.get("_data") if isinstance(cached, dict) else None
+            lookup = {}
+            if data:
+                for s in data:
+                    cname = _PROVIDER_PREFIX_RE.sub("", s.get("name", ""), count=1).strip() or s.get("name", "")
+                    lookup.setdefault(cname.lower(), s)
+            _series_name_lookup_cache[pnum] = lookup
+        return _series_name_lookup_cache[pnum]
 
     _EP_NUM_RE = re.compile(r"[Ss](\d{1,3})[Ee](\d{1,3})")
 
@@ -11177,13 +11205,19 @@ def continue_watching_menu(only_stype=None):
                     name = info["clean_name"]
                 if info.get("poster_url"):
                     icon = info["poster_url"]
-        elif stype == "series" and series_id:
-            match = _get_series_lookup(pnum).get(str(series_id))
+        elif stype == "series":
+            match = _get_series_lookup(pnum).get(str(series_id)) if series_id else None
             if match:
                 if match.get("name"):
                     name = _PROVIDER_PREFIX_RE.sub("", match["name"], count=1).strip() or match["name"]
                 if match.get("cover"):
                     icon = match["cover"]
+            if not icon:
+                # No series_id (fallback pass) or the ID lookup had no
+                # cover -- try again by the show's own cleaned name.
+                name_match = _get_series_lookup_by_name(pnum).get(name.lower())
+                if name_match and name_match.get("cover"):
+                    icon = name_match["cover"]
 
         # Displayed as a plain progress bar on the tile, not text -- and
         # deliberately approximate rather than exact (clamped so the bar
