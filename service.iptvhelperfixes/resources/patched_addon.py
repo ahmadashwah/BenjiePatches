@@ -4354,7 +4354,7 @@ def _show_all_m3u_channels(profile_num, page=1):
             ch.get("catchup_source", ""),
             ch.get("catchup_days", ""),
         )
-        li.addContextMenuItems(ctx)
+        li.addContextMenuItems(ctx, replaceItems=True)
 
         q = {
             "mode": "play_stream",
@@ -6563,7 +6563,7 @@ def m3u_group(group, profile_num=None, page=1):
             ch.get("catchup_source", ""),
             ch.get("catchup_days", ""),
         )
-        li.addContextMenuItems(ctx)
+        li.addContextMenuItems(ctx, replaceItems=True)
         q = {
             "mode": "play_stream",
             "url": live_play_url,
@@ -6668,7 +6668,7 @@ def xtream_categories(stype, profile_num=None):
             profile_num,
             is_folder=True,
         )
-        li.addContextMenuItems(ctx)
+        li.addContextMenuItems(ctx, replaceItems=True)
         xbmcplugin.addDirectoryItem(
             handle=addon_handle, url=cat_url, listitem=li, isFolder=True
         )
@@ -6776,7 +6776,7 @@ def xtream_streams(stype, cat_id, page=1, adult="0", profile_num=None):
                 catchup_source,
                 catchup_days,
             )
-            li.addContextMenuItems(ctx)
+            li.addContextMenuItems(ctx, replaceItems=True)
             q = {
                 "mode": "play_stream",
                 "url": play_url,
@@ -6863,7 +6863,7 @@ def xtream_streams(stype, cat_id, page=1, adult="0", profile_num=None):
                 profile_num,
             )
             ctx.extend(_watched_ctx_movie(sid, profile_num, wm=wm))
-            li.addContextMenuItems(ctx)
+            li.addContextMenuItems(ctx, replaceItems=True)
             q = {
                 "mode": "play_stream",
                 "url": play_url,
@@ -6943,7 +6943,7 @@ def xtream_streams(stype, cat_id, page=1, adult="0", profile_num=None):
                 profile_num,
             )
             ctx.extend(_watched_ctx_series(sid, profile_num, we=we))
-            li.addContextMenuItems(ctx)
+            li.addContextMenuItems(ctx, replaceItems=True)
             xbmcplugin.addDirectoryItem(
                 handle=addon_handle, url=series_url, listitem=li, isFolder=True
             )
@@ -7232,7 +7232,7 @@ def xtream_series(series_id, profile_num=None):
         if we.is_season_fully_watched(series_id, season_num, total_eps):
             info_tag.setPlaycount(1)
         ctx = _watched_ctx_season(series_id, season_num, total_eps, profile_num)
-        li.addContextMenuItems(ctx)
+        li.addContextMenuItems(ctx, replaceItems=True)
         q = {
             "mode": "xtream_season",
             "series_id": series_id,
@@ -7640,7 +7640,7 @@ def xtream_season(series_id, season_num, profile_num=None):
             profile_num=pnum,
         )
         ctx.extend(_watched_ctx_episode(series_id, season_num, ep_id, profile_num))
-        li.addContextMenuItems(ctx)
+        li.addContextMenuItems(ctx, replaceItems=True)
         q = {
             "mode": "play_stream",
             "url": play_url,
@@ -8291,7 +8291,7 @@ def unified_search(query, stype=None):
                 ctx = _build_fav_ctx(
                     sid, name, "live", s.get("stream_icon", ""), play_url, epg_id
                 )
-                li.addContextMenuItems(ctx)
+                li.addContextMenuItems(ctx, replaceItems=True)
                 q = {
                     "mode": "play_stream",
                     "url": play_url,
@@ -8343,7 +8343,7 @@ def unified_search(query, stype=None):
                     "",
                     pm.active,
                 )
-                li.addContextMenuItems(ctx)
+                li.addContextMenuItems(ctx, replaceItems=True)
                 q = {
                     "mode": "play_stream",
                     "url": play_url,
@@ -8464,7 +8464,7 @@ def search_m3u(query=None, stype=None):
                 ch.get("catchup_source", ""),
                 ch.get("catchup_days", ""),
             )
-            li.addContextMenuItems(ctx)
+            li.addContextMenuItems(ctx, replaceItems=True)
             q = {
                 "mode": "play_stream",
                 "url": url,
@@ -8764,7 +8764,7 @@ def search_all_profiles_combined(query):
                                 play_url,
                                 epg_id,
                             )
-                            li.addContextMenuItems(ctx)
+                            li.addContextMenuItems(ctx, replaceItems=True)
                             q = {
                                 "mode": "play_stream",
                                 "url": play_url,
@@ -8871,7 +8871,7 @@ def search_all_profiles_combined(query):
                             ctx = _build_fav_ctx(
                                 sid, name, "movie", info.get("poster_url", ""), play_url
                             )
-                            li.addContextMenuItems(ctx)
+                            li.addContextMenuItems(ctx, replaceItems=True)
                             q = {
                                 "mode": "play_stream",
                                 "url": play_url,
@@ -8928,7 +8928,7 @@ def search_all_profiles_combined(query):
                             ctx = _build_fav_ctx(
                                 sid, name, "series", s.get("cover", ""), series_url
                             )
-                            li.addContextMenuItems(ctx)
+                            li.addContextMenuItems(ctx, replaceItems=True)
                             xbmcplugin.addDirectoryItem(
                                 handle=addon_handle,
                                 url=series_url,
@@ -8992,7 +8992,7 @@ def search_all_profiles_combined(query):
                                 url,
                                 tvg_id,
                             )
-                            li.addContextMenuItems(ctx)
+                            li.addContextMenuItems(ctx, replaceItems=True)
                             q = {
                                 "mode": "play_stream",
                                 "url": url,
@@ -9100,7 +9100,7 @@ def _fav_render_items(items, source_folder=None, profile_num=None):
                         f"RunPlugin({build_url({'mode': 'toggle_fav', 'id': item.get('id'), 'name': name, 'stype': stype, 'icon': item.get('icon', ''), 'url': item.get('url', ''), 'epg_id': item.get('epg_id', ''), 'folder': gname})})",
                     )
                 )
-        li.addContextMenuItems(ctx)
+        li.addContextMenuItems(ctx, replaceItems=True)
         if stype == "live":
             q = {
                 "mode": "play_stream",
@@ -9259,7 +9259,7 @@ def favorites_menu(folder=None, stype_filter=None):
                         f"RunPlugin({build_url({'mode': 'fav_remove_by_type', 'folder': folder, 'stype': st})})",
                     )
                 ]
-                sep.addContextMenuItems(ctx)
+                sep.addContextMenuItems(ctx, replaceItems=True)
                 xbmcplugin.addDirectoryItem(
                     handle=addon_handle, url="", listitem=sep, isFolder=False
                 )
