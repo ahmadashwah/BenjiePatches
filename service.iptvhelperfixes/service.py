@@ -543,6 +543,65 @@ def patch_bingie_mylist():
     log(f"Patched IncludesPaths.xml so Home's My List uses XStream Player's own favorites (backup saved as {os.path.basename(backup)}).")
 
 
+def patch_bingie_goto_season_button():
+    """Adds a "Go to Season" button to the Discover show-info dialog
+    (IncludesDialogVideoInfo.xml), next to Trakt Manager -- long-pressing a
+    Continue Watching tile opens this info popup directly (not this add-on's
+    own context menu, which the v1.6.3 "Go to Season" context-menu entry
+    was added to), and until now the popup had no way to reach the
+    season/episode list at all: "More Episodes" only shows for real library
+    tvshows, and every other button just plays or shows metadata. Uses the
+    exact same visibility conditions already proven true on this screen
+    (the existing "Resume S5: Ep 6" row uses them), and the same
+    goto_show_season_by_name mode the context-menu version already uses.
+    Matches by exact content, not a version gate: safe no-op if the skin's
+    Trakt Manager button block doesn't look like what this patch expects
+    (e.g. after a skin update changes that section)."""
+    skin_dir = os.path.join(KODI_HOME, "addons", "skin.bingie")
+    target = os.path.join(skin_dir, "1080i", "IncludesDialogVideoInfo.xml")
+    if not os.path.isfile(target):
+        log("Bingie skin not installed (or different skin) — skipping Go to Season button.")
+        return
+
+    patch_file = os.path.join(ADDON_PATH, "resources", "bingie_goto_season_button_patch.json")
+    if not os.path.isfile(patch_file):
+        log(f"Bundled Go to Season button patch missing at {patch_file} — add-on may be corrupt.", xbmc.LOGERROR)
+        return
+    with open(patch_file, "r", encoding="utf-8") as f:
+        spec = json.load(f)
+
+    with open(target, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    entry = spec["IncludesDialogVideoInfo.xml"]
+    new_block = entry["new_block"]
+    if new_block in content:
+        log("Go to Season button already applied.")
+        return
+
+    matched_old_block = None
+    for candidate in entry["candidates"]:
+        if candidate in content:
+            matched_old_block = candidate
+            break
+
+    if matched_old_block is None:
+        log(
+            "IncludesDialogVideoInfo.xml's Trakt Manager button block doesn't "
+            "match the expected content (skin may have been updated) — "
+            "skipping Go to Season button rather than risk corrupting it.",
+            xbmc.LOGWARNING,
+        )
+        return
+
+    backup = target + f".bak-{time.strftime('%Y%m%d-%H%M%S')}"
+    shutil.copyfile(target, backup)
+    new_content = content.replace(matched_old_block, new_block, 1)
+    with open(target, "w", encoding="utf-8") as f:
+        f.write(new_content)
+    log(f"Patched IncludesDialogVideoInfo.xml to add the Go to Season button (backup saved as {os.path.basename(backup)}).")
+
+
 def patch_bingie_arabic_categories():
     """Repurposes the Home screen's 2nd/3rd widget rows (DefWidget1/2, right
     after Continue Watching) into "New Arabic Movies" and "New Arabic TV
@@ -998,6 +1057,7 @@ def run_checks():
     patch_tmdb_bingie_helper()
     patch_bingie_widgets_mylist()
     patch_bingie_mylist()
+    patch_bingie_goto_season_button()
     patch_bingie_arabic_search()
     patch_bingie_continue_watching()
     patch_bingie_continue_watching_progressbar()
