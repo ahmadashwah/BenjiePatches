@@ -11084,6 +11084,26 @@ def continue_watching_menu(only_stype=None):
             return int((position / duration) * 100) >= 1
         return True
 
+    # One tile per show, not one per episode: keep only the most recently
+    # watched episode for each show (movies are already unique per movie,
+    # so they're untouched). Grouped by series_id when known; the
+    # fallback pass's items have none, so those group by show name
+    # instead -- imperfect if a show ever fully lacks a series_id AND has
+    # an ambiguous name, but that's the same fallback-only limitation the
+    # rest of Continue Watching already has for those entries.
+    def _series_group_key(item):
+        if item["series_id"]:
+            return f"series:{item['series_id']}"
+        return f"name:{item['name'].strip().lower()}"
+
+    most_recent_by_show = {}
+    for s in all_series:
+        key = _series_group_key(s)
+        existing = most_recent_by_show.get(key)
+        if not existing or s["timestamp"] > existing["timestamp"]:
+            most_recent_by_show[key] = s
+    all_series = list(most_recent_by_show.values())
+
     all_movies = [m for m in all_movies if _has_meaningful_progress(m)]
     all_series = [s for s in all_series if _has_meaningful_progress(s)]
     # One chronological list, mixing movies and episodes freely by recency --
