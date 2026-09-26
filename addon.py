@@ -2302,7 +2302,18 @@ def _monitor_playback(
                 xbmc.sleep(1000)
                 if not xbmc.Player().isPlaying():
                     try:
-                        xbmc.executebuiltin(f"RunPlugin({autoplay_data['url']})")
+                        # PlayMedia, not RunPlugin: RunPlugin invokes the
+                        # addon as a detached background script, with no
+                        # actual playback-resolution request behind it, so
+                        # play_stream()'s own xbmcplugin.setResolvedUrl()
+                        # call has nothing to resolve and silently does
+                        # nothing -- the rest of play_stream() (this log
+                        # line, preparing the *next* episode's autoplay
+                        # data) still runs regardless, which is exactly why
+                        # this looked like it worked while nothing actually
+                        # played. PlayMedia is what every other Play/Resume
+                        # action in this codebase already uses correctly.
+                        xbmc.executebuiltin(f"PlayMedia({autoplay_data['url']})")
                         _log(f"Autoplay: starting next episode: {autoplay_data['title']}")
                         xbmcgui.Dialog().notification(
                             "Autoplay",
