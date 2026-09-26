@@ -7421,7 +7421,7 @@ def favorites_widget_export(profile_num=None):
     xbmcplugin.endOfDirectory(addon_handle)
 
 
-def goto_show_season(series_id, season_num, profile_num=None, showname=None):
+def goto_show_season(series_id, season_num, profile_num=None, showname=None, ep_id=None):
     """RunPlugin action for a new "Go to Season" context menu entry/info-
     dialog button: jumps to that show's season/episode list for a known
     series_id/season_num. Used wherever a context menu already has these
@@ -7435,8 +7435,34 @@ def goto_show_season(series_id, season_num, profile_num=None, showname=None):
     _resolve_discover_season_path() cross-addon lookup, when a show name
     is available to search with. Falls back to this add-on's own bare
     season/episode listing if that lookup fails or no name was given, so
-    this is never worse than before."""
+    this is never worse than before.
+
+    When ep_id is also given, focuses that specific episode's tile once
+    Discover's episode list has loaded (control id 525 -- the episode
+    Container in this skin's View_525_Bingie_Episodes.xml -- via
+    SetFocus), computed from the episode's own number within the season
+    (TMDb's season listings are in plain airing order, so episode N is
+    simply the (N-1)th tile). Skipped entirely if the ID lookup for that
+    episode's number fails, leaving the season landing (already an
+    improvement) as the fallback."""
     pnum = profile_num or pm.active
+    focus_index = None
+    if ep_id:
+        try:
+            creds = _get_credentials_for_profile(pnum)
+            info = IPTV.get_xtream_series_info(
+                creds.get("xtream_url", ""),
+                creds.get("xtream_username", ""),
+                creds.get("xtream_password", ""),
+                series_id,
+            )
+            for ep in info.get("episodes", {}).get(str(season_num), []):
+                if str(ep.get("id", "")) == str(ep_id):
+                    focus_index = int(ep.get("episode_num", 0)) - 1
+                    break
+        except Exception as e:
+            _log(f"goto_show_season: episode focus lookup error: {e}")
+
     if showname:
         show_path, season_path = _resolve_discover_season_path(showname, season_num)
         if show_path:
@@ -7444,6 +7470,9 @@ def goto_show_season(series_id, season_num, profile_num=None, showname=None):
             if season_path and season_path != show_path:
                 xbmc.sleep(300)
                 xbmc.executebuiltin(f"Container.Update({season_path})")
+                if focus_index is not None and focus_index >= 0:
+                    xbmc.sleep(500)
+                    xbmc.executebuiltin(f"SetFocus(525,{focus_index})")
             return
 
     show_path = build_url({"mode": "xtream_series", "series_id": series_id, "profile_num": pnum})
@@ -7494,10 +7523,12 @@ def goto_show_season_by_name(showname, year="", profile_num=None):
 
     target_series_id = str(candidates[0].get("series_id", ""))
     target_season = None
+    target_ep_id = None
     if series_wh:
         latest = max(series_wh, key=lambda e: e.get("timestamp", 0))
         target_series_id = str(latest.get("series_id", ""))
         target_season = latest.get("season_num", "")
+        target_ep_id = latest.get("ep_id", "") or None
 
     if not target_season:
         info = IPTV.get_xtream_series_info(url, user, pwd, target_series_id)
@@ -7513,7 +7544,7 @@ def goto_show_season_by_name(showname, year="", profile_num=None):
         xbmcgui.Dialog().notification("XStream Player", "Show not found")
         return
 
-    goto_show_season(target_series_id, target_season, pnum, showname=showname)
+    goto_show_season(target_series_id, target_season, pnum, showname=showname, ep_id=target_ep_id)
 
 
 def xtream_next_up(showname, year="", profile_num=None):
@@ -11308,7 +11339,7 @@ def continue_watching_menu(only_stype=None):
             ctx.append(
                 (
                     "Go to Season",
-                    f"RunPlugin({build_url({'mode': 'goto_show_season', 'series_id': series_id, 'season_num': season_num, 'profile_num': pnum, 'showname': name})})",
+                    f"RunPlugin({build_url({'mode': 'goto_show_season', 'series_id': series_id, 'season_num': season_num, 'profile_num': pnum, 'showname': name, 'ep_id': ep_id})})",
                 )
             )
         elif stype == "movie":
@@ -11441,6 +11472,7 @@ elif mode == "goto_show_season":
         args.get("season_num", [""])[0],
         pnum,
         showname=args.get("showname", [""])[0] or None,
+        ep_id=args.get("ep_id", [""])[0] or None,
     )
 elif mode == "goto_show_season_by_name":
     try:
