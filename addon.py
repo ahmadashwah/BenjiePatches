@@ -7421,14 +7421,31 @@ def favorites_widget_export(profile_num=None):
     xbmcplugin.endOfDirectory(addon_handle)
 
 
-def goto_show_season(series_id, season_num, profile_num=None):
-    """RunPlugin action for a new "Go to Season" context menu entry: jumps
-    straight to this add-on's own season/episode list for a known
+def goto_show_season(series_id, season_num, profile_num=None, showname=None):
+    """RunPlugin action for a new "Go to Season" context menu entry/info-
+    dialog button: jumps to that show's season/episode list for a known
     series_id/season_num. Used wherever a context menu already has these
     IDs on hand (Continue Watching's main watch-history pass), giving a
     direct way back to "where I left off" that doesn't depend on playback
-    having just happened, unlike the Back-button-during-playback feature."""
+    having just happened, unlike the Back-button-during-playback feature.
+
+    Prefers Discover's own season page (same TMDb-metadata-rich browsing
+    the Back-button feature already lands on -- real episode titles/plot/
+    art instead of raw provider titles) via the same
+    _resolve_discover_season_path() cross-addon lookup, when a show name
+    is available to search with. Falls back to this add-on's own bare
+    season/episode listing if that lookup fails or no name was given, so
+    this is never worse than before."""
     pnum = profile_num or pm.active
+    if showname:
+        show_path, season_path = _resolve_discover_season_path(showname, season_num)
+        if show_path:
+            xbmc.executebuiltin(f"ActivateWindow(Videos,{show_path},return)")
+            if season_path and season_path != show_path:
+                xbmc.sleep(300)
+                xbmc.executebuiltin(f"Container.Update({season_path})")
+            return
+
     show_path = build_url({"mode": "xtream_series", "series_id": series_id, "profile_num": pnum})
     season_path = build_url(
         {"mode": "xtream_season", "series_id": series_id, "season_num": season_num, "profile_num": pnum}
@@ -7496,7 +7513,7 @@ def goto_show_season_by_name(showname, year="", profile_num=None):
         xbmcgui.Dialog().notification("XStream Player", "Show not found")
         return
 
-    goto_show_season(target_series_id, target_season, pnum)
+    goto_show_season(target_series_id, target_season, pnum, showname=showname)
 
 
 def xtream_next_up(showname, year="", profile_num=None):
@@ -11221,7 +11238,7 @@ def continue_watching_menu(only_stype=None):
             ctx.append(
                 (
                     "Go to Season",
-                    f"RunPlugin({build_url({'mode': 'goto_show_season', 'series_id': series_id, 'season_num': season_num, 'profile_num': pnum})})",
+                    f"RunPlugin({build_url({'mode': 'goto_show_season', 'series_id': series_id, 'season_num': season_num, 'profile_num': pnum, 'showname': name})})",
                 )
             )
         elif stype == "movie":
@@ -11349,7 +11366,12 @@ elif mode == "goto_show_season":
         pnum = int(args.get("profile_num", [0])[0])
     except (ValueError, TypeError):
         pnum = None
-    goto_show_season(args.get("series_id", [""])[0], args.get("season_num", [""])[0], pnum)
+    goto_show_season(
+        args.get("series_id", [""])[0],
+        args.get("season_num", [""])[0],
+        pnum,
+        showname=args.get("showname", [""])[0] or None,
+    )
 elif mode == "goto_show_season_by_name":
     try:
         pnum = int(args.get("profile_num", [0])[0])
