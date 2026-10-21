@@ -5282,20 +5282,35 @@ def handle_playback_back():
     show_path, season_path = _resolve_discover_season_path(show_name, season_num)
     _log(f"handle_back: resolved show_path={show_path!r} season_path={season_path!r}")
 
+    if not show_path:
+        # No Discover page found: plain stop, Kodi returns to the previous
+        # window on its own, same as the default behavior for other content.
+        xbmc.Player().stop()
+        return
+
+    # Open the show's page FIRST and only then stop playback. Stopping
+    # first makes Kodi return to whatever window launched the video (Home,
+    # for Continue Watching) for as long as our own navigation takes to
+    # arrive -- measured at ~0.4s of the Home screen showing even with the
+    # lookup already done. Once the Videos window is already active, Kodi's
+    # own "return to the previous window after stop" doesn't fire at all
+    # (it only does that from the fullscreen video window), so there's no
+    # Home flash. Audio keeps playing for the fraction of a second until
+    # the window is up.
+    # Visit the show's own "all seasons" page first, then drill into the
+    # season -- rather than jumping straight to the season -- so Kodi's
+    # container history has the seasons page as the parent, and a second
+    # Back press (from the season's episode list) goes up to "all seasons"
+    # like normal folder browsing.
+    xbmc.executebuiltin(f"ActivateWindow(Videos,{show_path},return)")
+    for _ in range(40):
+        if xbmc.getCondVisibility("Window.IsActive(videos)"):
+            break
+        xbmc.sleep(50)
     xbmc.Player().stop()
-    if show_path:
-        # Visit the show's own "all seasons" page first, then drill into
-        # the season -- rather than jumping straight to the season -- so
-        # Kodi's own container history has the seasons page as the
-        # parent. That makes a second Back press (from the season's
-        # episode list) naturally go up to "all seasons" instead of
-        # exiting straight back out, exactly like normal folder browsing.
-        xbmc.executebuiltin(f"ActivateWindow(Videos,{show_path},return)")
-        if season_path and season_path != show_path:
-            xbmc.sleep(300)
-            xbmc.executebuiltin(f"Container.Update({season_path})")
-    # else: playback is already stopped; Kodi returns to the previous
-    # window on its own, same as the default behavior for other content.
+    if season_path and season_path != show_path:
+        xbmc.sleep(300)
+        xbmc.executebuiltin(f"Container.Update({season_path})")
 
 
 def install_upnext():
