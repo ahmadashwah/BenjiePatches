@@ -5211,6 +5211,29 @@ def _resolve_discover_season_path(show_name, season_num):
         return None, None
 
 
+def show_osd_top():
+    """Bound to Up during fullscreen video (see the bundled keymap): opens
+    the player OSD with focus already on its Subtitles button (control
+    104 -- first of the subtitles/audio/video buttons, in the top bar of
+    Bingie's OSD layout and in the classic single-row layout alike),
+    instead of Kodi's default big-step-forward. Not SetFocus(400), the top
+    bar itself: that lands on its first item, "Exit", which stops playback
+    when clicked. A keymap entry can only run one action, and there's no
+    builtin that opens the OSD *and* picks a focus target, so this opens
+    it, waits for it, then moves focus. Down just uses the plain OSD
+    action directly (the skin already focuses Play/Pause on open), so only
+    Up needs this."""
+    xbmc.executebuiltin("Action(OSD)")
+    for _ in range(30):
+        if xbmc.getCondVisibility("Window.IsActive(videoosd)"):
+            break
+        xbmc.sleep(50)
+    else:
+        return
+    xbmc.sleep(100)
+    xbmc.executebuiltin("SetFocus(104)")
+
+
 def handle_playback_back():
     """Bound to the Back/Escape key during fullscreen video playback (see
     the bundled keymap). If a series episode from this add-on is playing,
@@ -12190,6 +12213,11 @@ elif mode == "handle_back":
     except Exception as e:
         _log(f"handle_back error: {e}")
         xbmc.executebuiltin("PlayerControl(Stop)")
+elif mode == "osd_top":
+    try:
+        show_osd_top()
+    except Exception as e:
+        _log(f"osd_top error: {e}")
 elif mode == "install_upnext":
     try:
         install_upnext()

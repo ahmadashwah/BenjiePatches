@@ -4,9 +4,13 @@
     <keyboard>
       <backspace>RunPlugin(plugin://plugin.video.xstream-player/?mode=handle_back)</backspace>
       <escape>RunPlugin(plugin://plugin.video.xstream-player/?mode=handle_back)</escape>
+      <down>OSD</down>
+      <up>RunPlugin(plugin://plugin.video.xstream-player/?mode=osd_top)</up>
     </keyboard>
     <remote>
       <back>RunPlugin(plugin://plugin.video.xstream-player/?mode=handle_back)</back>
+      <down>OSD</down>
+      <up>RunPlugin(plugin://plugin.video.xstream-player/?mode=osd_top)</up>
     </remote>
     <gamepad>
       <back>RunPlugin(plugin://plugin.video.xstream-player/?mode=handle_back)</back>

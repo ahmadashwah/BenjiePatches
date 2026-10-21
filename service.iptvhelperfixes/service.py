@@ -946,7 +946,8 @@ def install_backbutton_keymap():
 
     with open(target, "w", encoding="utf-8") as f:
         f.write(desired)
-    log("Installed/updated back-button keymap — takes effect after Kodi restarts.")
+    xbmc.executebuiltin("Action(reloadkeymaps)")
+    log("Installed/updated back-button keymap and asked Kodi to reload keymaps.")
 
 
 def install_player_config():
