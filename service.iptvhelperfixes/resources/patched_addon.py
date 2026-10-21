@@ -647,6 +647,19 @@ def _prefetch_vod_info_batch(streams, base_url, user, pwd):
         finally:
             pm.active = original_active
 
+    # Only movies whose info isn't already cached need fetching. The 200ms
+    # gap below used to be spent between every batch of 4 whether or not
+    # anything in it needed a request -- 13 batches of 51 already-cached
+    # movies meant ~2.6s of pure sleeping on every load of a row like "New
+    # Arabic Movies".
+    streams = [
+        s
+        for s in streams
+        if s.get("stream_id") and not os.path.exists(_cache_path(f"vod_info_{s.get('stream_id')}"))
+    ]
+    if not streams:
+        return
+
     # Throttled prefetch: max 4 concurrent threads with 200ms gap between batches
     # to avoid overwhelming the Xtream provider.
     batch_size = 4
@@ -1206,17 +1219,35 @@ def _get_cached_xtream_streams(url, user, pwd, stype, category_id=None):
     key = f"xtream_streams_{stype}"
     cached = _cache_load(key)
     source = f"{url}|{user}|{pwd}"
-    if isinstance(cached, dict) and cached.get("_src") == source and _cache_valid(key):
-        data = cached.get("_data") or []
+    cached_ok = (
+        isinstance(cached, dict) and cached.get("_src") == source and cached.get("_data")
+    )
+    if cached_ok and _cache_valid(key):
+        data = cached["_data"]
+    elif cached_ok:
+        # Stale: serve what we have right now and refresh in the
+        # background, instead of making whatever is loading (a Home row, a
+        # menu) wait on re-downloading the whole catalog -- tens of MB,
+        # which is what made Home take up to ~30s once a day.
+        data = cached["_data"]
+        _refresh_catalog_in_background(stype)
     else:
         data = IPTV.get_xtream_streams(url, user, pwd, stype, None)
-        _cache_save(key, {"_src": source, "_data": data})
-        # Sidecar: cache category counts so xtream_categories() never loads all streams just for counts
-        counts = {}
-        for s in data:
-            cid = str(s.get("category_id", ""))
-            counts[cid] = counts.get(cid, 0) + 1
-        _cache_save(f"xtream_counts_{stype}", counts)
+        if data:
+            # Never overwrite the cache with an empty list: a failed
+            # download returns [] and that used to replace a good catalog,
+            # leaving every row empty for the whole refresh interval.
+            _cache_save(key, {"_src": source, "_data": data})
+            # Sidecar: cache category counts so xtream_categories() never loads all streams just for counts
+            counts = {}
+            for s in data:
+                cid = str(s.get("category_id", ""))
+                counts[cid] = counts.get(cid, 0) + 1
+            _cache_save(f"xtream_counts_{stype}", counts)
+    if category_id:
+        # Filter first, so the name/tag cleanup below only touches the rows
+        # actually returned, not the whole 15-40k-entry catalog on every call.
+        data = [s for s in data if str(s.get("category_id", "")) == str(category_id)]
     if stype in ("movie", "series"):
         for s in data:
             raw_name = s.get("name", "")
@@ -1228,9 +1259,66 @@ def _get_cached_xtream_streams(url, user, pwd, stype, category_id=None):
                     s["name"] = cleaned
             else:
                 s["provider_tag"] = ""
-    if category_id:
-        return [s for s in data if str(s.get("category_id", "")) == str(category_id)]
     return data
+
+
+def _refresh_catalog_in_background(stype):
+    """Starts a detached refresh_catalog run for this stream type, at most
+    once every 5 minutes (a lock file stops the several Home rows that hit
+    a stale cache at the same moment from each starting their own
+    download)."""
+    try:
+        profile = xbmcvfs.translatePath(addon.getAddonInfo("profile"))
+        pnum = pm.active
+        lock = os.path.join(profile, f"catalog_refresh_{stype}_p{pnum}.lock")
+        if os.path.exists(lock) and time.time() - os.path.getmtime(lock) < 300:
+            return
+        with open(lock, "w") as f:
+            f.write(str(time.time()))
+        xbmc.executebuiltin(
+            "RunPlugin(%s)"
+            % build_url({"mode": "refresh_catalog", "stype": stype, "profile_num": pnum})
+        )
+    except Exception as e:
+        _log(f"background catalog refresh not started: {e}")
+
+
+def refresh_catalog(stype, profile_num):
+    """Background counterpart to _get_cached_xtream_streams()'s stale-cache
+    path: downloads the catalog and replaces the cache, only if the download
+    actually returned something."""
+    original_active = pm.active
+    try:
+        pm.active = str(profile_num)
+        creds = _get_credentials_for_profile(profile_num)
+        url = creds.get("xtream_url", "")
+        user = creds.get("xtream_username", "")
+        pwd = creds.get("xtream_password", "")
+        if not (url and user and pwd):
+            return
+        data = IPTV.get_xtream_streams(url, user, pwd, stype, None)
+        if not data:
+            _log(f"refresh_catalog({stype}): empty response, keeping existing cache")
+            return
+        key = f"xtream_streams_{stype}"
+        _cache_save(key, {"_src": f"{url}|{user}|{pwd}", "_data": data})
+        counts = {}
+        for s in data:
+            cid = str(s.get("category_id", ""))
+            counts[cid] = counts.get(cid, 0) + 1
+        _cache_save(f"xtream_counts_{stype}", counts)
+        _log(f"refresh_catalog({stype}): refreshed {len(data)} items in background")
+    finally:
+        pm.active = original_active
+        try:
+            os.remove(
+                os.path.join(
+                    xbmcvfs.translatePath(addon.getAddonInfo("profile")),
+                    f"catalog_refresh_{stype}_p{profile_num}.lock",
+                )
+            )
+        except OSError:
+            pass
 
 
 def _pvr_m3u_path():
@@ -6785,9 +6873,36 @@ def xtream_streams(stype, cat_id, page=1, adult="0", profile_num=None):
     end = start + per_page
     page_streams = streams[start:end]
 
+    # A Home screen row (this runs while the Home window is active) must
+    # never sit waiting on per-movie metadata requests: on a device that
+    # hasn't cached them yet (each device has its own cache) that blocked
+    # the row for up to the 15s prefetch deadline plus a request per
+    # remaining movie. Rows use whatever is cached and the rest is fetched
+    # in the background for next time; normal browsing still prefetches
+    # up front.
+    home_widget = bool(xbmc.getCondVisibility("Window.IsActive(home)"))
     if stype == "movie" and url and user and pwd:
         if addon.getSetting("provider_movie_enabled").lower() == "true":
-            _prefetch_vod_info_batch(page_streams, url, user, pwd)
+            if home_widget:
+                missing = [
+                    str(s.get("stream_id"))
+                    for s in page_streams
+                    if s.get("stream_id")
+                    and not os.path.exists(_cache_path(f"vod_info_{s.get('stream_id')}"))
+                ]
+                if missing:
+                    xbmc.executebuiltin(
+                        "RunPlugin(%s)"
+                        % build_url(
+                            {
+                                "mode": "prefetch_vod_info",
+                                "ids": ",".join(missing),
+                                "profile_num": pnum,
+                            }
+                        )
+                    )
+            else:
+                _prefetch_vod_info_batch(page_streams, url, user, pwd)
 
     if stype == "live":
         xbmcplugin.setContent(addon_handle, "livetv")
@@ -6858,7 +6973,8 @@ def xtream_streams(stype, cat_id, page=1, adult="0", profile_num=None):
         elif stype == "movie":
             sid = str(s.get("stream_id", ""))
             play_url = IPTV.build_xtream_stream_url(url, user, pwd, s, "movie")
-            info = _enrich_movie_info(s, url, user, pwd)
+            # No base_url for Home rows = cache-only (no per-movie request).
+            info = _enrich_movie_info(s, None if home_widget else url, user, pwd)
             label = name
             li = xbmcgui.ListItem(label=label)
             info_tag = li.getVideoInfoTag()
@@ -12249,6 +12365,24 @@ elif mode == "osd_top":
         show_osd_top()
     except Exception as e:
         _log(f"osd_top error: {e}")
+elif mode == "refresh_catalog":
+    try:
+        refresh_catalog(args.get("stype", [""])[0], int(args.get("profile_num", [1])[0]))
+    except Exception as e:
+        _log(f"refresh_catalog error: {e}")
+elif mode == "prefetch_vod_info":
+    try:
+        _pnum = int(args.get("profile_num", [1])[0])
+        _creds = _get_credentials_for_profile(_pnum)
+        pm.active = str(_pnum)
+        _prefetch_vod_info_batch(
+            [{"stream_id": i} for i in args.get("ids", [""])[0].split(",") if i],
+            _creds.get("xtream_url", ""),
+            _creds.get("xtream_username", ""),
+            _creds.get("xtream_password", ""),
+        )
+    except Exception as e:
+        _log(f"prefetch_vod_info error: {e}")
 elif mode == "install_upnext":
     try:
         install_upnext()
