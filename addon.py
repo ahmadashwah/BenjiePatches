@@ -5224,14 +5224,30 @@ def show_osd_top():
     action directly (the skin already focuses Play/Pause on open), so only
     Up needs this."""
     xbmc.executebuiltin("Action(OSD)")
-    for _ in range(30):
+    for _ in range(40):
         if xbmc.getCondVisibility("Window.IsActive(videoosd)"):
             break
         xbmc.sleep(50)
     else:
+        _log("osd_top: OSD never became active")
         return
-    xbmc.sleep(100)
-    xbmc.executebuiltin("SetFocus(104)")
+    # The OSD's own onload focuses Play/Pause (203). On a slower device that
+    # can land *after* a SetFocus sent too early, leaving Play/Pause
+    # highlighted so a second Up press was needed -- so wait for the skin to
+    # finish first, then move focus and confirm it actually took, retrying
+    # if not.
+    for _ in range(20):
+        if xbmc.getCondVisibility("Control.HasFocus(203)"):
+            break
+        xbmc.sleep(50)
+    for attempt in range(1, 21):
+        xbmc.executebuiltin("SetFocus(104)")
+        xbmc.sleep(100)
+        if xbmc.getCondVisibility("Control.HasFocus(104)"):
+            if attempt > 1:
+                _log(f"osd_top: focus took after {attempt} attempts")
+            return
+    _log("osd_top: could not focus Subtitles")
 
 
 def handle_playback_back():
