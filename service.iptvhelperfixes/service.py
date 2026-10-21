@@ -950,6 +950,26 @@ def install_backbutton_keymap():
     log("Installed/updated back-button keymap and asked Kodi to reload keymaps.")
 
 
+def disable_osd_autopause():
+    """One-time: turns off Bingie's "auto-pause when the OSD opens" skin
+    setting (EnableAutoPauseOnOSD), so opening the playback controls (Down,
+    or Enter/OK) leaves the video playing until Play/Pause is actually
+    pressed. Done once via a flag file, not every pass, so turning it back
+    on in the skin settings later sticks."""
+    if xbmc.getSkinDir() != "skin.bingie":
+        return
+    marker_dir = os.path.join(KODI_PROFILE, "addon_data", ADDON_ID)
+    os.makedirs(marker_dir, exist_ok=True)
+    marker = os.path.join(marker_dir, "osd_autopause_off.flag")
+    if os.path.isfile(marker):
+        return
+    if xbmc.getCondVisibility("Skin.HasSetting(EnableAutoPauseOnOSD)"):
+        xbmc.executebuiltin("Skin.Reset(EnableAutoPauseOnOSD)")
+        log("Turned off auto-pause-on-OSD (one-time).")
+    with open(marker, "w") as f:
+        f.write("done")
+
+
 def install_player_config():
     """Returns True if TMDb Bingie Helper is present and the player config is up to date."""
     helper_dir = os.path.join(KODI_HOME, "addons", "plugin.video.tmdb.bingie.helper")
@@ -1055,6 +1075,7 @@ def run_checks():
     apply_default_player_settings()
     add_live_tv_shortcut()
     install_backbutton_keymap()
+    disable_osd_autopause()
     patch_tmdb_bingie_helper()
     patch_bingie_widgets_mylist()
     patch_bingie_mylist()
