@@ -50,6 +50,7 @@ import xbmc
 import xbmcaddon
 import xbmcvfs
 
+import error_report
 import github_sync
 
 ADDON = xbmcaddon.Addon()
@@ -1093,6 +1094,10 @@ def run_checks():
         import traceback
 
         log(traceback.format_exc(), xbmc.LOGERROR)
+    try:
+        error_report.run_cycle()
+    except Exception as e:
+        log(f"[diag] cycle failed: {e}", xbmc.LOGWARNING)
     return config_ok and patch_ok
 
 
@@ -1108,6 +1113,10 @@ def main():
     # silently undoing a fix. Rechecking periodically catches and re-applies
     # anything that gets reverted, instead of only fixing it once per boot.
     notified = False
+    try:
+        error_report.begin_session()
+    except Exception as e:
+        log(f"[diag] could not start crash tracking: {e}", xbmc.LOGWARNING)
     while not monitor.abortRequested():
         try:
             core_ok = run_checks()
@@ -1128,8 +1137,20 @@ def main():
             notified = True
 
         log(f"Done. Re-checking in {RECHECK_INTERVAL_SECONDS}s.")
-        if monitor.waitForAbort(RECHECK_INTERVAL_SECONDS):
+        # Wake every 30s to refresh the crash-tracking heartbeat (its last
+        # value is the fallback crash time) instead of one long sleep.
+        aborted = False
+        waited = 0
+        while waited < RECHECK_INTERVAL_SECONDS:
+            if monitor.waitForAbort(30):
+                aborted = True
+                break
+            waited += 30
+            error_report.heartbeat()
+        if aborted:
             break
+
+    error_report.end_session()
 
 
 if __name__ == "__main__":
