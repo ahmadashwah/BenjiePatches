@@ -971,6 +971,74 @@ def disable_osd_autopause():
         f.write("done")
 
 
+SUBTITLE_ADDON = "service.subtitles.opensubtitles"
+_last_subtitle_install_request = 0.0
+
+
+def _set_kodi_setting(name, value):
+    reply = json.loads(
+        xbmc.executeJSONRPC(
+            json.dumps(
+                {
+                    "jsonrpc": "2.0",
+                    "id": 1,
+                    "method": "Settings.SetSettingValue",
+                    "params": {"setting": name, "value": value},
+                }
+            )
+        )
+    )
+    return reply.get("result") is True
+
+
+def setup_subtitles():
+    """One-time: installs and enables the official OpenSubtitles.com add-on,
+    sets the preferred subtitle languages to Arabic and English, and makes
+    it the default subtitle service for TV shows and movies. It still needs
+    a free opensubtitles.com account entered in the add-on's own settings --
+    that can't be done from here. Guarded by a flag file so changing any of
+    these later in Kodi's settings sticks; retried every ~10 minutes until
+    the add-on is actually installed (the install is asynchronous and needs
+    the repository to be reachable)."""
+    global _last_subtitle_install_request
+    marker_dir = os.path.join(KODI_PROFILE, "addon_data", ADDON_ID)
+    os.makedirs(marker_dir, exist_ok=True)
+    marker = os.path.join(marker_dir, "subtitles_setup.flag")
+    if os.path.isfile(marker):
+        return
+
+    if not xbmc.getCondVisibility(f"System.HasAddon({SUBTITLE_ADDON})"):
+        if time.time() - _last_subtitle_install_request >= 600:
+            _last_subtitle_install_request = time.time()
+            xbmc.executebuiltin(f"InstallAddon({SUBTITLE_ADDON})")
+            log("Requested install of the OpenSubtitles.com subtitle add-on.")
+        return
+
+    if not xbmc.getCondVisibility(f"System.AddonIsEnabled({SUBTITLE_ADDON})"):
+        xbmc.executeJSONRPC(
+            json.dumps(
+                {
+                    "jsonrpc": "2.0",
+                    "id": 1,
+                    "method": "Addons.SetAddonEnabled",
+                    "params": {"addonid": SUBTITLE_ADDON, "enabled": True},
+                }
+            )
+        )
+
+    ok = [
+        _set_kodi_setting("subtitles.languages", ["Arabic", "English"]),
+        _set_kodi_setting("subtitles.tv", SUBTITLE_ADDON),
+        _set_kodi_setting("subtitles.movie", SUBTITLE_ADDON),
+    ]
+    if all(ok):
+        with open(marker, "w") as f:
+            f.write("done")
+        log("Subtitles set up: OpenSubtitles.com, Arabic + English (log in via the add-on's settings).")
+    else:
+        log(f"Subtitle settings not all applied yet ({ok}); will retry.", xbmc.LOGWARNING)
+
+
 def install_player_config():
     """Returns True if TMDb Bingie Helper is present and the player config is up to date."""
     helper_dir = os.path.join(KODI_HOME, "addons", "plugin.video.tmdb.bingie.helper")
@@ -1077,6 +1145,7 @@ def run_checks():
     add_live_tv_shortcut()
     install_backbutton_keymap()
     disable_osd_autopause()
+    setup_subtitles()
     patch_tmdb_bingie_helper()
     patch_bingie_widgets_mylist()
     patch_bingie_mylist()

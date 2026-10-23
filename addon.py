@@ -2092,6 +2092,30 @@ def _set_live_props(li):
     li.setContentLookup(False)
 
 
+def _subtitle_search_info(name, stype):
+    """Clean title/season/episode/year pulled out of the raw provider title
+    (e.g. "The Office (2005) (US) - S05E06 - Customer Survey", or "Toy Story
+    (1995) <Arabic title>"), for subtitle services. They search by the
+    playing item's title/show/season/episode/year and the raw provider
+    string matches nothing; a plugin item otherwise carries none of those.
+    Returns only what could be worked out."""
+    n = _PROVIDER_PREFIX_RE.sub("", name or "", count=1).strip()
+    out = {}
+    m = re.search(r"[Ss](\d{1,3})[Ee](\d{1,3})", n)
+    if stype == "series" and m:
+        show = re.sub(r"\s*-\s*[Ss]\d{1,3}[Ee]\d{1,3}.*$", "", n).strip()
+        ym = re.search(r"\((\d{4})\)", show)
+        clean = re.sub(r"(\s*\([^)]*\))+\s*$", "", show).strip() or show
+        out = {"tvshowtitle": clean, "season": int(m.group(1)), "episode": int(m.group(2))}
+        if ym:
+            out["year"] = int(ym.group(1))
+    elif stype == "movie":
+        mm = re.match(r"^(.*?)\s*\((\d{4})\)", n)
+        if mm and mm.group(1).strip():
+            out = {"title": mm.group(1).strip(), "year": int(mm.group(2))}
+    return out
+
+
 def play_stream(
     play_url,
     name,
@@ -2161,6 +2185,15 @@ def play_stream(
     info_tag.setMediaType("video")
     info_tag.setTitle(title or name)
     info_tag.setPlot(plot or "")
+    sub_info = _subtitle_search_info(name, stype)
+    if "tvshowtitle" in sub_info:
+        info_tag.setTvShowTitle(sub_info["tvshowtitle"])
+        info_tag.setSeason(sub_info["season"])
+        info_tag.setEpisode(sub_info["episode"])
+    elif "title" in sub_info:
+        info_tag.setTitle(sub_info["title"])
+    if "year" in sub_info:
+        info_tag.setYear(sub_info["year"])
     if icon:
         li.setArt({"icon": icon, "thumb": icon})
     _prepare_playback_item(li)
