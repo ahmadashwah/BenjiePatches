@@ -2126,6 +2126,20 @@ def _subtitle_search_info(name, stype, season_num=None):
     return out
 
 
+def _show_playback_loading():
+    """Black screen with the skin's spinner (Custom_1160_PlaybackLoading.xml,
+    installed by the service; it shows while the Home property PlaybackLoading
+    is set), shown from the moment a movie/episode play
+    starts until playback begins, so the user isn't left looking at Home
+    while the stream is found. The service clears the property when
+    playback starts; the window also clears it after 60s. Does nothing harmful if the
+    skin doesn't have the window."""
+    try:
+        xbmc.executebuiltin("SetProperty(PlaybackLoading,1,Home)")
+    except Exception as e:
+        _log(f"loading screen not shown: {e}")
+
+
 def play_stream(
     play_url,
     name,
@@ -2142,6 +2156,8 @@ def play_stream(
     stream_ref="",
 ):
     pnum = profile_num if profile_num is not None else pm.active
+    if stype in ("movie", "series"):
+        _show_playback_loading()
 
     # Remember what's playing (series only) so the FullscreenVideo Back
     # button (wired via a bundled keymap) can jump to the right show/season

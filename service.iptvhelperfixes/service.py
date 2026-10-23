@@ -42,6 +42,7 @@ the same files and can silently revert a fix shortly after boot.
 
 import json
 import os
+import re
 import shutil
 import time
 import xml.etree.ElementTree as ET
@@ -359,6 +360,7 @@ def patch_bingie_focus_frame():
 
 
 def patch_bingie_continue_watching_click():
+    global _skin_changed_by_loading_patch
     """Continue Watching tiles led to a TMDb Bingie Helper show-info screen
     on click instead of playing/resuming directly. Root cause: Bingie's
     shared ContainerShowInfoOnclick include (used by every Home widget row)
@@ -417,6 +419,7 @@ def patch_bingie_continue_watching_click():
         new_content = content.replace(matched_old_block, new_block, 1)
         with open(target, "w", encoding="utf-8") as f:
             f.write(new_content)
+        _skin_changed_by_loading_patch = True
         log(f"Patched {rel_path} for the continue-watching click fix (backup saved as {os.path.basename(backup)}).")
 
 
@@ -743,6 +746,109 @@ def warm_netflix_top10():
 
     _netflix_warm_thread = threading.Thread(target=_run, daemon=True)
     _netflix_warm_thread.start()
+
+
+PLAYBACK_LOADING_WINDOW = """<?xml version="1.0" encoding="UTF-8"?>
+<!-- IPTV Helper Fixes: black screen + spinner while a play request is being resolved
+     (skin dialogs with a <visible> condition open and close themselves, so this
+     one shows while Window(Home).Property(PlaybackLoading) is set by XStream
+     Player's play_stream and the info dialog's Play buttons, and the service
+     clears it when playback starts). The spinner hides while a select
+     dialog (e.g. choosing a server) is showing so it never competes with it. -->
+<window type="dialog" id="1160">
+    <visible>!Player.HasVideo + String.IsEqual(Window(Home).Property(PlaybackLoading),1)</visible>
+    <onload>AlarmClock(ClosePlaybackLoading,ClearProperty(PlaybackLoading,Home),01:00,silent)</onload>
+    <onunload condition="System.HasAlarm(ClosePlaybackLoading)">CancelAlarm(ClosePlaybackLoading,true)</onunload>
+    <controls>
+        <control type="image">
+            <left>0</left>
+            <top>0</top>
+            <width>1920</width>
+            <height>1080</height>
+            <texture>colors/color_black.png</texture>
+        </control>
+        <include content="Busy_Spinner">
+            <param name="visibility" value="!Window.IsActive(selectdialog) + !Window.IsActive(DialogSelect.xml)" />
+        </include>
+    </controls>
+</window>
+"""
+
+_skin_changed_by_loading_patch = False
+
+
+def install_playback_loading_window():
+    """Writes the black-screen-with-spinner window into the Bingie skin (a
+    new file, so nothing to match against)."""
+    global _skin_changed_by_loading_patch
+    skin = os.path.join(KODI_HOME, "addons", "skin.bingie", "1080i")
+    if not os.path.isdir(skin):
+        return
+    target = os.path.join(skin, "Custom_1160_PlaybackLoading.xml")
+    current = None
+    if os.path.isfile(target):
+        with open(target, "r", encoding="utf-8") as f:
+            current = f.read()
+    if current != PLAYBACK_LOADING_WINDOW:
+        with open(target, "w", encoding="utf-8") as f:
+            f.write(PLAYBACK_LOADING_WINDOW)
+        _skin_changed_by_loading_patch = True
+        log("Installed the playback loading window.")
+
+
+def patch_bingie_play_loading():
+    """Opens the loading window from every Play/Resume action in the info
+    dialog (they all start playback with AlarmClock(PlayMovie,PlayMedia(...)),
+    about a second after the dialog closes, and the plugin can then take
+    several more seconds to find a stream -- all with Home showing). Adds a
+    copy of each such click handler, with the same condition, that runs
+    SetProperty(PlaybackLoading,1,Home) first. Line-based and idempotent, so a skin update
+    that moves things around doesn't break it."""
+    global _skin_changed_by_loading_patch
+    target = os.path.join(KODI_HOME, "addons", "skin.bingie", "1080i", "IncludesDialogVideoInfo.xml")
+    if not os.path.isfile(target):
+        return
+    with open(target, "r", encoding="utf-8") as f:
+        lines = f.read().split("\n")
+    pattern = re.compile(r'^([ \t]*)<onclick((?: condition="[^"]*")?)>AlarmClock\(PlayMovie,PlayMedia\(')
+    out = []
+    added = 0
+    migrated = 0
+    for i, line in enumerate(lines):
+        if "ActivateWindow(1160)</onclick>" in line:
+            line = line.replace("ActivateWindow(1160)", "SetProperty(PlaybackLoading,1,Home)")
+            migrated += 1
+        m = pattern.match(line)
+        if m and not (out and "PlaybackLoading" in out[-1]):
+            out.append(f"{m.group(1)}<onclick{m.group(2)}>SetProperty(PlaybackLoading,1,Home)</onclick>")
+            added += 1
+        out.append(line)
+    if added or migrated:
+        shutil.copyfile(target, target + f".bak-{time.strftime('%Y%m%d-%H%M%S')}")
+        with open(target, "w", encoding="utf-8") as f:
+            f.write("\n".join(out))
+        _skin_changed_by_loading_patch = True
+        log(f"Added the loading screen to {added} Play actions in the info dialog.")
+
+
+class _PlaybackWatcher(xbmc.Player):
+    """Closes the loading window once playback has actually started (or failed
+    to). Deliberately not the stopped/ended events: those also fire for the
+    previous item when a new play request replaces it, which would close the
+    window while the new stream is still being found."""
+
+    @staticmethod
+    def _close():
+        xbmc.executebuiltin("ClearProperty(PlaybackLoading,Home)")
+
+    def onAVStarted(self):
+        self._close()
+
+    def onPlayBackError(self):
+        self._close()
+
+
+_playback_watcher = None
 
 
 def patch_bingie_arabic_categories():
@@ -1305,6 +1411,8 @@ def run_checks():
     patch_bingie_mylist()
     patch_bingie_goto_season_button()
     patch_bingie_addon_settings_nav()
+    install_playback_loading_window()
+    patch_bingie_play_loading()
     patch_bingie_top_rank_badge()
     warm_netflix_top10()
     patch_bingie_arabic_search()
@@ -1339,6 +1447,8 @@ def main():
     # silently undoing a fix. Rechecking periodically catches and re-applies
     # anything that gets reverted, instead of only fixing it once per boot.
     notified = False
+    global _playback_watcher
+    _playback_watcher = _PlaybackWatcher()
     try:
         error_report.begin_session()
     except Exception as e:
@@ -1362,6 +1472,13 @@ def main():
                 notify("XStream Player fixes applied")
             notified = True
 
+        global _skin_changed_by_loading_patch
+        if _skin_changed_by_loading_patch and not xbmc.Player().isPlaying():
+            # New skin window / click handlers only take effect on a skin
+            # reload; do it now (when nothing is playing) instead of making
+            # the user restart Kodi.
+            _skin_changed_by_loading_patch = False
+            xbmc.executebuiltin("ReloadSkin()")
         log(f"Done. Re-checking in {RECHECK_INTERVAL_SECONDS}s.")
         # Wake every 30s to refresh the crash-tracking heartbeat (its last
         # value is the fallback crash time) instead of one long sleep.
