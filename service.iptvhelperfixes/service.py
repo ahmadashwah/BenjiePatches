@@ -899,10 +899,12 @@ def patch_bingie_new_hub_streaming_rows():
 
 def patch_bingie_profile_login():
     """Turns the side menu's "Master user / Switch Profiles" header (which
-    logs off to Kodi's profile picker, useless here) into the place to enter
-    the IPTV login: it now reads "IPTV Account / Enter your IPTV login" and
-    opens XStream Player's settings, where the provider URL, username and
-    password go. Edits only that header block, exact-content, idempotent."""
+    logs off to Kodi's profile picker, useless here) into the place to manage
+    the IPTV login: it shows the XStream Player profile's name (kept in
+    Window(Home).Property(XStreamProfileName) by update_profile_label) with no
+    subtitle, and selecting it opens XStream Player's settings, where the
+    provider URL, username and password go. Edits only that header block,
+    exact-content, idempotent."""
     global _skin_changed_by_loading_patch
     target = os.path.join(KODI_HOME, "addons", "skin.bingie", "1080i", "IncludesBingie.xml")
     if not os.path.isfile(target):
@@ -915,24 +917,44 @@ def patch_bingie_profile_login():
         log("Profile header not found in IncludesBingie.xml — skipping IPTV login header.", xbmc.LOGWARNING)
         return
     block = content[start:end]
-    if "mode=settings" in block:
-        return
+    prop = "$INFO[Window(Home).Property(XStreamProfileName)]"
     new = block
-    for old, repl in (
-        ("<onclick>System.LogOff</onclick>", "<onclick>RunPlugin(plugin://plugin.video.xstream-player/?mode=settings)</onclick>"),
-        ("<label>$INFO[System.ProfileName]</label>", "<label>IPTV Account</label>"),
-        ("<label>[B]$INFO[System.ProfileName][/B]</label>", "<label>[B]IPTV Account[/B]</label>"),
-        ("<label>$LOCALIZE[31076]</label>", "<label>Enter your IPTV login</label>"),
+    for olds, repl in (
+        (("<onclick>System.LogOff</onclick>",), "<onclick>RunPlugin(plugin://plugin.video.xstream-player/?mode=settings)</onclick>"),
+        (("<label>$INFO[System.ProfileName]</label>", "<label>IPTV Account</label>"), f"<label>{prop}</label>"),
+        (("<label>[B]$INFO[System.ProfileName][/B]</label>", "<label>[B]IPTV Account[/B]</label>"), f"<label>[B]{prop}[/B]</label>"),
+        (("<label>$LOCALIZE[31076]</label>", "<label>Enter your IPTV login</label>"), "<label></label>"),
     ):
-        if block.count(old) != 1:
-            log(f"Profile header layout not recognised ({old[:30]}) — skipping IPTV login header.", xbmc.LOGWARNING)
+        if repl in new:
+            continue
+        hit = [o for o in olds if new.count(o) == 1]
+        if not hit:
+            log(f"Profile header layout not recognised ({olds[0][:30]}) — skipping IPTV login header.", xbmc.LOGWARNING)
             return
-        new = new.replace(old, repl)
+        new = new.replace(hit[0], repl)
+    if new == block:
+        return
     shutil.copyfile(target, target + f".bak-{time.strftime('%Y%m%d-%H%M%S')}")
     with open(target, "w", encoding="utf-8") as f:
         f.write(content[:start] + new + content[end:])
     _skin_changed_by_loading_patch = True
-    log("The side menu's profile header now opens the IPTV login settings.")
+    log("The side menu's profile header now shows the IPTV profile name and opens its settings.")
+
+
+def update_profile_label():
+    """Publishes the active XStream Player profile's name for the side menu
+    header (falls back to "IPTV Account" until one has been entered)."""
+    name = ""
+    try:
+        addon = xbmcaddon.Addon("plugin.video.xstream-player")
+        m = re.search(r"(\d+)", addon.getSetting("active_pvr_profile") or "")
+        num = m.group(1) if m else "1"
+        name = (addon.getSetting(f"profile_{num}_name") or "").strip()
+        if re.fullmatch(r"Profile \d+", name):
+            name = ""
+    except Exception as e:
+        log(f"profile name not read: {e}")
+    xbmc.executebuiltin("SetProperty(XStreamProfileName,%s,Home)" % (name or "IPTV Account").replace(",", " "))
 
 
 class _PlaybackWatcher(xbmc.Player):
@@ -1518,6 +1540,7 @@ def run_checks():
     install_playback_loading_window()
     patch_bingie_play_loading()
     patch_bingie_profile_login()
+    update_profile_label()
     patch_bingie_new_hub_streaming_rows()
     patch_bingie_top_rank_badge()
     warm_netflix_top10()
@@ -1596,6 +1619,7 @@ def main():
                 break
             waited += 30
             error_report.heartbeat()
+            update_profile_label()
         if aborted:
             break
 
