@@ -897,6 +897,44 @@ def patch_bingie_new_hub_streaming_rows():
         _skin_changed_by_loading_patch = True
 
 
+def patch_bingie_profile_login():
+    """Turns the side menu's "Master user / Switch Profiles" header (which
+    logs off to Kodi's profile picker, useless here) into the place to enter
+    the IPTV login: it now reads "IPTV Account / Enter your IPTV login" and
+    opens XStream Player's settings, where the provider URL, username and
+    password go. Edits only that header block, exact-content, idempotent."""
+    global _skin_changed_by_loading_patch
+    target = os.path.join(KODI_HOME, "addons", "skin.bingie", "1080i", "IncludesBingie.xml")
+    if not os.path.isfile(target):
+        return
+    with open(target, "r", encoding="utf-8") as f:
+        content = f.read()
+    start = content.find('<control type="button" id="40000">')
+    end = content.find("<!--Main Menu Items 900-->", start) if start >= 0 else -1
+    if start < 0 or end < 0:
+        log("Profile header not found in IncludesBingie.xml — skipping IPTV login header.", xbmc.LOGWARNING)
+        return
+    block = content[start:end]
+    if "mode=settings" in block:
+        return
+    new = block
+    for old, repl in (
+        ("<onclick>System.LogOff</onclick>", "<onclick>RunPlugin(plugin://plugin.video.xstream-player/?mode=settings)</onclick>"),
+        ("<label>$INFO[System.ProfileName]</label>", "<label>IPTV Account</label>"),
+        ("<label>[B]$INFO[System.ProfileName][/B]</label>", "<label>[B]IPTV Account[/B]</label>"),
+        ("<label>$LOCALIZE[31076]</label>", "<label>Enter your IPTV login</label>"),
+    ):
+        if block.count(old) != 1:
+            log(f"Profile header layout not recognised ({old[:30]}) — skipping IPTV login header.", xbmc.LOGWARNING)
+            return
+        new = new.replace(old, repl)
+    shutil.copyfile(target, target + f".bak-{time.strftime('%Y%m%d-%H%M%S')}")
+    with open(target, "w", encoding="utf-8") as f:
+        f.write(content[:start] + new + content[end:])
+    _skin_changed_by_loading_patch = True
+    log("The side menu's profile header now opens the IPTV login settings.")
+
+
 class _PlaybackWatcher(xbmc.Player):
     """Closes the loading window once playback has actually started (or failed
     to). Deliberately not the stopped/ended events: those also fire for the
@@ -1479,6 +1517,7 @@ def run_checks():
     patch_bingie_addon_settings_nav()
     install_playback_loading_window()
     patch_bingie_play_loading()
+    patch_bingie_profile_login()
     patch_bingie_new_hub_streaming_rows()
     patch_bingie_top_rank_badge()
     warm_netflix_top10()
