@@ -1213,7 +1213,7 @@ def _get_cached_xtream_categories(url, user, pwd, stype):
     return data
 
 
-def _get_cached_xtream_streams(url, user, pwd, stype, category_id=None):
+def _get_cached_xtream_streams(url, user, pwd, stype, category_id=None, fresh_if_stale=False):
     if not url or not user or not pwd:
         return []
     key = f"xtream_streams_{stype}"
@@ -1224,7 +1224,7 @@ def _get_cached_xtream_streams(url, user, pwd, stype, category_id=None):
     )
     if cached_ok and _cache_valid(key):
         data = cached["_data"]
-    elif cached_ok:
+    elif cached_ok and not fresh_if_stale:
         # Stale: serve what we have right now and refresh in the
         # background, instead of making whatever is loading (a Home row, a
         # menu) wait on re-downloading the whole catalog -- tens of MB,
@@ -1233,6 +1233,8 @@ def _get_cached_xtream_streams(url, user, pwd, stype, category_id=None):
         _refresh_catalog_in_background(stype)
     else:
         data = IPTV.get_xtream_streams(url, user, pwd, stype, None)
+        if not data and cached_ok:
+            data = cached["_data"]
         if data:
             # Never overwrite the cache with an empty list: a failed
             # download returns [] and that used to replace a good catalog,
@@ -8007,17 +8009,27 @@ def xtream_next_up(showname, year="", profile_num=None):
     user = creds.get("xtream_username", "")
     pwd = creds.get("xtream_password", "")
 
-    all_series = _get_cached_xtream_streams(url, user, pwd, "series")
     showname_lower = (showname or "").strip().lower()
     year_str = str(year or "").strip()
-    candidates = []
-    for s in all_series:
-        name = _PROVIDER_PREFIX_RE.sub("", s.get("name", ""), count=1).strip() or s.get("name", "")
-        if not name.lower().startswith(showname_lower):
-            continue
-        if year_str and year_str not in name:
-            continue
-        candidates.append(s)
+
+    def _find_candidates(all_series):
+        found = []
+        for s in all_series:
+            name = _PROVIDER_PREFIX_RE.sub("", s.get("name", ""), count=1).strip() or s.get("name", "")
+            if not name.lower().startswith(showname_lower):
+                continue
+            if year_str and year_str not in name:
+                continue
+            found.append(s)
+        return found
+
+    candidates = _find_candidates(_get_cached_xtream_streams(url, user, pwd, "series"))
+    if not candidates and not _cache_valid("xtream_streams_series"):
+        # A stale cache can predate a show the provider added since; the
+        # info screen's Play button would sit on "Loading..." forever.
+        candidates = _find_candidates(
+            _get_cached_xtream_streams(url, user, pwd, "series", fresh_if_stale=True)
+        )
 
     if not candidates:
         xbmcplugin.endOfDirectory(addon_handle)
