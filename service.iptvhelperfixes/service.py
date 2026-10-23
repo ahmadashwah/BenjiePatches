@@ -993,6 +993,39 @@ def patch_bingie_power_menu():
     log("Power menu: removed Reboot and Power off, added Update.")
 
 
+_SEARCH_KEYBOARD_LINE = (
+    '\t<onload condition="Skin.HasSetting(EnableBingieSearchFullKeyboard) + String.IsEmpty(Skin.String(CustomSearchTerm)) + '
+    '[System.Platform.Windows | System.Platform.OSX | System.Platform.Linux + !System.Platform.Android]">'
+    "AlarmClock(OpenSearchKeyboard,Skin.SetString(CustomSearchTerm),00:00,silent)</onload>"
+)
+
+
+def patch_bingie_search_desktop_keyboard():
+    """On a computer (Windows, macOS, Linux), the Search page's on-screen
+    letter grid ignores the physical keyboard -- letters did nothing, only the
+    arrow keys worked -- because typing only works in Kodi's real keyboard,
+    which the page opens on "Up". Open that keyboard as soon as a fresh search
+    page loads on those platforms, so typing just works. TV boxes and phones
+    keep the letter grid. Line-based and idempotent."""
+    global _skin_changed_by_loading_patch
+    target = os.path.join(KODI_HOME, "addons", "skin.bingie", "1080i", "Custom_1109_BingieSearch.xml")
+    if not os.path.isfile(target):
+        return
+    with open(target, "r", encoding="utf-8") as f:
+        content = f.read()
+    if "OpenSearchKeyboard" in content:
+        return
+    anchor = '<onload condition="String.IsEmpty(Skin.String(CustomSearchTerm))">SetProperty(CustomSearch,1,home)</onload>'
+    if content.count(anchor) != 1:
+        log("Search page layout not recognised — skipping desktop typing fix.", xbmc.LOGWARNING)
+        return
+    shutil.copyfile(target, target + f".bak-{time.strftime('%Y%m%d-%H%M%S')}")
+    with open(target, "w", encoding="utf-8") as f:
+        f.write(content.replace(anchor, anchor + "\n" + _SEARCH_KEYBOARD_LINE, 1))
+    _skin_changed_by_loading_patch = True
+    log("Search page now opens the typing keyboard on computers.")
+
+
 class _PlaybackWatcher(xbmc.Player):
     """Closes the loading window once playback has actually started (or failed
     to). Deliberately not the stopped/ended events: those also fire for the
@@ -1577,6 +1610,7 @@ def run_checks():
     patch_bingie_play_loading()
     patch_bingie_profile_login()
     patch_bingie_power_menu()
+    patch_bingie_search_desktop_keyboard()
     update_profile_label()
     patch_bingie_new_hub_streaming_rows()
     patch_bingie_top_rank_badge()
