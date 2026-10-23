@@ -7879,7 +7879,7 @@ _STREAMING_SERVICES = {
     "peacock": {"providers": "386|387"},
     "prime": {"providers": "9"},
 }
-_STREAMING_LIMIT = 20
+_STREAMING_LIMIT = 10
 
 
 def _discover_dir(query, kind):
@@ -7907,7 +7907,7 @@ def _discover_dir(query, kind):
 
 
 def _get_streaming_new_items(service, kind):
-    name = f"streaming_new_{service}_{kind}"
+    name = f"streaming_new10_{service}_{kind}"
     cached = _cache_load(name)
     if isinstance(cached, dict) and cached.get("_items") and _cache_valid(name, hours=6):
         return cached["_items"]
@@ -7949,12 +7949,13 @@ def _get_streaming_new_items(service, kind):
 def streaming_new(service, kind):
     """Directory of what a streaming service has recently put out (new
     movies, and new series plus shows airing now), from TMDb's watch-provider
-    data through TMDb Bingie Helper, so the tiles behave like its other rows."""
+    data through TMDb Bingie Helper, so the tiles behave like its other rows.
+    Numbered 1-10 by TMDb popularity among the recent releases."""
     kind = "tv" if kind == "tv" else "movie"
     if service not in _STREAMING_SERVICES:
         xbmcplugin.endOfDirectory(addon_handle, succeeded=False)
         return
-    _emit_tmdb_items(_get_streaming_new_items(service, kind), kind, ranked=False)
+    _emit_tmdb_items(_get_streaming_new_items(service, kind), kind, ranked=True)
 
 
 def goto_show_season(series_id, season_num, profile_num=None, showname=None, ep_id=None):
