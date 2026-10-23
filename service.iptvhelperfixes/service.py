@@ -44,6 +44,7 @@ import json
 import os
 import re
 import shutil
+import threading
 import time
 import xml.etree.ElementTree as ET
 
@@ -1037,6 +1038,40 @@ def patch_bingie_search_desktop_keyboard():
     log("Search page now opens the typing keyboard.")
 
 
+def first_run_welcome():
+    """Once, on a fresh install with no IPTV login entered yet: offers to
+    open the login settings straight away (it is also under the profile name
+    at the top of the side menu). What the error reports are is explained in
+    the build's INSTALL.txt and the add-on's settings."""
+    marker_dir = os.path.join(KODI_PROFILE, "addon_data", ADDON_ID)
+    marker = os.path.join(marker_dir, "welcome_shown.flag")
+    if os.path.isfile(marker):
+        return
+    try:
+        xs = xbmcaddon.Addon("plugin.video.xstream-player")
+    except Exception:
+        return
+    has_login = any(
+        (xs.getSetting(f"profile_{n}_xtream_url") or xs.getSetting(f"profile_{n}_m3u") or "").strip()
+        for n in range(1, 11)
+    )
+    os.makedirs(marker_dir, exist_ok=True)
+    with open(marker, "w") as f:
+        f.write("done")
+    if has_login:
+        return
+    import xbmcgui
+
+    if xbmcgui.Dialog().yesno(
+        "Welcome",
+        "Enter your IPTV login to get started.[CR]"
+        "You can also do it any time from the name at the top of the side menu.",
+        yeslabel="Enter login",
+        nolabel="Later",
+    ):
+        xbmc.executebuiltin("RunPlugin(plugin://plugin.video.xstream-player/?mode=settings)")
+
+
 class _PlaybackWatcher(xbmc.Player):
     """Closes the loading window once playback has actually started (or failed
     to). Deliberately not the stopped/ended events: those also fire for the
@@ -1623,6 +1658,7 @@ def run_checks():
     patch_bingie_power_menu()
     patch_bingie_search_desktop_keyboard()
     update_profile_label()
+    threading.Thread(target=first_run_welcome, daemon=True).start()
     patch_bingie_new_hub_streaming_rows()
     patch_bingie_top_rank_badge()
     warm_netflix_top10()

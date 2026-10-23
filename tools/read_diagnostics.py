@@ -19,7 +19,7 @@ KODI_SETTINGS = os.path.expanduser(
 
 
 def token():
-    t = os.environ.get("GITHUB_TOKEN", "").strip()
+    t = (os.environ.get("BENJIE_DIAG_TOKEN") or os.environ.get("GITHUB_TOKEN") or "").strip()
     if t:
         return t
     try:
@@ -43,9 +43,13 @@ def main():
     tok = token()
     if not tok:
         sys.exit("No GitHub token: set GITHUB_TOKEN or enable sync in the add-on settings.")
-    gist = next((g for g in api("/gists?per_page=100", tok) if "watch progress sync" in (g.get("description") or "")), None)
+    gist = next(
+        (g for g in api("/gists?per_page=100", tok)
+         if "error reports" in (g.get("description") or "") or "watch progress sync" in (g.get("description") or "")),
+        None,
+    )
     if not gist:
-        sys.exit("Sync gist not found.")
+        sys.exit("No diagnostics gist found for this token.")
     files = api(f"/gists/{gist['id']}", tok)["files"]
     reports = {n: f for n, f in files.items() if n.startswith("diag_")}
     if not reports:

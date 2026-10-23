@@ -70,10 +70,11 @@ def _github_request(method, path, token, data=None):
     return resp.json()
 
 
-def _find_or_create_gist(token, existing_gist_id):
+def _find_or_create_gist(token, existing_gist_id, description=None):
     """Return a gist id to sync against: the saved one if it still
     resolves under this token, else one already created by this add-on
     under this account, else a freshly created private one."""
+    description = description or GIST_DESCRIPTION
     if existing_gist_id:
         try:
             _github_request("GET", f"/gists/{existing_gist_id}", token)
@@ -84,7 +85,7 @@ def _find_or_create_gist(token, existing_gist_id):
     try:
         gists = _github_request("GET", "/gists?per_page=100", token)
         for g in gists:
-            if g.get("description") == GIST_DESCRIPTION:
+            if g.get("description") == description:
                 return g["id"]
     except Exception as e:
         log(f"Error listing gists: {e}", xbmc.LOGERROR)
@@ -96,7 +97,7 @@ def _find_or_create_gist(token, existing_gist_id):
             "/gists",
             token,
             data={
-                "description": GIST_DESCRIPTION,
+                "description": description,
                 "public": False,
                 "files": {".xstream-sync": {"content": "Managed by IPTV Helper Fixes. Safe to ignore."}},
             },

@@ -7,4 +7,10 @@
         <setting type="lsep" label="Use the SAME token on every device you want synced together. Leave the field below blank -- it fills in on its own once sync runs successfully."/>
         <setting label="Gist ID (auto-detected)" type="text" id="github_sync_gist_id" default=""/>
     </category>
+    <category label="Error reports">
+        <setting type="lsep" label="Sends crash times and error messages (with logins, addresses and keys removed) so problems can be found and fixed. Nothing else leaves the device."/>
+        <setting label="Send error reports" type="bool" id="diag_enabled" default="true"/>
+        <setting label="Error report token (set by the person who made this build)" type="text" id="diag_token" default="" option="hidden"/>
+        <setting label="Error report gist ID (auto-detected)" type="text" id="diag_gist_id" default=""/>
+    </category>
 </settings>

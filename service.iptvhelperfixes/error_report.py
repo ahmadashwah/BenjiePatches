@@ -388,17 +388,36 @@ def _build_report(state):
     return report
 
 
+DIAG_GIST_DESCRIPTION = "IPTV Helper Fixes error reports (managed by IPTV Helper Fixes -- do not delete)"
+
+
+def _upload_target(svc):
+    """(token, gist_setting, description) to upload to, or None. A build for
+    other people carries a dedicated diagnostics token (diag_token) that
+    reports into its own gist, separate from the watch-progress sync; without
+    one, the owner's own devices keep using the sync gist as before. The
+    "Send error reports" setting turns it all off."""
+    if svc.getSetting("diag_enabled").lower() == "false":
+        return None
+    diag_token = svc.getSetting("diag_token").strip()
+    if diag_token:
+        return diag_token, "diag_gist_id", DIAG_GIST_DESCRIPTION
+    if svc.getSetting("github_sync_enabled").lower() != "true":
+        return None
+    token = svc.getSetting("github_sync_token").strip()
+    return (token, "github_sync_gist_id", None) if token else None
+
+
 def upload(state):
-    """Mirror this device's report into the sync gist as diag_<device>.json,
-    only when it changed and only if the cross-device sync is configured."""
+    """Mirror this device's report into a gist as diag_<device>.json, only
+    when it changed and only if a diagnostics or sync token is configured."""
     import github_sync  # same folder; imported lazily so a failure here can't break startup
 
     svc = xbmcaddon.Addon()
-    if svc.getSetting("github_sync_enabled").lower() != "true":
+    target = _upload_target(svc)
+    if not target:
         return
-    token = svc.getSetting("github_sync_token").strip()
-    if not token:
-        return
+    token, gist_setting, description = target
     report = _build_report(state)
     content = json.dumps(report, ensure_ascii=False, indent=1)
     while len(content) > UPLOAD_LIMIT and report["errors"]:
@@ -409,12 +428,12 @@ def upload(state):
     ).hexdigest()
     if digest == state.get("uploaded_hash"):
         return
-    saved = svc.getSetting("github_sync_gist_id").strip()
-    gist_id = github_sync._find_or_create_gist(token, saved)
+    saved = svc.getSetting(gist_setting).strip()
+    gist_id = github_sync._find_or_create_gist(token, saved, description)
     if not gist_id:
         return
     if gist_id != saved:
-        svc.setSetting("github_sync_gist_id", gist_id)
+        svc.setSetting(gist_setting, gist_id)
     github_sync._github_request(
         "PATCH", f"/gists/{gist_id}", token,
         data={"files": {f"diag_{device_key()}.json": {"content": content}}},
