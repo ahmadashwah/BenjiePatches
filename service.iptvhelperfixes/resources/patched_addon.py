@@ -2092,7 +2092,7 @@ def _set_live_props(li):
     li.setContentLookup(False)
 
 
-def _subtitle_search_info(name, stype):
+def _subtitle_search_info(name, stype, season_num=None):
     """Clean title/season/episode/year pulled out of the raw provider title
     (e.g. "The Office (2005) (US) - S05E06 - Customer Survey", or "Toy Story
     (1995) <Arabic title>"), for subtitle services. They search by the
@@ -2107,6 +2107,16 @@ def _subtitle_search_info(name, stype):
         ym = re.search(r"\((\d{4})\)", show)
         clean = re.sub(r"(\s*\([^)]*\))+\s*$", "", show).strip() or show
         out = {"tvshowtitle": clean, "season": int(m.group(1)), "episode": int(m.group(2))}
+        if ym:
+            out["year"] = int(ym.group(1))
+    elif stype == "series" and n and str(season_num or "").isdigit():
+        # Continue Watching starts an episode with just the show's name
+        # (the episode only travels as season/episode ids), so there is no
+        # "SxxExx" to read: take the show from the name and the season from
+        # the id; the episode number is filled in once playback has started.
+        ym = re.search(r"\((\d{4})\)", n)
+        clean = re.sub(r"(\s*\([^)]*\))+\s*$", "", n).strip() or n
+        out = {"tvshowtitle": clean, "season": int(season_num)}
         if ym:
             out["year"] = int(ym.group(1))
     elif stype == "movie":
@@ -2185,11 +2195,33 @@ def play_stream(
     info_tag.setMediaType("video")
     info_tag.setTitle(title or name)
     info_tag.setPlot(plot or "")
-    sub_info = _subtitle_search_info(name, stype)
+    sub_info = _subtitle_search_info(name, stype, season_num)
+    series_info_cache = None
+    if "tvshowtitle" in sub_info and "episode" not in sub_info and series_id and ep_id:
+        # Continue Watching starts an episode with the show name and ids
+        # only. A subtitle search needs the episode number and updating the
+        # playing item afterwards (Player.updateInfoTag) doesn't change it,
+        # so look it up first. The autoplay setup below needs this same
+        # series info, so it is reused there rather than fetched twice.
+        try:
+            ecreds = _get_credentials_for_profile(pnum)
+            series_info_cache = IPTV.get_xtream_series_info(
+                ecreds.get("xtream_url", ""),
+                ecreds.get("xtream_username", ""),
+                ecreds.get("xtream_password", ""),
+                series_id,
+            )
+            for fep in series_info_cache.get("episodes", {}).get(str(season_num), []):
+                if str(fep.get("id", "")) == str(ep_id):
+                    sub_info["episode"] = int(fep.get("episode_num", 0) or 0)
+                    break
+        except Exception as e:
+            _log(f"episode lookup for subtitles skipped: {e}")
     if "tvshowtitle" in sub_info:
         info_tag.setTvShowTitle(sub_info["tvshowtitle"])
         info_tag.setSeason(sub_info["season"])
-        info_tag.setEpisode(sub_info["episode"])
+        if sub_info.get("episode"):
+            info_tag.setEpisode(sub_info["episode"])
     elif "title" in sub_info:
         info_tag.setTitle(sub_info["title"])
     if "year" in sub_info:
@@ -2234,7 +2266,7 @@ def play_stream(
             xt_url = creds.get("xtream_url", "")
             xt_user = creds.get("xtream_username", "")
             xt_pwd = creds.get("xtream_password", "")
-            info = IPTV.get_xtream_series_info(xt_url, xt_user, xt_pwd, series_id)
+            info = series_info_cache or IPTV.get_xtream_series_info(xt_url, xt_user, xt_pwd, series_id)
             eps = info.get("episodes", {}).get(season_num, [])
             for i, ep in enumerate(eps):
                 if str(ep.get("id", "")) == str(ep_id):
