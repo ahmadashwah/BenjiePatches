@@ -8197,10 +8197,12 @@ def xtream_next_up(showname, year="", profile_num=None):
             name = _PROVIDER_PREFIX_RE.sub("", s.get("name", ""), count=1).strip() or s.get("name", "")
             if not name.lower().startswith(showname_lower):
                 continue
-            if year_str and year_str not in name:
-                continue
-            found.append(s)
-        return found
+            found.append((s, year_str and year_str in name))
+        # Prefer entries whose name carries the year, but don't require it:
+        # many catalog names (Arabic titles especially) have no year in them,
+        # which left the info screen's Play button on "Loading..." forever.
+        dated = [s for s, has_year in found if has_year]
+        return dated or [s for s, _ in found]
 
     candidates = _find_candidates(_get_cached_xtream_streams(url, user, pwd, "series"))
     if not candidates and not _cache_valid("xtream_streams_series"):
@@ -8211,6 +8213,7 @@ def xtream_next_up(showname, year="", profile_num=None):
         )
 
     if not candidates:
+        _log(f"next_up: no catalog match for {showname!r} ({year_str or 'no year'})")
         xbmcplugin.endOfDirectory(addon_handle)
         return
 
