@@ -994,6 +994,10 @@ def patch_bingie_power_menu():
 
 
 _SEARCH_KEYBOARD_LINE = (
+    '\t<onload condition="Skin.HasSetting(EnableBingieSearchFullKeyboard) + String.IsEmpty(Skin.String(CustomSearchTerm))">'
+    "AlarmClock(OpenSearchKeyboard,Skin.SetString(CustomSearchTerm),00:00,silent)</onload>"
+)
+_SEARCH_KEYBOARD_OLD_LINE = (
     '\t<onload condition="Skin.HasSetting(EnableBingieSearchFullKeyboard) + String.IsEmpty(Skin.String(CustomSearchTerm)) + '
     '[System.Platform.Windows | System.Platform.OSX | System.Platform.Linux + !System.Platform.Android]">'
     "AlarmClock(OpenSearchKeyboard,Skin.SetString(CustomSearchTerm),00:00,silent)</onload>"
@@ -1001,29 +1005,36 @@ _SEARCH_KEYBOARD_LINE = (
 
 
 def patch_bingie_search_desktop_keyboard():
-    """On a computer (Windows, macOS, Linux), the Search page's on-screen
-    letter grid ignores the physical keyboard -- letters did nothing, only the
-    arrow keys worked -- because typing only works in Kodi's real keyboard,
-    which the page opens on "Up". Open that keyboard as soon as a fresh search
-    page loads on those platforms, so typing just works. TV boxes and phones
-    keep the letter grid. Line-based and idempotent."""
+    """Makes Kodi's real keyboard the way to search, on every device: the
+    Search page's on-screen letter grid ignores a physical keyboard (letters
+    did nothing, only the arrow keys worked), while the real keyboard takes
+    typing, Backspace, Space and Enter. Turns Bingie's "full keyboard" search
+    setting on (kept on every pass, so it stays the only mode) and opens that
+    keyboard as soon as a fresh search page loads. Line-based and
+    idempotent."""
     global _skin_changed_by_loading_patch
+    if xbmc.getSkinDir() == "skin.bingie" and not xbmc.getCondVisibility("Skin.HasSetting(EnableBingieSearchFullKeyboard)"):
+        xbmc.executebuiltin("Skin.SetBool(EnableBingieSearchFullKeyboard)")
     target = os.path.join(KODI_HOME, "addons", "skin.bingie", "1080i", "Custom_1109_BingieSearch.xml")
     if not os.path.isfile(target):
         return
     with open(target, "r", encoding="utf-8") as f:
         content = f.read()
-    if "OpenSearchKeyboard" in content:
+    if _SEARCH_KEYBOARD_LINE in content:
         return
-    anchor = '<onload condition="String.IsEmpty(Skin.String(CustomSearchTerm))">SetProperty(CustomSearch,1,home)</onload>'
-    if content.count(anchor) != 1:
-        log("Search page layout not recognised — skipping desktop typing fix.", xbmc.LOGWARNING)
-        return
+    if _SEARCH_KEYBOARD_OLD_LINE in content:
+        new = content.replace(_SEARCH_KEYBOARD_OLD_LINE, _SEARCH_KEYBOARD_LINE, 1)
+    else:
+        anchor = '<onload condition="String.IsEmpty(Skin.String(CustomSearchTerm))">SetProperty(CustomSearch,1,home)</onload>'
+        if content.count(anchor) != 1:
+            log("Search page layout not recognised — skipping the typing keyboard fix.", xbmc.LOGWARNING)
+            return
+        new = content.replace(anchor, anchor + "\n" + _SEARCH_KEYBOARD_LINE, 1)
     shutil.copyfile(target, target + f".bak-{time.strftime('%Y%m%d-%H%M%S')}")
     with open(target, "w", encoding="utf-8") as f:
-        f.write(content.replace(anchor, anchor + "\n" + _SEARCH_KEYBOARD_LINE, 1))
+        f.write(new)
     _skin_changed_by_loading_patch = True
-    log("Search page now opens the typing keyboard on computers.")
+    log("Search page now opens the typing keyboard.")
 
 
 class _PlaybackWatcher(xbmc.Player):
