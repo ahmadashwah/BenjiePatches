@@ -7958,7 +7958,7 @@ def streaming_new(service, kind):
     _emit_tmdb_items(_get_streaming_new_items(service, kind), kind, ranked=True)
 
 
-_PATCH_REPO_RAW = "https://raw.githubusercontent.com/ahmadashwah/BenjiePatches/main/"
+_PATCH_REPO_API = "https://api.github.com/repos/ahmadashwah/BenjiePatches/contents/"
 _PATCH_ADDON_ID = "service.iptvhelperfixes"
 
 
@@ -7969,7 +7969,9 @@ def _version_tuple(v):
 def update_patch():
     """Power-menu "Update": downloads the newest IPTV Helper Fixes (the
     Benjie patches) from the GitHub repo and installs it over the current one,
-    then offers to restart Kodi so it takes effect."""
+    then offers to restart Kodi so it takes effect. Lists the repo through
+    GitHub's API (raw.githubusercontent.com serves files a few minutes stale)
+    and reads the version from the downloaded zip itself."""
     import urllib.request
 
     dialog = xbmcgui.Dialog()
@@ -7979,50 +7981,51 @@ def update_patch():
         local = xbmcaddon.Addon(_PATCH_ADDON_ID).getAddonInfo("version")
     except Exception:
         local = ""
+    tmp_zip = os.path.join(xbmcvfs.translatePath("special://temp/"), "benjie_patch_update.zip")
     try:
-        def fetch(path):
-            req = urllib.request.Request(_PATCH_REPO_RAW + path, headers={"User-Agent": "Kodi"})
+        def fetch(url):
+            req = urllib.request.Request(url, headers={"User-Agent": "Kodi"})
             with urllib.request.urlopen(req, timeout=30) as r:
                 return r.read()
 
-        remote_xml = fetch(f"{_PATCH_ADDON_ID}/addon.xml").decode("utf-8", "replace")
-        m = re.search(r'<addon[^>]*\sversion="([^"]+)"', remote_xml)
-        remote = m.group(1) if m else ""
-        if not remote:
-            raise RuntimeError("could not read the latest version")
-        if local and _version_tuple(remote) <= _version_tuple(local):
-            progress.close()
-            dialog.ok("Update", f"You already have the latest version ({local}).")
-            return
-        progress.update(30, f"Downloading version {remote}...")
-        index = fetch("index.html").decode("utf-8", "replace")
-        zips = re.findall(rf"{re.escape(_PATCH_ADDON_ID)}\d+\.zip", index)
+        listing = json.loads(fetch(_PATCH_REPO_API).decode("utf-8", "replace"))
+        zips = sorted(
+            (
+                (int(m.group(1)), f["download_url"])
+                for f in listing
+                for m in [re.fullmatch(rf"{re.escape(_PATCH_ADDON_ID)}(\d+)\.zip", f.get("name", ""))]
+                if m and f.get("download_url")
+            ),
+            reverse=True,
+        )
         if not zips:
             raise RuntimeError("no download found")
-        data = fetch(zips[0])
-        progress.update(70, "Installing...")
-        tmp_zip = os.path.join(xbmcvfs.translatePath("special://temp/"), "benjie_patch_update.zip")
+        progress.update(30, "Downloading the latest version...")
         with open(tmp_zip, "wb") as f:
-            f.write(data)
-        dest_root = xbmcvfs.translatePath("special://home/addons/")
+            f.write(fetch(zips[0][1]))
         with zipfile.ZipFile(tmp_zip) as z:
             names = z.namelist()
             if f"{_PATCH_ADDON_ID}/addon.xml" not in names:
                 raise RuntimeError("the download is not the expected package")
-            ET.fromstring(z.read(f"{_PATCH_ADDON_ID}/addon.xml"))
+            root = ET.fromstring(z.read(f"{_PATCH_ADDON_ID}/addon.xml"))
+            remote = root.get("version", "")
+            if not remote:
+                raise RuntimeError("could not read the downloaded version")
+            if local and _version_tuple(remote) <= _version_tuple(local):
+                progress.close()
+                dialog.ok("Update", f"You already have the latest version ({local}).")
+                return
+            progress.update(70, f"Installing version {remote}...")
+            dest_root = os.path.realpath(xbmcvfs.translatePath("special://home/addons/"))
             for name in names:
                 if name.endswith("/") or "__pycache__" in name or not name.startswith(_PATCH_ADDON_ID + "/"):
                     continue
                 target = os.path.realpath(os.path.join(dest_root, name))
-                if not target.startswith(os.path.realpath(dest_root) + os.sep):
+                if not target.startswith(dest_root + os.sep):
                     continue
                 os.makedirs(os.path.dirname(target), exist_ok=True)
                 with open(target, "wb") as out:
                     out.write(z.read(name))
-        try:
-            os.remove(tmp_zip)
-        except OSError:
-            pass
         progress.close()
         _log(f"update_patch: {local or '?'} -> {remote}")
         if dialog.yesno("Update", f"Updated to version {remote}.[CR]Restart Kodi now to finish?"):
@@ -8031,6 +8034,11 @@ def update_patch():
         progress.close()
         _log(f"update_patch error: {e}")
         dialog.ok("Update", f"The update did not work: {e}[CR]Check the internet connection and try again.")
+    finally:
+        try:
+            os.remove(tmp_zip)
+        except OSError:
+            pass
 
 
 def goto_show_season(series_id, season_num, profile_num=None, showname=None, ep_id=None):
