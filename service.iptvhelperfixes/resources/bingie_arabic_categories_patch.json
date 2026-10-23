@@ -24,6 +24,30 @@
           "<variable name=\"DefWidget2Name\">\n\t\t<value condition=\"Library.HasContent(Movies) | Library.HasContent(TVShows)\">$LOCALIZE[31079]</value>\n        <value condition=\"!Library.HasContent(Movies) + !Library.HasContent(TVShows)\">$LOCALIZE[31326]</value>\n    </variable>"
         ],
         "new_block": "<variable name=\"DefWidget2Name\">\n\t\t<value condition=\"Library.HasContent(Movies) | Library.HasContent(TVShows)\">$LOCALIZE[31079]</value>\n\t\t<value condition=\"!Library.HasContent(Movies) + !Library.HasContent(TVShows) + System.HasAddon(plugin.video.xstream-player)\">New Arabic TV Shows</value>\n        <value condition=\"!Library.HasContent(Movies) + !Library.HasContent(TVShows)\">$LOCALIZE[31326]</value>\n    </variable>"
+      },
+      {
+        "candidates": [
+          "<variable name=\"DefWidget3Content\">\n\t\t<value condition=\"Library.HasContent(Movies) | Library.HasContent(TVShows)\">plugin://script.bingie.widgets/?action=forgenre&amp;mediatype=media&amp;limit=25&amp;reload=$INFO[Window(Home).Property(widgetreload)]</value>\n        <value condition=\"!Library.HasContent(Movies) + !Library.HasContent(TVShows)\">plugin://plugin.video.tmdb.bingie.helper?info=trakt_popular&amp;tmdb_type=tv&amp;widget=true&amp;reload=$INFO[Window(Home).Property(TMDbBingieHelper.Widgets.Reload)]</value>\n    </variable>"
+        ],
+        "new_block": "<variable name=\"DefWidget3Content\">\n\t\t<value condition=\"Library.HasContent(Movies) | Library.HasContent(TVShows)\">plugin://script.bingie.widgets/?action=forgenre&amp;mediatype=media&amp;limit=25&amp;reload=$INFO[Window(Home).Property(widgetreload)]</value>\n\t\t<value condition=\"!Library.HasContent(Movies) + !Library.HasContent(TVShows) + System.HasAddon(plugin.video.xstream-player)\">plugin://plugin.video.xstream-player/?mode=netflix_top10&amp;type=tv</value>\n        <value condition=\"!Library.HasContent(Movies) + !Library.HasContent(TVShows)\">plugin://plugin.video.tmdb.bingie.helper?info=trakt_popular&amp;tmdb_type=tv&amp;widget=true&amp;reload=$INFO[Window(Home).Property(TMDbBingieHelper.Widgets.Reload)]</value>\n    </variable>"
+      },
+      {
+        "candidates": [
+          "<variable name=\"DefWidget3Name\">\n\t\t<value condition=\"Library.HasContent(Movies) | Library.HasContent(TVShows)\">$LOCALIZE[515]</value>\n        <value condition=\"!Library.HasContent(Movies) + !Library.HasContent(TVShows)\">$LOCALIZE[31319]</value>\n    </variable>"
+        ],
+        "new_block": "<variable name=\"DefWidget3Name\">\n\t\t<value condition=\"Library.HasContent(Movies) | Library.HasContent(TVShows)\">$LOCALIZE[515]</value>\n\t\t<value condition=\"!Library.HasContent(Movies) + !Library.HasContent(TVShows) + System.HasAddon(plugin.video.xstream-player)\">Netflix Top 10 - TV Shows</value>\n        <value condition=\"!Library.HasContent(Movies) + !Library.HasContent(TVShows)\">$LOCALIZE[31319]</value>\n    </variable>"
+      },
+      {
+        "candidates": [
+          "<variable name=\"DefWidget4Content\">\n\t\t<value condition=\"Library.HasContent(Movies) | Library.HasContent(TVShows)\">special://skin/extras/widgetplaylists/criticallyacclaimedmovies.xsp</value>\n\t\t<value condition=\"!Library.HasContent(Movies) + !Library.HasContent(TVShows)\">plugin://plugin.video.tmdb.bingie.helper/?info=trakt_userlist&amp;list_name=IMDB:+Top+Rated+Movies&amp;list_slug=imdb-top-rated-movies&amp;user_slug=justin&amp;plugin_category=IMDB:+Top+Rated+Movies&amp;widget=true&amp;reload=$INFO[Window(Home).Property(TMDbBingieHelper.Widgets.Reload)]</value>\n    </variable>"
+        ],
+        "new_block": "<variable name=\"DefWidget4Content\">\n\t\t<value condition=\"Library.HasContent(Movies) | Library.HasContent(TVShows)\">special://skin/extras/widgetplaylists/criticallyacclaimedmovies.xsp</value>\n\t\t<value condition=\"!Library.HasContent(Movies) + !Library.HasContent(TVShows) + System.HasAddon(plugin.video.xstream-player)\">plugin://plugin.video.xstream-player/?mode=netflix_top10&amp;type=movie</value>\n\t\t<value condition=\"!Library.HasContent(Movies) + !Library.HasContent(TVShows)\">plugin://plugin.video.tmdb.bingie.helper/?info=trakt_userlist&amp;list_name=IMDB:+Top+Rated+Movies&amp;list_slug=imdb-top-rated-movies&amp;user_slug=justin&amp;plugin_category=IMDB:+Top+Rated+Movies&amp;widget=true&amp;reload=$INFO[Window(Home).Property(TMDbBingieHelper.Widgets.Reload)]</value>\n    </variable>"
+      },
+      {
+        "candidates": [
+          "<variable name=\"DefWidget4Name\">\n\t\t<value condition=\"Library.HasContent(Movies) | Library.HasContent(TVShows)\">$LOCALIZE[31532]</value>\n\t\t<value condition=\"!Library.HasContent(Movies) + !Library.HasContent(TVShows)\">$LOCALIZE[31277]</value>\n    </variable>"
+        ],
+        "new_block": "<variable name=\"DefWidget4Name\">\n\t\t<value condition=\"Library.HasContent(Movies) | Library.HasContent(TVShows)\">$LOCALIZE[31532]</value>\n\t\t<value condition=\"!Library.HasContent(Movies) + !Library.HasContent(TVShows) + System.HasAddon(plugin.video.xstream-player)\">Netflix Top 10 - Movies</value>\n\t\t<value condition=\"!Library.HasContent(Movies) + !Library.HasContent(TVShows)\">$LOCALIZE[31277]</value>\n    </variable>"
       }
     ]
   }

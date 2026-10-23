@@ -7668,6 +7668,182 @@ def favorites_widget_export(profile_num=None):
     xbmcplugin.endOfDirectory(addon_handle)
 
 
+NETFLIX_TOP10_URL = "https://top10.netflix.com/data/all-weeks-global.tsv"
+_TMDB_RESULT_PROPS = [
+    "title", "art", "plot", "year", "rating", "genre", "mpaa", "runtime", "uniqueid",
+    "file", "premiered", "studio", "votes", "tagline", "originaltitle", "cast",
+    "director", "country", "imdbnumber",
+]
+
+
+def _netflix_top10_titles(kind):
+    """Titles of Netflix's own most recent weekly Top 10 (their published
+    data file), for "movie" (Films, English + non-English) or "tv" (TV,
+    English + non-English), ranked together by hours viewed. Returns
+    (titles, week)."""
+    import requests
+
+    name = "netflix_top10_tsv"
+    cached = _cache_load(name)
+    if isinstance(cached, dict) and cached.get("text") and _cache_valid(name, hours=12):
+        text = cached["text"]
+    else:
+        resp = requests.get(NETFLIX_TOP10_URL, timeout=30, headers={"User-Agent": "Mozilla/5.0"})
+        resp.raise_for_status()
+        text = resp.text
+        _cache_save(name, {"text": text})
+    # Split on newlines only (str.splitlines also breaks on characters that
+    # occasionally appear inside titles, which corrupts a row) and keep just
+    # well-formed rows.
+    lines = text.replace("\r", "").split("\n")
+    header = lines[0].split("\t")
+    col = {h: i for i, h in enumerate(header)}
+    rows = [
+        r
+        for r in (ln.split("\t") for ln in lines[1:] if ln.strip())
+        if len(r) == len(header) and re.match(r"^\d{4}-\d\d-\d\d$", r[col["week"]])
+    ]
+    week = max(r[col["week"]] for r in rows)
+    want = "Films" if kind == "movie" else "TV"
+    picked = []
+    for r in rows:
+        if r[col["week"]] != week or not r[col["category"]].startswith(want):
+            continue
+        try:
+            hours = int(r[col["weekly_hours_viewed"]])
+        except ValueError:
+            hours = 0
+        picked.append((hours, r[col["show_title"]].split(" // ")[0].strip()))
+    picked.sort(reverse=True)
+    titles = []
+    for _hours, title in picked:
+        if title and title not in titles:
+            titles.append(title)
+    return titles[:10], week
+
+
+def _resolve_tmdb_title(title, kind):
+    """Best TMDb Bingie Helper search match for a Netflix title, as a dict of
+    the fields needed to rebuild a native-looking item, or None."""
+    search = (
+        "plugin://plugin.video.tmdb.bingie.helper?info=search&tmdb_type=%s"
+        "&nextpage=false&query=%s" % (kind, urllib.parse.quote(title))
+    )
+    reply = json.loads(
+        xbmc.executeJSONRPC(
+            json.dumps(
+                {
+                    "jsonrpc": "2.0",
+                    "id": 1,
+                    "method": "Files.GetDirectory",
+                    "params": {"directory": search, "media": "video", "properties": _TMDB_RESULT_PROPS},
+                }
+            )
+        )
+    )
+    results = (reply.get("result") or {}).get("files") or []
+    if not results:
+        return None
+    wanted = title.lower()
+    best = next((r for r in results[:5] if (r.get("title") or "").lower() == wanted), results[0])
+    best["filetype"] = best.get("filetype", "file")
+    return best
+
+
+def _get_netflix_top10_items(kind):
+    name = f"netflix_top10_items_{kind}"
+    cached = _cache_load(name)
+    if isinstance(cached, dict) and cached.get("_items") and _cache_valid(name, hours=12):
+        return cached["_items"]
+    try:
+        titles, week = _netflix_top10_titles(kind)
+    except Exception as e:
+        _log(f"netflix top10 titles error: {e}")
+        return (cached or {}).get("_items", []) if isinstance(cached, dict) else []
+    resolved = {}
+
+    def _one(i, t):
+        try:
+            resolved[i] = _resolve_tmdb_title(t, kind)
+        except Exception as e:
+            _log(f"netflix top10 resolve error for {t!r}: {e}")
+
+    for start in range(0, len(titles), 5):
+        threads = [
+            threading.Thread(target=_one, args=(i, t))
+            for i, t in enumerate(titles[start:start + 5], start)
+        ]
+        for th in threads:
+            th.start()
+        for th in threads:
+            th.join(timeout=30)
+    items = [resolved[i] for i in sorted(resolved) if resolved.get(i)]
+    _log(f"netflix top10 ({kind}, week {week}): {len(titles)} titles, {len(items)} matched on TMDb")
+    if items:
+        _cache_save(name, {"_week": week, "_items": items})
+    return items
+
+
+def netflix_top10(kind):
+    """Directory of Netflix's current weekly Top 10 (movies or TV), rebuilt
+    from TMDb Bingie Helper's own search results so the tiles, info dialog and
+    click behaviour match its other rows, with a TopRank property (1-10) the
+    skin shows as a number on the tile."""
+    kind = "tv" if kind == "tv" else "movie"
+    items = _get_netflix_top10_items(kind)
+    xbmcplugin.setContent(addon_handle, "tvshows" if kind == "tv" else "movies")
+    for rank, it in enumerate(items, 1):
+        li = xbmcgui.ListItem(label=it.get("title") or it.get("label") or "")
+        tag = li.getVideoInfoTag()
+        tag.setMediaType("tvshow" if kind == "tv" else "movie")
+        tag.setTitle(it.get("title") or "")
+        tag.setOriginalTitle(it.get("originaltitle") or "")
+        tag.setPlot(it.get("plot") or "")
+        tag.setTagLine(it.get("tagline") or "")
+        tag.setMpaa(it.get("mpaa") or "")
+        tag.setPremiered(it.get("premiered") or "")
+        try:
+            tag.setYear(int(it.get("year") or 0))
+        except (TypeError, ValueError):
+            pass
+        try:
+            tag.setRating(float(it.get("rating") or 0), int(it.get("votes") or 0))
+        except (TypeError, ValueError):
+            pass
+        if kind == "movie" and it.get("runtime"):
+            try:
+                tag.setDuration(int(it["runtime"]))
+            except (TypeError, ValueError):
+                pass
+        tag.setGenres(it.get("genre") or [])
+        tag.setStudios(it.get("studio") or [])
+        tag.setCountries(it.get("country") or [])
+        tag.setDirectors(it.get("director") or [])
+        uid = {k: v for k, v in (it.get("uniqueid") or {}).items() if k in ("tmdb", "imdb", "tvdb") and v}
+        if uid:
+            tag.setUniqueIDs(uid, "tmdb" if "tmdb" in uid else next(iter(uid)))
+        cast = []
+        for order, c in enumerate(it.get("cast") or []):
+            cast.append(xbmc.Actor(c.get("name", ""), c.get("role", ""), c.get("order", order), c.get("thumbnail", "")))
+        if cast:
+            tag.setCast(cast)
+        art = {k: v for k, v in (it.get("art") or {}).items() if v}
+        if art:
+            li.setArt(art)
+        li.setProperty("TopRank", str(rank))
+        li.setProperty("DBTYPE", "tvshow" if kind == "tv" else "movie")
+        if uid.get("tmdb"):
+            li.setProperty("tmdb_id", str(uid["tmdb"]))
+        li.setProperty("tmdb_type", kind)
+        xbmcplugin.addDirectoryItem(
+            handle=addon_handle,
+            url=it.get("file", ""),
+            listitem=li,
+            isFolder=it.get("filetype") == "directory",
+        )
+    xbmcplugin.endOfDirectory(addon_handle)
+
+
 def goto_show_season(series_id, season_num, profile_num=None, showname=None, ep_id=None):
     """RunPlugin action for a new "Go to Season" context menu entry/info-
     dialog button: jumps to that show's season/episode list for a known
@@ -12430,6 +12606,12 @@ elif mode == "osd_top":
         show_osd_top()
     except Exception as e:
         _log(f"osd_top error: {e}")
+elif mode == "netflix_top10":
+    try:
+        netflix_top10(args.get("type", ["movie"])[0])
+    except Exception as e:
+        _log(f"netflix_top10 error: {e}")
+        xbmcplugin.endOfDirectory(addon_handle, succeeded=False)
 elif mode == "refresh_catalog":
     try:
         refresh_catalog(args.get("stype", [""])[0], int(args.get("profile_num", [1])[0]))

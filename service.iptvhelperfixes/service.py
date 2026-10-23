@@ -636,6 +636,115 @@ def patch_bingie_addon_settings_nav():
     log("Patched DialogAddonSettings.xml so Down reaches the OK button.")
 
 
+_TOP_RANK_DEFINITION = """    <!-- Rank number for ranked rows (the Netflix Top 10 rows): XStream Player sets
+    ListItem.Property(TopRank) on those tiles; invisible on every other row.
+    Included from the home widget poster layouts next to the progress bar. -->
+    <include name="NetflixTopRankBadge">
+        <control type="group">
+            <visible>!String.IsEmpty(ListItem.Property(TopRank))</visible>
+            <left>6</left>
+            <top>8</top>
+            <width>120</width>
+            <height>100</height>
+            <control type="image">
+                <width>120</width>
+                <height>100</height>
+                <texture colordiffuse="B3000000">diffuse/panel2.png</texture>
+            </control>
+            <control type="label">
+                <width>120</width>
+                <height>100</height>
+                <align>center</align>
+                <aligny>center</aligny>
+                <font>Bold64</font>
+                <textcolor>ffffffff</textcolor>
+                <label>$INFO[ListItem.Property(TopRank)]</label>
+            </control>
+        </control>
+    </include>
+
+"""
+
+
+def patch_bingie_top_rank_badge():
+    """Adds the rank-number badge (see _TOP_RANK_DEFINITION) to Bingie's home
+    widget poster tiles. Two exact-content edits, each a safe no-op if the
+    skin's text isn't what's expected: define the include next to the
+    Continue Watching progress bar's definition, and include it wherever
+    the home poster layouts include that progress bar."""
+    skin = os.path.join(KODI_HOME, "addons", "skin.bingie", "1080i")
+    poster = os.path.join(skin, "IncludesViewsLayoutPoster.xml")
+    home = os.path.join(skin, "IncludesHomeWidgets.xml")
+    if not (os.path.isfile(poster) and os.path.isfile(home)):
+        return
+
+    with open(poster, "r", encoding="utf-8") as f:
+        content = f.read()
+    anchor = "    <!-- Thin progress bar for continue-watching tiles."
+    if 'name="NetflixTopRankBadge"' in content:
+        pass
+    elif anchor in content:
+        shutil.copyfile(poster, poster + f".bak-{time.strftime('%Y%m%d-%H%M%S')}")
+        with open(poster, "w", encoding="utf-8") as f:
+            f.write(content.replace(anchor, _TOP_RANK_DEFINITION + anchor, 1))
+        log("Added the Netflix Top 10 rank badge to the poster layout.")
+    else:
+        log("Poster layout doesn't match the expected content — skipping rank badge.", xbmc.LOGWARNING)
+        return
+
+    with open(home, "r", encoding="utf-8") as f:
+        content = f.read()
+    old = "<include>ContinueWatchingProgressBar</include>"
+    new = old + "\n                <include>NetflixTopRankBadge</include>"
+    if "NetflixTopRankBadge" in content:
+        return
+    if old not in content:
+        log("Home widget layout doesn't match the expected content — skipping rank badge.", xbmc.LOGWARNING)
+        return
+    shutil.copyfile(home, home + f".bak-{time.strftime('%Y%m%d-%H%M%S')}")
+    with open(home, "w", encoding="utf-8") as f:
+        f.write(content.replace(old, new))
+    log(f"Included the rank badge in {content.count(old)} home tile layouts.")
+
+
+_netflix_warm_thread = None
+
+
+def warm_netflix_top10():
+    """Keeps the Netflix Top 10 rows' cache fresh in the background: a cold
+    build takes 4-6s (it looks every title up on TMDb), so Home should
+    never be what triggers it. Cheap (about 0.1s) while the cache is fresh."""
+    global _netflix_warm_thread
+    if _netflix_warm_thread is not None and _netflix_warm_thread.is_alive():
+        return
+    if not xbmc.getCondVisibility("System.HasAddon(plugin.video.xstream-player)"):
+        return
+
+    def _run():
+        for kind in ("tv", "movie"):
+            try:
+                xbmc.executeJSONRPC(
+                    json.dumps(
+                        {
+                            "jsonrpc": "2.0",
+                            "id": 1,
+                            "method": "Files.GetDirectory",
+                            "params": {
+                                "directory": f"plugin://plugin.video.xstream-player/?mode=netflix_top10&type={kind}",
+                                "media": "video",
+                            },
+                        }
+                    )
+                )
+            except Exception as e:
+                log(f"Netflix Top 10 warm-up ({kind}) failed: {e}", xbmc.LOGWARNING)
+
+    import threading
+
+    _netflix_warm_thread = threading.Thread(target=_run, daemon=True)
+    _netflix_warm_thread.start()
+
+
 def patch_bingie_arabic_categories():
     """Repurposes the Home screen's 2nd/3rd widget rows (DefWidget1/2, right
     after Continue Watching) into "New Arabic Movies" and "New Arabic TV
@@ -1196,6 +1305,8 @@ def run_checks():
     patch_bingie_mylist()
     patch_bingie_goto_season_button()
     patch_bingie_addon_settings_nav()
+    patch_bingie_top_rank_badge()
+    warm_netflix_top10()
     patch_bingie_arabic_search()
     patch_bingie_continue_watching()
     patch_bingie_continue_watching_progressbar()
