@@ -1,0 +1,8 @@
+{
+  "DialogAddonSettings.xml": {
+    "candidates": [
+      "<control type=\"grouplist\" id=\"5\">\n                        <description>control area</description>\n                        <posx>0</posx>\n                        <posy>1</posy>\n                        <width>930</width>\n                        <height>471</height>\n                        <itemgap>5</itemgap>\n                        <pagecontrol>60</pagecontrol>\n                        <onleft>3</onleft>\n                        <onright>60</onright>\n                        <onup>5</onup>\n                        <ondown>5</ondown>\n                        <scrolltime tween=\"cubic\" easing=\"out\">500</scrolltime>\n                    </control>"
+    ],
+    "new_block": "<control type=\"grouplist\" id=\"5\">\n                        <description>control area</description>\n                        <posx>0</posx>\n                        <posy>1</posy>\n                        <width>930</width>\n                        <height>471</height>\n                        <itemgap>5</itemgap>\n                        <pagecontrol>60</pagecontrol>\n                        <onleft>3</onleft>\n                        <onright>60</onright>\n                        <onup>5</onup>\n                        <ondown>8002</ondown>\n                        <scrolltime tween=\"cubic\" easing=\"out\">500</scrolltime>\n                    </control>"
+  }
+}

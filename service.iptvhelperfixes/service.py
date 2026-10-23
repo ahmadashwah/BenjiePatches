@@ -603,6 +603,39 @@ def patch_bingie_goto_season_button():
     log(f"Patched IncludesDialogVideoInfo.xml to add the Go to Season button (backup saved as {os.path.basename(backup)}).")
 
 
+def patch_bingie_addon_settings_nav():
+    """Bingie's add-on settings dialog has no way to reach the OK / Cancel /
+    Defaults buttons with Down: the settings list's "down" link points back
+    at the list itself, so the only route was Left twice -- a real problem
+    with a TV remote (entering a login or token and not being able to save
+    it). Points Down at the button row, so Down from the last setting moves
+    to OK like in other skins. Matches by exact content: safe no-op if the
+    skin's block doesn't look like what this patch expects."""
+    target = os.path.join(KODI_HOME, "addons", "skin.bingie", "1080i", "DialogAddonSettings.xml")
+    patch_file = os.path.join(ADDON_PATH, "resources", "bingie_addon_settings_nav_patch.json")
+    if not os.path.isfile(target) or not os.path.isfile(patch_file):
+        return
+    with open(patch_file, "r", encoding="utf-8") as f:
+        entry = json.load(f)["DialogAddonSettings.xml"]
+    with open(target, "r", encoding="utf-8") as f:
+        content = f.read()
+    if entry["new_block"] in content:
+        log("Add-on settings navigation fix already applied.")
+        return
+    matched = next((c for c in entry["candidates"] if c in content), None)
+    if matched is None:
+        log(
+            "DialogAddonSettings.xml doesn't match the expected content (skin may have "
+            "been updated) — skipping add-on settings navigation fix.",
+            xbmc.LOGWARNING,
+        )
+        return
+    shutil.copyfile(target, target + f".bak-{time.strftime('%Y%m%d-%H%M%S')}")
+    with open(target, "w", encoding="utf-8") as f:
+        f.write(content.replace(matched, entry["new_block"], 1))
+    log("Patched DialogAddonSettings.xml so Down reaches the OK button.")
+
+
 def patch_bingie_arabic_categories():
     """Repurposes the Home screen's 2nd/3rd widget rows (DefWidget1/2, right
     after Continue Watching) into "New Arabic Movies" and "New Arabic TV
@@ -971,7 +1004,8 @@ def disable_osd_autopause():
         f.write("done")
 
 
-SUBTITLE_ADDON = "service.subtitles.opensubtitles"
+SUBTITLE_ADDON = "service.subtitles.opensubtitles-com"
+LEGACY_SUBTITLE_ADDON = "service.subtitles.opensubtitles"  # the old OpenSubtitles.org one, wrongly installed by 1.7.11
 _last_subtitle_install_request = 0.0
 
 
@@ -992,7 +1026,7 @@ def _set_kodi_setting(name, value):
 
 
 def setup_subtitles():
-    """One-time: installs and enables the official OpenSubtitles.com add-on,
+    """One-time: installs and enables the official OpenSubtitles.com add-on (service.subtitles.opensubtitles-com -- NOT service.subtitles.opensubtitles, which is the legacy OpenSubtitles.org one),
     sets the preferred subtitle languages to Arabic and English, and makes
     it the default subtitle service for TV shows and movies. It still needs
     a free opensubtitles.com account entered in the add-on's own settings --
@@ -1003,7 +1037,7 @@ def setup_subtitles():
     global _last_subtitle_install_request
     marker_dir = os.path.join(KODI_PROFILE, "addon_data", ADDON_ID)
     os.makedirs(marker_dir, exist_ok=True)
-    marker = os.path.join(marker_dir, "subtitles_setup.flag")
+    marker = os.path.join(marker_dir, "subtitles_setup_v2.flag")
     if os.path.isfile(marker):
         return
 
@@ -1032,6 +1066,17 @@ def setup_subtitles():
         _set_kodi_setting("subtitles.movie", SUBTITLE_ADDON),
     ]
     if all(ok):
+        if xbmc.getCondVisibility(f"System.AddonIsEnabled({LEGACY_SUBTITLE_ADDON})"):
+            xbmc.executeJSONRPC(
+                json.dumps(
+                    {
+                        "jsonrpc": "2.0",
+                        "id": 1,
+                        "method": "Addons.SetAddonEnabled",
+                        "params": {"addonid": LEGACY_SUBTITLE_ADDON, "enabled": False},
+                    }
+                )
+            )
         with open(marker, "w") as f:
             f.write("done")
         log("Subtitles set up: OpenSubtitles.com, Arabic + English (log in via the add-on's settings).")
@@ -1150,6 +1195,7 @@ def run_checks():
     patch_bingie_widgets_mylist()
     patch_bingie_mylist()
     patch_bingie_goto_season_button()
+    patch_bingie_addon_settings_nav()
     patch_bingie_arabic_search()
     patch_bingie_continue_watching()
     patch_bingie_continue_watching_progressbar()
