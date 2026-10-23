@@ -7958,6 +7958,81 @@ def streaming_new(service, kind):
     _emit_tmdb_items(_get_streaming_new_items(service, kind), kind, ranked=True)
 
 
+_PATCH_REPO_RAW = "https://raw.githubusercontent.com/ahmadashwah/BenjiePatches/main/"
+_PATCH_ADDON_ID = "service.iptvhelperfixes"
+
+
+def _version_tuple(v):
+    return tuple(int(p) for p in re.findall(r"\d+", v or ""))
+
+
+def update_patch():
+    """Power-menu "Update": downloads the newest IPTV Helper Fixes (the
+    Benjie patches) from the GitHub repo and installs it over the current one,
+    then offers to restart Kodi so it takes effect."""
+    import urllib.request
+
+    dialog = xbmcgui.Dialog()
+    progress = xbmcgui.DialogProgress()
+    progress.create("Update", "Checking for the latest version...")
+    try:
+        local = xbmcaddon.Addon(_PATCH_ADDON_ID).getAddonInfo("version")
+    except Exception:
+        local = ""
+    try:
+        def fetch(path):
+            req = urllib.request.Request(_PATCH_REPO_RAW + path, headers={"User-Agent": "Kodi"})
+            with urllib.request.urlopen(req, timeout=30) as r:
+                return r.read()
+
+        remote_xml = fetch(f"{_PATCH_ADDON_ID}/addon.xml").decode("utf-8", "replace")
+        m = re.search(r'<addon[^>]*\sversion="([^"]+)"', remote_xml)
+        remote = m.group(1) if m else ""
+        if not remote:
+            raise RuntimeError("could not read the latest version")
+        if local and _version_tuple(remote) <= _version_tuple(local):
+            progress.close()
+            dialog.ok("Update", f"You already have the latest version ({local}).")
+            return
+        progress.update(30, f"Downloading version {remote}...")
+        index = fetch("index.html").decode("utf-8", "replace")
+        zips = re.findall(rf"{re.escape(_PATCH_ADDON_ID)}\d+\.zip", index)
+        if not zips:
+            raise RuntimeError("no download found")
+        data = fetch(zips[0])
+        progress.update(70, "Installing...")
+        tmp_zip = os.path.join(xbmcvfs.translatePath("special://temp/"), "benjie_patch_update.zip")
+        with open(tmp_zip, "wb") as f:
+            f.write(data)
+        dest_root = xbmcvfs.translatePath("special://home/addons/")
+        with zipfile.ZipFile(tmp_zip) as z:
+            names = z.namelist()
+            if f"{_PATCH_ADDON_ID}/addon.xml" not in names:
+                raise RuntimeError("the download is not the expected package")
+            ET.fromstring(z.read(f"{_PATCH_ADDON_ID}/addon.xml"))
+            for name in names:
+                if name.endswith("/") or "__pycache__" in name or not name.startswith(_PATCH_ADDON_ID + "/"):
+                    continue
+                target = os.path.realpath(os.path.join(dest_root, name))
+                if not target.startswith(os.path.realpath(dest_root) + os.sep):
+                    continue
+                os.makedirs(os.path.dirname(target), exist_ok=True)
+                with open(target, "wb") as out:
+                    out.write(z.read(name))
+        try:
+            os.remove(tmp_zip)
+        except OSError:
+            pass
+        progress.close()
+        _log(f"update_patch: {local or '?'} -> {remote}")
+        if dialog.yesno("Update", f"Updated to version {remote}.[CR]Restart Kodi now to finish?"):
+            xbmc.executebuiltin("Quit()")
+    except Exception as e:
+        progress.close()
+        _log(f"update_patch error: {e}")
+        dialog.ok("Update", f"The update did not work: {e}[CR]Check the internet connection and try again.")
+
+
 def goto_show_season(series_id, season_num, profile_num=None, showname=None, ep_id=None):
     """RunPlugin action for a new "Go to Season" context menu entry/info-
     dialog button: jumps to that show's season/episode list for a known
@@ -12742,6 +12817,9 @@ elif mode == "streaming_new":
     except Exception as e:
         _log(f"streaming_new error: {e}")
         xbmcplugin.endOfDirectory(addon_handle, succeeded=False)
+elif mode == "update_patch":
+    xbmcplugin.endOfDirectory(addon_handle, succeeded=False)
+    update_patch()
 elif mode == "refresh_catalog":
     try:
         refresh_catalog(args.get("stype", [""])[0], int(args.get("profile_num", [1])[0]))

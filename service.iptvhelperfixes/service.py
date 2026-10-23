@@ -957,6 +957,42 @@ def update_profile_label():
     xbmc.executebuiltin("SetProperty(XStreamProfileName,%s,Home)" % (name or "IPTV Account").replace(",", " "))
 
 
+def patch_bingie_power_menu():
+    """Power menu: drops "Reboot" and "Power off system" (not wanted on these
+    boxes) and adds "Update", which runs XStream Player's update_patch mode
+    (installs the newest IPTV Helper Fixes from GitHub). Edits the skin's
+    default powermenu shortcut list; idempotent."""
+    global _skin_changed_by_loading_patch
+    target = os.path.join(KODI_HOME, "addons", "skin.bingie", "shortcuts", "powermenu.DATA.xml")
+    if not os.path.isfile(target):
+        return
+    with open(target, "r", encoding="utf-8") as f:
+        content = f.read()
+    new = content
+    for action in ("Reset()", "Powerdown()"):
+        new = re.sub(
+            r"[ \t]*<shortcut>(?:(?!</shortcut>).)*?<action>%s</action>.*?</shortcut>\n?" % re.escape(action),
+            "",
+            new,
+            flags=re.S,
+        )
+    if "mode=update_patch" not in new:
+        entry = (
+            "\t<shortcut>\n\t\t<defaultID>update</defaultID>\n\t\t<label>Update</label>\n\t\t<label2 />\n"
+            "\t\t<icon>common/reboot1.png</icon>\n\t\t<thumb />\n"
+            "\t\t<action>RunPlugin(plugin://plugin.video.xstream-player/?mode=update_patch)</action>\n"
+            "\t\t<visible>System.HasAddon(plugin.video.xstream-player)</visible>\n\t</shortcut>\n"
+        )
+        new = new.replace("</shortcuts>", entry + "</shortcuts>", 1)
+    if new == content:
+        return
+    shutil.copyfile(target, target + f".bak-{time.strftime('%Y%m%d-%H%M%S')}")
+    with open(target, "w", encoding="utf-8") as f:
+        f.write(new)
+    _skin_changed_by_loading_patch = True
+    log("Power menu: removed Reboot and Power off, added Update.")
+
+
 class _PlaybackWatcher(xbmc.Player):
     """Closes the loading window once playback has actually started (or failed
     to). Deliberately not the stopped/ended events: those also fire for the
@@ -1540,6 +1576,7 @@ def run_checks():
     install_playback_loading_window()
     patch_bingie_play_loading()
     patch_bingie_profile_login()
+    patch_bingie_power_menu()
     update_profile_label()
     patch_bingie_new_hub_streaming_rows()
     patch_bingie_top_rank_badge()
