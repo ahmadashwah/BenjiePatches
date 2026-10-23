@@ -831,6 +831,72 @@ def patch_bingie_play_loading():
         log(f"Added the loading screen to {added} Play actions in the info dialog.")
 
 
+_STREAMING_ROW_SERVICES = [
+    ("max", "HBO / Max"),
+    ("showtime", "Showtime"),
+    ("hulu", "Hulu"),
+    ("apple", "Apple TV+"),
+    ("peacock", "Peacock"),
+    ("prime", "Prime Video"),
+]
+_STREAMING_ROWS_MARKER = "IPTV Helper Fixes: streaming service rows"
+
+
+def patch_bingie_new_hub_streaming_rows():
+    """Adds a New and a TV Shows row per streaming service (HBO/Max,
+    Showtime, Hulu, Apple TV+, Peacock, Prime Video) to Bingie's
+    "New & Popular" page, fed by XStream Player's streaming_new mode: 12 rows
+    that show what each platform has recently put out. Appends to two
+    persistent skin files (the row variables and the hub's default shortcut
+    list); idempotent via a marker comment."""
+    global _skin_changed_by_loading_patch
+    skin = os.path.join(KODI_HOME, "addons", "skin.bingie")
+    paths = os.path.join(skin, "1080i", "IncludesPaths.xml")
+    hub = os.path.join(skin, "shortcuts", "newhub.DATA.xml")
+    if not (os.path.isfile(paths) and os.path.isfile(hub)):
+        return
+    variables = [f"\t<!-- {_STREAMING_ROWS_MARKER} -->"]
+    shortcuts = [f"    <!-- {_STREAMING_ROWS_MARKER} -->"]
+    n = 4
+    for key, label in _STREAMING_ROW_SERVICES:
+        for kind, kind_label in (("movie", "New Movies"), ("tv", "New TV Shows")):
+            variables.append(
+                f'\t<variable name="DefNewHub{n}Name">\n\t\t<value>{label} - {kind_label}</value>\n\t</variable>'
+            )
+            variables.append(
+                f'\t<variable name="DefNewHub{n}Content">\n\t\t<value condition="System.HasAddon(plugin.video.xstream-player)">'
+                f"plugin://plugin.video.xstream-player/?mode=streaming_new&amp;service={key}&amp;type={kind}"
+                "&amp;reload=$INFO[Window(Home).Property(TMDbBingieHelper.Widgets.Reload)]</value>\n\t</variable>"
+            )
+            shortcuts.append(
+                "    <shortcut>\n"
+                f"        <label>$VAR[DefNewHub{n}Name]</label>\n        <label2 />\n        <icon />\n        <thumb />\n"
+                f"        <action>$VAR[DefNewHub{n}Content]</action>\n"
+                "        <visible>System.HasAddon(plugin.video.xstream-player)</visible>\n"
+                "    </shortcut>"
+            )
+            n += 1
+    changed = False
+    for target, closing, block in (
+        (paths, "</includes>", "\n".join(variables) + "\n"),
+        (hub, "</shortcuts>", "\n".join(shortcuts) + "\n"),
+    ):
+        with open(target, "r", encoding="utf-8") as f:
+            content = f.read()
+        if _STREAMING_ROWS_MARKER in content:
+            continue
+        if content.count(closing) != 1:
+            log(f"{os.path.basename(target)} layout not recognised — skipping streaming rows.", xbmc.LOGWARNING)
+            continue
+        shutil.copyfile(target, target + f".bak-{time.strftime('%Y%m%d-%H%M%S')}")
+        with open(target, "w", encoding="utf-8") as f:
+            f.write(content.replace(closing, block + closing))
+        changed = True
+        log(f"Added the streaming service rows to {os.path.basename(target)}.")
+    if changed:
+        _skin_changed_by_loading_patch = True
+
+
 class _PlaybackWatcher(xbmc.Player):
     """Closes the loading window once playback has actually started (or failed
     to). Deliberately not the stopped/ended events: those also fire for the
@@ -1413,6 +1479,7 @@ def run_checks():
     patch_bingie_addon_settings_nav()
     install_playback_loading_window()
     patch_bingie_play_loading()
+    patch_bingie_new_hub_streaming_rows()
     patch_bingie_top_rank_badge()
     warm_netflix_top10()
     patch_bingie_arabic_search()

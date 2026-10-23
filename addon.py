@@ -7808,7 +7808,12 @@ def netflix_top10(kind):
     click behaviour match its other rows, with a TopRank property (1-10) the
     skin shows as a number on the tile."""
     kind = "tv" if kind == "tv" else "movie"
-    items = _get_netflix_top10_items(kind)
+    _emit_tmdb_items(_get_netflix_top10_items(kind), kind, ranked=True)
+
+
+def _emit_tmdb_items(items, kind, ranked):
+    """Writes TMDb Bingie Helper result dicts out as a directory of
+    native-looking items; ranked adds the 1-N TopRank number badge."""
     xbmcplugin.setContent(addon_handle, "tvshows" if kind == "tv" else "movies")
     for rank, it in enumerate(items, 1):
         li = xbmcgui.ListItem(label=it.get("title") or it.get("label") or "")
@@ -7848,7 +7853,8 @@ def netflix_top10(kind):
         art = {k: v for k, v in (it.get("art") or {}).items() if v}
         if art:
             li.setArt(art)
-        li.setProperty("TopRank", str(rank))
+        if ranked:
+            li.setProperty("TopRank", str(rank))
         li.setProperty("DBTYPE", "tvshow" if kind == "tv" else "movie")
         if uid.get("tmdb"):
             li.setProperty("tmdb_id", str(uid["tmdb"]))
@@ -7860,6 +7866,95 @@ def netflix_top10(kind):
             isFolder=it.get("filetype") == "directory",
         )
     xbmcplugin.endOfDirectory(addon_handle)
+
+
+# TMDb watch-provider ids (US region). Showtime has almost no provider
+# entries of its own any more, so its TV row goes by the Showtime network
+# and its movie row by the Paramount+ (with Showtime) providers.
+_STREAMING_SERVICES = {
+    "max": {"providers": "1899|384"},
+    "showtime": {"providers": "1770|1853|531", "tv_network": "67", "window": 730, "tv_air_days": 365},
+    "hulu": {"providers": "15"},
+    "apple": {"providers": "350"},
+    "peacock": {"providers": "386|387"},
+    "prime": {"providers": "9"},
+}
+_STREAMING_LIMIT = 20
+
+
+def _discover_dir(query, kind):
+    url = (
+        "plugin://plugin.video.tmdb.bingie.helper?info=discover&tmdb_type=%s"
+        "&watch_region=US&sort_by=popularity.desc&limit=%d&widget=true&%s"
+        % (kind, _STREAMING_LIMIT, query)
+    )
+    reply = json.loads(
+        xbmc.executeJSONRPC(
+            json.dumps(
+                {
+                    "jsonrpc": "2.0",
+                    "id": 1,
+                    "method": "Files.GetDirectory",
+                    "params": {"directory": url, "media": "video", "properties": _TMDB_RESULT_PROPS},
+                }
+            )
+        )
+    )
+    files = (reply.get("result") or {}).get("files") or []
+    for f in files:
+        f["filetype"] = f.get("filetype", "file")
+    return files
+
+
+def _get_streaming_new_items(service, kind):
+    name = f"streaming_new_{service}_{kind}"
+    cached = _cache_load(name)
+    if isinstance(cached, dict) and cached.get("_items") and _cache_valid(name, hours=6):
+        return cached["_items"]
+    cfg = _STREAMING_SERVICES[service]
+    today = datetime.date.today()
+    window = cfg.get("window", 120)
+    gte = (today - datetime.timedelta(days=window)).isoformat()
+    on = f"with_watch_providers={urllib.parse.quote(cfg['providers'])}&with_watch_monetization_types=flatrate"
+    items = []
+    try:
+        if kind == "movie":
+            items = _discover_dir(
+                f"{on}&primary_release_date.gte={gte}&primary_release_date.lte={today.isoformat()}", kind
+            )
+        else:
+            where = f"with_networks={cfg['tv_network']}" if cfg.get("tv_network") else on
+            # New series first, then whatever else is airing new episodes now.
+            if cfg.get("tv_air_days"):
+                # Few brand-new series: use whatever has aired recently.
+                aired = (today - datetime.timedelta(days=cfg["tv_air_days"])).isoformat()
+                items = _discover_dir(f"{where}&air_date.gte={aired}&air_date.lte={today.isoformat()}", kind)
+            else:
+                items = _discover_dir(f"{where}&first_air_date.gte={gte}&first_air_date.lte={today.isoformat()}", kind)
+            recent = (today - datetime.timedelta(days=14)).isoformat()
+            if len(items) < _STREAMING_LIMIT:
+                seen = {(i.get("uniqueid") or {}).get("tmdb") for i in items}
+                extra = _discover_dir(f"{where}&air_date.gte={recent}&air_date.lte={today.isoformat()}", kind)
+                items += [i for i in extra if (i.get("uniqueid") or {}).get("tmdb") not in seen]
+    except Exception as e:
+        _log(f"streaming_new {service}/{kind} error: {e}")
+        return (cached or {}).get("_items", []) if isinstance(cached, dict) else []
+    items = items[:_STREAMING_LIMIT]
+    _log(f"streaming_new {service}/{kind}: {len(items)} titles")
+    if items:
+        _cache_save(name, {"_items": items})
+    return items
+
+
+def streaming_new(service, kind):
+    """Directory of what a streaming service has recently put out (new
+    movies, and new series plus shows airing now), from TMDb's watch-provider
+    data through TMDb Bingie Helper, so the tiles behave like its other rows."""
+    kind = "tv" if kind == "tv" else "movie"
+    if service not in _STREAMING_SERVICES:
+        xbmcplugin.endOfDirectory(addon_handle, succeeded=False)
+        return
+    _emit_tmdb_items(_get_streaming_new_items(service, kind), kind, ranked=False)
 
 
 def goto_show_season(series_id, season_num, profile_num=None, showname=None, ep_id=None):
@@ -12639,6 +12734,12 @@ elif mode == "netflix_top10":
         netflix_top10(args.get("type", ["movie"])[0])
     except Exception as e:
         _log(f"netflix_top10 error: {e}")
+        xbmcplugin.endOfDirectory(addon_handle, succeeded=False)
+elif mode == "streaming_new":
+    try:
+        streaming_new(args.get("service", [""])[0], args.get("type", ["movie"])[0])
+    except Exception as e:
+        _log(f"streaming_new error: {e}")
         xbmcplugin.endOfDirectory(addon_handle, succeeded=False)
 elif mode == "refresh_catalog":
     try:
