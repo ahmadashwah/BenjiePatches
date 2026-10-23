@@ -166,7 +166,7 @@ def addons_db(kodi_home, addon_ids):
     return path
 
 
-INSTALL_TXT = """IPTV build {stamp}
+INSTALL_TXT = """Benjie build {stamp}
 
 1. Install Kodi 21 (Omega) from kodi.tv or your device's app store, open it once,
    then close it completely.
@@ -178,11 +178,11 @@ INSTALL_TXT = """IPTV build {stamp}
      Android  Android/data/org.xbmc.kodi/files/.kodi   (use a file manager)
 3. Start Kodi. The first start applies the setup and the second loads it, so
    close Kodi and open it again once if the look is not right yet.
-4. Enter your IPTV login when asked (or tap the name at the top of the side
+4. Enter your login when asked (or tap the name at the top of the side
    menu).
 
 Error reports (no logins or addresses) help fix problems; switch them off in
-the IPTV Helper Fixes add-on settings.
+the Helper Fixes add-on's settings.
 """
 
 
@@ -200,7 +200,7 @@ def main():
     svc_version = addons["service.iptvhelperfixes"][1]
     os.makedirs(args.out, exist_ok=True)
     stamp = datetime.date.today().isoformat()
-    out = os.path.join(args.out, f"iptv-build-{svc_version}.zip")
+    out = os.path.join(args.out, f"benjie-build-{svc_version}.zip")
     diag_token = os.environ.get("BENJIE_DIAG_TOKEN", "").strip()
 
     with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED, compresslevel=6) as z:
