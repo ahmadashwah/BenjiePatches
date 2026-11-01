@@ -119,6 +119,20 @@ def install_defusedxml(xstream_dir):
         log("defusedxml already up to date.")
 
 
+LIVE_TV_ICON = "shortcuts/antenna.png"
+
+
+def _rebuild_skin_shortcuts():
+    """Forget skinshortcuts' saved hash so it regenerates the skin's menu
+    files (and the skin reloads) the next time Home opens."""
+    global _skin_changed_by_loading_patch
+    try:
+        os.remove(os.path.join(KODI_PROFILE, "addon_data", "script.skinshortcuts", "skin.bingie.hash"))
+    except OSError:
+        pass
+    _skin_changed_by_loading_patch = True
+
+
 def add_live_tv_shortcut():
     """Adds a 'Live TV' home-menu shortcut (native Kodi PVR channel list) to
     the Bingie skin's home menu, if the skin's shortcuts config exists and
@@ -138,17 +152,45 @@ def add_live_tv_shortcut():
         return
 
     shortcuts = root.findall("shortcut")
+    icons_fixed = False
+    for shortcut in shortcuts:
+        # The Movies entry can end up with a blank icon ("/") in a saved
+        # menu; restore the skin's own clapperboard icon.
+        action_el = shortcut.find("action")
+        icon_el = shortcut.find("icon")
+        if (
+            action_el is not None and (action_el.text or "").strip() == "ActivateWindow(1111,return)"
+            and icon_el is not None and (icon_el.text or "").strip() in ("", "/")
+        ):
+            icon_el.text = "shortcuts/clapperboard.png"
+            icons_fixed = True
     for shortcut in shortcuts:
         action_el = shortcut.find("action")
         if action_el is not None and action_el.text and "TVChannels" in action_el.text:
-            log("Live TV shortcut already present.")
+            # An earlier version (and the skin's own editor) can leave this
+            # on a generic or the Shows icon; give it the antenna icon so it
+            # reads as live TV and matches the other menu icons.
+            icon_el = shortcut.find("icon")
+            if icon_el is not None and (icon_el.text or "").strip() != LIVE_TV_ICON:
+                icon_el.text = LIVE_TV_ICON
+                icons_fixed = True
+                log("Gave the Live TV shortcut the antenna icon.")
+            if icons_fixed:
+                try:
+                    ET.indent(tree, space="\t")
+                except AttributeError:
+                    pass
+                tree.write(shortcuts_path, encoding="UTF-8", xml_declaration=False)
+                _rebuild_skin_shortcuts()
+            elif icon_el is None or (icon_el.text or "").strip() == LIVE_TV_ICON:
+                log("Live TV shortcut already present.")
             return
 
     new_shortcut = ET.Element("shortcut")
     ET.SubElement(new_shortcut, "defaultID")
     ET.SubElement(new_shortcut, "label").text = "Live TV"
     ET.SubElement(new_shortcut, "label2").text = "Custom item"
-    ET.SubElement(new_shortcut, "icon").text = "shortcuts/tv.png"
+    ET.SubElement(new_shortcut, "icon").text = LIVE_TV_ICON
     ET.SubElement(new_shortcut, "thumb").text = "thumb"
     ET.SubElement(new_shortcut, "action").text = "ActivateWindow(TVChannels,return)"
 
@@ -1072,6 +1114,131 @@ def first_run_welcome():
         xbmc.executebuiltin("RunPlugin(plugin://plugin.video.xstream-player/?mode=settings)")
 
 
+def patch_menu_icon_texture():
+    """Side-menu icons: script.skinshortcuts hands Live TV a generic icon
+    (the red Bingie "B") and Movies none, which looks out of place next to the
+    others, and it regenerates its menu file whenever the skin loads, so the
+    icons are chosen here in the skin's own icon include instead: Live TV gets
+    the antenna and Movies the clapperboard from the skin's icon set, every
+    other entry keeps its own. Exact-content edit of IncludesBingie.xml;
+    idempotent."""
+    global _skin_changed_by_loading_patch
+    target = os.path.join(KODI_HOME, "addons", "skin.bingie", "1080i", "IncludesBingie.xml")
+    if not os.path.isfile(target):
+        return
+    with open(target, "r", encoding="utf-8") as f:
+        content = f.read()
+    if "BingieMenuIconTexture" in content:
+        return
+    m = re.search(r'(<include name="Bingie_Menu_Icon_Defs">.*?)<texture background="true">\$INFO\[ListItem\.Icon\]</texture>', content, re.S)
+    anchor = '<variable name="MenuIconColor">'
+    if not m or content.count(anchor) != 1 or m.group(1).count("<include") != 1:
+        log("Menu icon include not recognised — skipping the Live TV icon fix.", xbmc.LOGWARNING)
+        return
+    variable = (
+        '<variable name="BingieMenuIconTexture">\n'
+        f'\t\t<value condition="String.IsEqual(ListItem.Property(path),ActivateWindow(TVChannels,return))">{LIVE_TV_ICON}</value>\n'
+        '\t\t<value condition="String.IsEqual(ListItem.Property(path),ActivateWindow(1111,return))">shortcuts/clapperboard.png</value>\n'
+        "\t\t<value>$INFO[ListItem.Icon]</value>\n"
+        "\t</variable>\n\n\t"
+    )
+    new = content[:m.start()] + m.group(1) + '<texture background="true">$VAR[BingieMenuIconTexture]</texture>' + content[m.end():]
+    new = new.replace(anchor, variable + anchor, 1)
+    shutil.copyfile(target, target + f".bak-{time.strftime('%Y%m%d-%H%M%S')}")
+    with open(target, "w", encoding="utf-8") as f:
+        f.write(new)
+    _skin_changed_by_loading_patch = True
+    log("Side menu: Live TV now uses the antenna icon and Movies the clapperboard.")
+
+
+_live_tv_thread = None
+
+
+def _has_iptv_login():
+    try:
+        xs = xbmcaddon.Addon("plugin.video.xstream-player")
+    except Exception:
+        return False
+    for n in range(1, 11):
+        if xs.getSetting(f"profile_{n}_enabled") == "false":
+            continue
+        if xs.getSetting(f"profile_{n}_m3u").strip() or (
+            xs.getSetting(f"profile_{n}_xtream_url").strip()
+            and xs.getSetting(f"profile_{n}_xtream_username").strip()
+            and xs.getSetting(f"profile_{n}_xtream_password").strip()
+        ):
+            return True
+    return False
+
+
+def _live_tv_state_path():
+    return os.path.join(KODI_PROFILE, "addon_data", ADDON_ID, "live_tv_setup.json")
+
+
+def ensure_live_tv():
+    """A new install shows an empty Live TV list: the Live TV add-on
+    (pvr.iptvsimple) is not installed, or not switched on, and XStream
+    Player's channel sync has never run. Once an IPTV login exists, installs
+    and enables that add-on if needed and runs the channel sync, with limits
+    so it never loops: at most 3 install attempts, and a sync only when there
+    are no channels and none was started in the last 12 hours. Runs in the
+    background, a minute and a half after start so the Live TV add-on has had
+    its chance to load by itself."""
+    global _live_tv_thread
+    if _live_tv_thread is not None and _live_tv_thread.is_alive():
+        return
+
+    def _work():
+        monitor = xbmc.Monitor()
+        if monitor.waitForAbort(90) or not _has_iptv_login():
+            return
+        path = _live_tv_state_path()
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                state = json.load(f)
+        except (OSError, ValueError):
+            state = {}
+
+        def save():
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+            with open(path, "w", encoding="utf-8") as f:
+                json.dump(state, f)
+
+        if not xbmc.getCondVisibility("System.HasAddon(pvr.iptvsimple)"):
+            if state.get("install_attempts", 0) >= 3:
+                return
+            state["install_attempts"] = state.get("install_attempts", 0) + 1
+            save()
+            log("Live TV add-on missing: asking Kodi to install pvr.iptvsimple.")
+            xbmc.executebuiltin("InstallAddon(pvr.iptvsimple)")
+            end = time.time() + 180
+            while time.time() < end and not xbmc.getCondVisibility("System.HasAddon(pvr.iptvsimple)"):
+                if xbmc.getCondVisibility("Window.IsActive(yesnodialog)"):
+                    xbmc.executebuiltin("SendClick(11)")
+                if monitor.waitForAbort(1):
+                    return
+        if not xbmc.getCondVisibility("System.HasAddon(pvr.iptvsimple)"):
+            log("pvr.iptvsimple could not be installed.", xbmc.LOGWARNING)
+            return
+        if not xbmc.getCondVisibility("System.AddonIsEnabled(pvr.iptvsimple)"):
+            xbmc.executeJSONRPC(json.dumps({
+                "jsonrpc": "2.0", "id": 1, "method": "Addons.SetAddonEnabled",
+                "params": {"addonid": "pvr.iptvsimple", "enabled": True},
+            }))
+            monitor.waitForAbort(5)
+        if xbmc.getCondVisibility("PVR.HasTVChannels"):
+            return
+        if time.time() - state.get("last_sync", 0) < 12 * 3600:
+            return
+        state["last_sync"] = time.time()
+        save()
+        log("No Live TV channels yet: running XStream Player's channel sync (pvr_sync_silent).")
+        xbmc.executebuiltin("RunPlugin(plugin://plugin.video.xstream-player/?mode=pvr_sync_silent)")
+
+    _live_tv_thread = threading.Thread(target=_work, daemon=True)
+    _live_tv_thread.start()
+
+
 class _PlaybackWatcher(xbmc.Player):
     """Closes the loading window once playback has actually started (or failed
     to). Deliberately not the stopped/ended events: those also fire for the
@@ -1656,9 +1823,11 @@ def run_checks():
     patch_bingie_play_loading()
     patch_bingie_profile_login()
     patch_bingie_power_menu()
+    patch_menu_icon_texture()
     patch_bingie_search_desktop_keyboard()
     update_profile_label()
     threading.Thread(target=first_run_welcome, daemon=True).start()
+    ensure_live_tv()
     patch_bingie_new_hub_streaming_rows()
     patch_bingie_top_rank_badge()
     warm_netflix_top10()
@@ -1720,7 +1889,9 @@ def main():
             notified = True
 
         global _skin_changed_by_loading_patch
-        if _skin_changed_by_loading_patch and not xbmc.Player().isPlaying():
+        # Bingie plays a muted trailer behind Home, so "something is playing"
+        # is not a reason to hold off; only a full-screen video is.
+        if _skin_changed_by_loading_patch and not xbmc.getCondVisibility("Window.IsActive(fullscreenvideo)"):
             # New skin window / click handlers only take effect on a skin
             # reload; do it now (when nothing is playing) instead of making
             # the user restart Kodi.

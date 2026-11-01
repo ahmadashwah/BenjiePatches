@@ -12737,6 +12737,14 @@ elif mode == "force_reload_epg":
         _log(f"Force reload EPG error: {e}")
 
         _log(f"Traceback: {traceback.format_exc()}")
+elif mode == "pvr_sync_silent":
+    # Used by IPTV Helper Fixes to set up Live TV on a new install: the same
+    # channel sync as "Force reload PVR", without the questions and dialogs.
+    xbmcplugin.endOfDirectory(addon_handle, succeeded=False)
+    try:
+        _log(f"pvr_sync_silent: {'ok' if _sync_pvr_force() else 'nothing synced'}")
+    except Exception as e:
+        _log(f"pvr_sync_silent error: {e}")
 elif mode == "force_reload_pvr":
     try:
         if xbmcgui.Dialog().yesno("XStream Player", _t(30820)):

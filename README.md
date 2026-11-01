@@ -53,7 +53,7 @@ In Kodi, add `https://ahmadashwah.github.io/BenjiePatches/` as a source
 (Settings → File Manager → Add source), then **Settings → Add-ons → Install
 from zip file** → pick that source → select the current zip listed on the
 page (the filename includes the version number, e.g.
-`service.iptvhelperfixes1726.zip`, so each release has its own unique
+`service.iptvhelperfixes1727.zip`, so each release has its own unique
 filename and never gets served stale from a cache).
 
 That's it — no computer, no command prompt, no keyboard needed, works
@@ -433,7 +433,7 @@ timestamp so whichever device watched something most recently wins.
 
 In Kodi, add `https://ahmadashwah.github.io/BenjiePatches/` as a source
 (Settings → File Manager → Add source), then **Settings → Add-ons → Install
-from zip file** → that source → `service.benjie.setup-1.0.3.zip`.
+from zip file** → that source → `service.benjie.setup-1.0.4.zip`.
 
 Kodi shows nothing after installing a zip and does not start its background
 part until Kodi is restarted, so then go to **Add-ons → Program add-ons →
