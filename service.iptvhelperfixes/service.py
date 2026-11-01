@@ -1175,6 +1175,18 @@ def _live_tv_state_path():
     return os.path.join(KODI_PROFILE, "addon_data", ADDON_ID, "live_tv_setup.json")
 
 
+def _offer_github_sync():
+    """Once an IPTV login exists, offers the optional GitHub sign-in (see
+    github_login). Dormant until the build carries a GitHub client ID."""
+    try:
+        import github_login
+
+        if github_login.is_available() and not xbmc.Monitor().waitForAbort(60):
+            github_login.offer_once(_has_iptv_login())
+    except Exception as e:
+        log(f"GitHub offer skipped: {e}", xbmc.LOGWARNING)
+
+
 def ensure_live_tv():
     """A new install shows an empty Live TV list: the Live TV add-on
     (pvr.iptvsimple) is not installed, or not switched on, and XStream
@@ -1828,6 +1840,7 @@ def run_checks():
     update_profile_label()
     threading.Thread(target=first_run_welcome, daemon=True).start()
     ensure_live_tv()
+    threading.Thread(target=_offer_github_sync, daemon=True).start()
     patch_bingie_new_hub_streaming_rows()
     patch_bingie_top_rank_badge()
     warm_netflix_top10()

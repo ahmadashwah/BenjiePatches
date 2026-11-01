@@ -5,6 +5,7 @@
         <import addon="script.module.requests" version="2.22.0"/>
     </requires>
     <extension point="xbmc.service" library="service.py" start="startup" />
+    <extension point="xbmc.python.script" library="connect.py"/>
     <extension point="xbmc.addon.metadata">
         <summary lang="en_GB">Auto-applies XStream Player + TMDb Bingie Helper fixes</summary>
         <description lang="en_GB">Runs once at Kodi startup. Wires TMDb Bingie Helper's player config to XStream Player, patches known XStream Player bugs (series ID lookup, provider name-prefix cleanup, EPG notification spam), and sets XStream Player as the default player so Discover/search play directly without a chooser dialog. Safe to re-run — checks before changing anything, and will not touch a different XStream Player version than the one these patches were built against, to avoid corrupting it.</description>
