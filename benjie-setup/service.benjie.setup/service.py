@@ -141,6 +141,23 @@ def switch_skin():
         xbmc.executebuiltin("SendClick(11)")
 
 
+def free_space():
+    """Setup is done: delete the bundled copy of everything (tens of MB) and
+    any cached copy of the downloaded zip, which matters on boxes with little
+    storage."""
+    try:
+        os.remove(PAYLOAD)
+    except OSError as e:
+        log(f"could not remove the payload: {e}")
+    for folder in (xbmcvfs.translatePath("special://home/addons/packages/"), xbmcvfs.translatePath("special://temp/")):
+        try:
+            for name in os.listdir(folder):
+                if name.startswith("service.benjie.setup") and name.endswith(".zip"):
+                    os.remove(os.path.join(folder, name))
+        except OSError:
+            pass
+
+
 def run():
     if os.path.isfile(FLAG) or not os.path.isfile(PAYLOAD):
         return
@@ -168,6 +185,7 @@ def run():
         progress.close()
         with open(FLAG, "w") as f:
             f.write(VERSION)
+        free_space()
         switch_skin()
         xbmcgui.Dialog().notification("Benjie Setup", "Done. Restart Kodi once to finish.", xbmcgui.NOTIFICATION_INFO, 8000)
         log("finished")
