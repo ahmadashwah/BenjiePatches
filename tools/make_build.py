@@ -256,7 +256,7 @@ def main():
         with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED, compresslevel=6) as z:
             for fn in ("addon.xml", "service.py", "setup.py", "run.py"):
                 z.write(os.path.join(template, fn), f"service.benjie.setup/{fn}")
-            z.write(payload, "service.benjie.setup/payload.zip", compress_type=zipfile.ZIP_STORED)
+            z.write(payload, "service.benjie.setup/payload.dat", compress_type=zipfile.ZIP_STORED)
         os.remove(payload)
     else:
         with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED, compresslevel=6) as z:

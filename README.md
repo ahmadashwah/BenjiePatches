@@ -433,14 +433,13 @@ timestamp so whichever device watched something most recently wins.
 
 In Kodi, add `https://ahmadashwah.github.io/BenjiePatches/` as a source
 (Settings → File Manager → Add source), then **Settings → Add-ons → Install
-from zip file** → that source → `service.benjie.setup-1.0.2.zip`. A minute
-later it asks "Set up Benjie now?"; say Set up. It copies the Bingie skin, the
-helper add-ons and their settings, turns them on and switches to the skin.
-Existing settings files are never overwritten, so a device that already has a
-login keeps it. Restart Kodi once afterwards. Built by
-`python3 tools/make_build.py --installer` (source in `benjie-setup/`).
+from zip file** → that source → `service.benjie.setup-1.0.3.zip`.
 
-If no "Set up Benjie now?" prompt appears after installing (it should show within
-about ten seconds, with a short "Starting..." message first), open
-**Add-ons → Program add-ons → Benjie Setup** to run it by hand. It says
-"already set up" once it has run; to run it again, install the zip again.
+Kodi shows nothing after installing a zip and does not start its background
+part until Kodi is restarted, so then go to **Add-ons → Program add-ons →
+Benjie Setup** (or restart Kodi and it asks by itself). It asks "Set up Benjie
+now?"; say Set up. It copies the Bingie skin, the helper add-ons and their
+settings, turns them on and switches to the skin. Existing settings files are
+never overwritten, so a device that already has a login keeps it. It says
+"already set up" once it has run. Built by
+`python3 tools/make_build.py --installer` (source in `benjie-setup/`).
