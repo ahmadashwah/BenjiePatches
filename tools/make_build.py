@@ -45,6 +45,7 @@ KODI_BUILTIN_PREFIXES = ("xbmc.", "kodi.resource", "resource.language.")
 # Platform-specific binaries come with Kodi or from its own repository, and
 # the ones on this Mac are for this Mac only.
 BINARY_PREFIXES = ("inputstream.", "pvr.", "kodi.binary.", "vfs.", "audiodecoder.", "game.", "peripheral.")
+INSTALLER_SKIP_ADDONS = {"resource.images.studios.coloured"}
 SKIP_NAMES = {"__pycache__", ".git", ".DS_Store"}
 SKIP_SUFFIXES = (".pyc", ".pyo")
 SKIP_CONTAINS = (".bak-", ".bak.", "addon.py.bak")
@@ -190,6 +191,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default=os.path.join(REPO, "dist"))
     ap.add_argument("--kodi-home", default=DEFAULT_HOME)
+    ap.add_argument("--installer", action="store_true",
+                    help="build service.benjie.setup-<ver>.zip, a single add-on zip that sets everything up")
     args = ap.parse_args()
     home = args.kodi_home
     ud = os.path.join(home, "userdata")
@@ -203,22 +206,25 @@ def main():
     out = os.path.join(args.out, f"benjie-build-{svc_version}.zip")
     diag_token = os.environ.get("BENJIE_DIAG_TOKEN", "").strip()
 
-    with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED, compresslevel=6) as z:
+    def write_payload(z, installer):
+        """The files that make up the build. For the one-step installer the
+        studio-logo pack (fetched from Kodi's own repository instead), the
+        Kodi settings file and the add-on database are left out: the installer
+        enables things and switches the skin through Kodi itself."""
         for a, (path, version) in sorted(addons.items()):
+            if installer and a in INSTALLER_SKIP_ADDONS:
+                continue
             print(f"  addon {a} {version}")
             add_tree(z, path, f"addons/{a}", home)
 
         def put(arc, text):
             z.writestr(arc, text)
 
-        put("userdata/guisettings.xml", GUISETTINGS)
-        put("userdata/addon_data/service.iptvhelperfixes/settings.xml", service_settings(diag_token))
-        put("INSTALL.txt", INSTALL_TXT.format(stamp=stamp))
-
         def read(rel):
             with open(os.path.join(ud, rel), encoding="utf-8") as f:
                 return f.read()
 
+        put("userdata/addon_data/service.iptvhelperfixes/settings.xml", service_settings(diag_token))
         put("userdata/addon_data/plugin.video.xstream-player/settings.xml",
             scrub_xstream_settings(read("addon_data/plugin.video.xstream-player/settings.xml")))
         put("userdata/addon_data/plugin.video.tmdb.bingie.helper/settings.xml",
@@ -232,9 +238,29 @@ def main():
         for fn in sorted(os.listdir(sk)):
             if fn.startswith("skin.bingie") and fn.endswith(".DATA.xml"):
                 put(f"userdata/addon_data/script.skinshortcuts/{fn}", read(f"addon_data/script.skinshortcuts/{fn}"))
-        dbfile = addons_db(home, addons.keys())
-        z.write(dbfile, "userdata/Database/Addons33.db")
-        os.remove(dbfile)
+        if not installer:
+            put("userdata/guisettings.xml", GUISETTINGS)
+            put("INSTALL.txt", INSTALL_TXT.format(stamp=stamp))
+            dbfile = addons_db(home, addons.keys())
+            z.write(dbfile, "userdata/Database/Addons33.db")
+            os.remove(dbfile)
+
+    if args.installer:
+        template = os.path.join(REPO, "benjie-setup", "service.benjie.setup")
+        setup_version = addon_info(template)[0]
+        out = os.path.join(args.out, f"service.benjie.setup-{setup_version}.zip")
+        fd, payload = tempfile.mkstemp(suffix=".zip")
+        os.close(fd)
+        with zipfile.ZipFile(payload, "w", zipfile.ZIP_DEFLATED, compresslevel=6) as pz:
+            write_payload(pz, True)
+        with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED, compresslevel=6) as z:
+            for fn in ("addon.xml", "service.py"):
+                z.write(os.path.join(template, fn), f"service.benjie.setup/{fn}")
+            z.write(payload, "service.benjie.setup/payload.zip", compress_type=zipfile.ZIP_STORED)
+        os.remove(payload)
+    else:
+        with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED, compresslevel=6) as z:
+            write_payload(z, False)
 
     mb = os.path.getsize(out) / 1e6
     print(f"\nBuilt {out} ({mb:.0f} MB)")
