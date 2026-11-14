@@ -1,0 +1,43 @@
+# Changes from Bingie 2.0.2
+
+Benjie 2.0 is skin.bingie 2.0.2 by matke, modified by ahmadashwah on
+2026-11-14 (GPL v2, section 2a). These are the changes; everything else is
+Bingie as released.
+
+Identity
+- `addon.xml`: id `skin.benjie`, name "Benjie 2.0", version 2.0.2.1, credit
+  to the Bingie authors in the provider name and description, source link.
+- References to `skin.bingie` inside the skin (skinshortcuts' generated
+  includes, the language file headers) now say `skin.benjie`.
+
+Built in from IPTV Helper Fixes (these used to be patched into Bingie at
+runtime by `service.iptvhelperfixes` 1.7.28 and earlier)
+- `1080i/IncludesPaths.xml`: Home's first row is XStream Player's Continue
+  Watching, the 2nd/3rd rows are New Arabic Movies / New Arabic TV Shows, the
+  Movie/TV Show hub rows use XStream Player's continue-watching data, My List
+  uses XStream Player's favourites, the Netflix Top 10 rows, and 12 streaming
+  service rows (HBO / Max, Showtime, Hulu, Apple TV+, Peacock, Prime Video).
+- `shortcuts/newhub.DATA.xml`: those streaming rows on New & Popular.
+- `1080i/IncludesViewsLayoutPoster.xml`, `1080i/IncludesHomeWidgets.xml`:
+  continue-watching progress bar, no empty title panel, Top 10 rank badge.
+- `1080i/IncludesBingie.xml`: focus frame shows on unlabelled tiles,
+  Continue Watching tiles play directly, the side menu header shows the IPTV
+  profile name and opens XStream Player's settings, Live TV / Movies menu
+  icons (antenna, clapperboard).
+- `1080i/IncludesDialogVideoInfo.xml`: Play/Resume use XStream Player's next
+  episode, a "Go to Season" button, the loading screen from every Play action.
+- `1080i/Custom_1160_PlaybackLoading.xml` (new): black screen with a spinner
+  while a stream is being found.
+- `1080i/IncludesBingieSearch.xml`, `Includes.xml`,
+  `Custom_1109_BingieSearch.xml`, `script-skinshortcuts-includes.xml`: Arabic
+  search goes to XStream Player's catalog; the Search page always uses Kodi's
+  full typing keyboard and opens it on a fresh search.
+- `1080i/DialogAddonSettings.xml`: Down from the last setting reaches OK.
+- `shortcuts/powermenu.DATA.xml`: no Reboot / Power off, an Update entry
+  (XStream Player's update_patch).
+
+New defaults
+- `shortcuts/mainmenu.DATA.xml`: a Live TV entry (Kodi's channel list,
+  `shortcuts/antenna.png`) after Movies.
+- `1080i/IncludesDefaultSkinSettings.xml`: auto-pause when the OSD opens is
+  off by default and the full search keyboard is on.

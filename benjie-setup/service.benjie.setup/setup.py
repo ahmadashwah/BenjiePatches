@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Benjie Setup logic: unpacks the bundled build (skin, add-ons, settings) into
-Kodi's data folder, enables everything and switches to the Bingie skin.
+Kodi's data folder, enables everything and switches to the Benjie skin
+(skin.benjie, a modified Bingie).
 
 Runs once after install. Existing settings files are never overwritten, so
 installing this on a device that already has a login keeps that login."""
@@ -27,7 +28,8 @@ PROFILE = xbmcvfs.translatePath("special://profile/")
 STATE_DIR = xbmcvfs.translatePath(ADDON.getAddonInfo("profile"))
 FLAG = os.path.join(STATE_DIR, f"setup_{VERSION}.done")
 DECLINED = os.path.join(STATE_DIR, "declined")
-SKIN = "skin.bingie"
+SKIN = "skin.benjie"
+OLD_SKIN = "skin.bingie"
 EXTRA_FROM_KODI_REPO = ["resource.images.studios.coloured"]
 
 
@@ -45,6 +47,39 @@ def rpc(method, **params):
 def safe_target(root, name):
     target = os.path.realpath(os.path.join(root, name))
     return target if target.startswith(os.path.realpath(root) + os.sep) else None
+
+
+def carry_over_bingie_data():
+    """On a device that already used the Bingie skin, copies its skin settings
+    and menus (script.skinshortcuts) to skin.benjie's names before the bundled
+    defaults are unpacked, so they are kept. Only fills in files that do not
+    exist yet."""
+    data = os.path.join(PROFILE, "addon_data")
+    pairs = []
+    old = os.path.join(data, OLD_SKIN)
+    for dp, _, fns in os.walk(old):
+        for fn in fns:
+            s = os.path.join(dp, fn)
+            pairs.append((s, os.path.join(data, SKIN, os.path.relpath(s, old))))
+    sk = os.path.join(data, "script.skinshortcuts")
+    if os.path.isdir(sk):
+        for fn in os.listdir(sk):
+            if (fn.startswith(OLD_SKIN + "-") and fn.endswith(".DATA.xml")) or fn == OLD_SKIN + ".properties":
+                pairs.append((os.path.join(sk, fn), os.path.join(sk, SKIN + fn[len(OLD_SKIN):])))
+    n = 0
+    for s, d in pairs:
+        if os.path.exists(d):
+            continue
+        os.makedirs(os.path.dirname(d), exist_ok=True)
+        with open(s, "rb") as f:
+            raw = f.read()
+        if s.endswith((".xml", ".properties")):
+            raw = raw.replace(OLD_SKIN.encode(), SKIN.encode())
+        with open(d, "wb") as f:
+            f.write(raw)
+        n += 1
+    if n:
+        log(f"carried over {n} Bingie settings/menu files")
 
 
 def extract(progress):
@@ -188,6 +223,7 @@ def run(manual=False):
     progress.create("Benjie Setup", "Preparing...")
     try:
         os.makedirs(STATE_DIR, exist_ok=True)
+        carry_over_bingie_data()
         addon_ids = extract(progress)
         log(f"copied {len(addon_ids)} add-ons")
         progress.update(80, "Turning things on...")

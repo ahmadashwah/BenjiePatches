@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- BINGIE -->
+<shortcuts>
+    <shortcut>
+        <label>$VAR[DefNewHubName]</label>
+        <label2 />
+        <icon />
+        <thumb />
+        <action>$VAR[DefNewHubContent]</action>
+    </shortcut>
+    <shortcut>
+        <label>$VAR[DefNewHub1Name]</label>
+        <label2 />
+        <icon />
+        <thumb />
+        <action>$VAR[DefNewHub1Content]</action>
+    </shortcut>
+    <shortcut>
+        <label>$VAR[DefNewHub2Name]</label>
+        <label2 />
+        <icon />
+        <thumb />
+        <action>$VAR[DefNewHub2Content]</action>
+		<visible>!Library.HasContent(Movies) + !Library.HasContent(TVShows)</visible>
+    </shortcut>
+	<shortcut>
+        <label>$VAR[DefNewHub3Name]</label>
+        <label2 />
+        <icon />
+        <thumb />
+        <action>$VAR[DefNewHub3Content]</action>
+		<visible>!Library.HasContent(Movies) + !Library.HasContent(TVShows)</visible>
+    </shortcut>
+    
+    <!-- IPTV Helper Fixes: streaming service rows -->
+    <shortcut>
+        <label>$VAR[DefNewHub4Name]</label>
+        <label2 />
+        <icon />
+        <thumb />
+        <action>$VAR[DefNewHub4Content]</action>
+        <visible>System.HasAddon(plugin.video.xstream-player)</visible>
+    </shortcut>
+    <shortcut>
+        <label>$VAR[DefNewHub5Name]</label>
+        <label2 />
+        <icon />
+        <thumb />
+        <action>$VAR[DefNewHub5Content]</action>
+        <visible>System.HasAddon(plugin.video.xstream-player)</visible>
+    </shortcut>
+    <shortcut>
+        <label>$VAR[DefNewHub6Name]</label>
+        <label2 />
+        <icon />
+        <thumb />
+        <action>$VAR[DefNewHub6Content]</action>
+        <visible>System.HasAddon(plugin.video.xstream-player)</visible>
+    </shortcut>
+    <shortcut>
+        <label>$VAR[DefNewHub7Name]</label>
+        <label2 />
+        <icon />
+        <thumb />
+        <action>$VAR[DefNewHub7Content]</action>
+        <visible>System.HasAddon(plugin.video.xstream-player)</visible>
+    </shortcut>
+    <shortcut>
+        <label>$VAR[DefNewHub8Name]</label>
+        <label2 />
+        <icon />
+        <thumb />
+        <action>$VAR[DefNewHub8Content]</action>
+        <visible>System.HasAddon(plugin.video.xstream-player)</visible>
+    </shortcut>
+    <shortcut>
+        <label>$VAR[DefNewHub9Name]</label>
+        <label2 />
+        <icon />
+        <thumb />
+        <action>$VAR[DefNewHub9Content]</action>
+        <visible>System.HasAddon(plugin.video.xstream-player)</visible>
+    </shortcut>
+    <shortcut>
+        <label>$VAR[DefNewHub10Name]</label>
+        <label2 />
+        <icon />
+        <thumb />
+        <action>$VAR[DefNewHub10Content]</action>
+        <visible>System.HasAddon(plugin.video.xstream-player)</visible>
+    </shortcut>
+    <shortcut>
+        <label>$VAR[DefNewHub11Name]</label>
+        <label2 />
+        <icon />
+        <thumb />
+        <action>$VAR[DefNewHub11Content]</action>
+        <visible>System.HasAddon(plugin.video.xstream-player)</visible>
+    </shortcut>
+    <shortcut>
+        <label>$VAR[DefNewHub12Name]</label>
+        <label2 />
+        <icon />
+        <thumb />
+        <action>$VAR[DefNewHub12Content]</action>
+        <visible>System.HasAddon(plugin.video.xstream-player)</visible>
+    </shortcut>
+    <shortcut>
+        <label>$VAR[DefNewHub13Name]</label>
+        <label2 />
+        <icon />
+        <thumb />
+        <action>$VAR[DefNewHub13Content]</action>
+        <visible>System.HasAddon(plugin.video.xstream-player)</visible>
+    </shortcut>
+    <shortcut>
+        <label>$VAR[DefNewHub14Name]</label>
+        <label2 />
+        <icon />
+        <thumb />
+        <action>$VAR[DefNewHub14Content]</action>
+        <visible>System.HasAddon(plugin.video.xstream-player)</visible>
+    </shortcut>
+    <shortcut>
+        <label>$VAR[DefNewHub15Name]</label>
+        <label2 />
+        <icon />
+        <thumb />
+        <action>$VAR[DefNewHub15Content]</action>
+        <visible>System.HasAddon(plugin.video.xstream-player)</visible>
+    </shortcut>
+</shortcuts>

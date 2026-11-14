@@ -2,11 +2,15 @@
 """Build a clean, shareable "build" zip of this Kodi setup.
 
     python3 tools/make_build.py [--out DIR] [--kodi-home DIR]
+    python3 tools/make_build.py --installer     # service.benjie.setup-<ver>.zip
+    python3 tools/make_build.py --skin --service  # release zips of the two repo add-ons
 
 The zip unpacks into Kodi's data folder (see INSTALL.txt inside it) and gives
-a fresh install: Bingie skin and every add-on it needs, the IPTV Helper Fixes
-service (from this repo, not the live copy), keymaps, skin settings and the
-Home / New & Popular layout. Personal data is left out: IPTV login, profile
+a fresh install: the Benjie skin (skin.benjie, from this repo) and every add-on
+it needs, the IPTV Helper Fixes service (from this repo, not the live copy),
+keymaps, skin settings and the Home / New & Popular layout. Skin settings and
+menus are taken from skin.benjie's data in the Kodi folder, or from
+skin.bingie's (renamed) if that Kodi has not switched yet. Personal data is left out: IPTV login, profile
 names, watch history and favourites, caches, thumbnails, databases, Trakt and
 other account tokens, and the owner's GitHub sync token.
 
@@ -33,8 +37,13 @@ import zipfile
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DEFAULT_HOME = os.path.expanduser("~/Library/Application Support/Kodi")
 
+SKIN = "skin.benjie"
+OLD_SKIN = "skin.bingie"
+# Add-ons that come from this repo (the source of truth), not the live Kodi.
+REPO_ADDONS = (SKIN, "service.iptvhelperfixes")
+
 ROOT_ADDONS = [
-    "skin.bingie",
+    SKIN,
     "plugin.video.tmdb.bingie.helper",
     "plugin.video.xstream-player",
     "service.iptvhelperfixes",
@@ -64,16 +73,13 @@ def collect_addons(kodi_home):
         a = todo.pop()
         if a in chosen or a.startswith(KODI_BUILTIN_PREFIXES) or a.startswith(BINARY_PREFIXES):
             continue
-        path = os.path.join(addons_dir, a)
+        path = os.path.join(REPO if a in REPO_ADDONS else addons_dir, a)
         if not os.path.isfile(os.path.join(path, "addon.xml")):
             print(f"  note: {a} is not installed here, skipping (Kodi fetches it if needed)")
             continue
         version, imports = addon_info(path)
         chosen[a] = (path, version)
         todo.extend(imports)
-    # The service comes from this repo, which is the source of truth.
-    repo_service = os.path.join(REPO, "service.iptvhelperfixes")
-    chosen["service.iptvhelperfixes"] = (repo_service, addon_info(repo_service)[0])
     return chosen
 
 
@@ -136,7 +142,7 @@ def service_settings(diag_token):
 
 GUISETTINGS = (
     '<settings version="2">\n'
-    '    <setting id="lookandfeel.skin">skin.bingie</setting>\n'
+    f'    <setting id="lookandfeel.skin">{SKIN}</setting>\n'
     "</settings>\n"
 )
 
@@ -193,7 +199,24 @@ def main():
     ap.add_argument("--kodi-home", default=DEFAULT_HOME)
     ap.add_argument("--installer", action="store_true",
                     help="build service.benjie.setup-<ver>.zip, a single add-on zip that sets everything up")
+    ap.add_argument("--skin", action="store_true",
+                    help=f"build {SKIN}-<ver>.zip (what the service downloads on existing devices)")
+    ap.add_argument("--service", action="store_true",
+                    help="build service.iptvhelperfixes<ver>.zip (what the power menu's Update downloads)")
     args = ap.parse_args()
+    if args.skin or args.service:
+        os.makedirs(args.out, exist_ok=True)
+        for a, enabled in ((SKIN, args.skin), ("service.iptvhelperfixes", args.service)):
+            if not enabled:
+                continue
+            src = os.path.join(REPO, a)
+            version = addon_info(src)[0]
+            name = f"{a}-{version}.zip" if a == SKIN else f"{a}{version.replace('.', '')}.zip"
+            out = os.path.join(args.out, name)
+            with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED, compresslevel=6) as z:
+                add_tree(z, src, a, args.kodi_home)
+            print(f"Built {out} ({os.path.getsize(out) / 1e6:.1f} MB)")
+        return
     home = args.kodi_home
     ud = os.path.join(home, "userdata")
     if not os.path.isdir(os.path.join(home, "addons")):
@@ -229,15 +252,22 @@ def main():
             scrub_xstream_settings(read("addon_data/plugin.video.xstream-player/settings.xml")))
         put("userdata/addon_data/plugin.video.tmdb.bingie.helper/settings.xml",
             scrub_tmdb_helper_settings(read("addon_data/plugin.video.tmdb.bingie.helper/settings.xml")))
-        for rel in (
-            "addon_data/skin.bingie/settings.xml",
-            "keymaps/xstream_backbutton.xml",
-        ):
-            put(f"userdata/{rel}", read(rel))
+        put("userdata/keymaps/xstream_backbutton.xml", read("keymaps/xstream_backbutton.xml"))
+        # Skin settings and menus: skin.benjie's own once this Kodi uses it,
+        # otherwise Bingie's, renamed (skinshortcuts writes the skin id into
+        # some entries, so the text is changed too).
+        src_skin = SKIN if os.path.isfile(os.path.join(ud, "addon_data", SKIN, "settings.xml")) else OLD_SKIN
+        print(f"  skin settings and menus from addon_data/{src_skin}")
+
+        def as_benjie(text):
+            return text.replace(OLD_SKIN, SKIN)
+
+        put(f"userdata/addon_data/{SKIN}/settings.xml", as_benjie(read(f"addon_data/{src_skin}/settings.xml")))
         sk = os.path.join(ud, "addon_data", "script.skinshortcuts")
         for fn in sorted(os.listdir(sk)):
-            if fn.startswith("skin.bingie") and fn.endswith(".DATA.xml"):
-                put(f"userdata/addon_data/script.skinshortcuts/{fn}", read(f"addon_data/script.skinshortcuts/{fn}"))
+            if fn.startswith(src_skin + "-") and fn.endswith(".DATA.xml"):
+                put(f"userdata/addon_data/script.skinshortcuts/{SKIN}{fn[len(src_skin):]}",
+                    as_benjie(read(f"addon_data/script.skinshortcuts/{fn}")))
         if not installer:
             put("userdata/guisettings.xml", GUISETTINGS)
             put("INSTALL.txt", INSTALL_TXT.format(stamp=stamp))

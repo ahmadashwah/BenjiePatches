@@ -51,6 +51,7 @@ OURS = (
     "[IPTV Helper Fixes]",
     "xstream-player",
     "service.iptvhelperfixes",
+    "skin.benjie",
     "skin.bingie",
     "script.bingie",
     "tmdb.bingie",
@@ -108,6 +109,10 @@ def _iso(epoch=None):
 
 
 def _addon_version(addon_id):
+    # Asking for an add-on that is not installed makes Kodi log an EXCEPTION
+    # line even when it is caught (skin.bingie is absent on new installs).
+    if not xbmc.getCondVisibility(f"System.HasAddon({addon_id})"):
+        return None
     try:
         return xbmcaddon.Addon(addon_id).getAddonInfo("version")
     except Exception:
@@ -144,7 +149,9 @@ def device_info():
         "versions": {
             "service.iptvhelperfixes": _addon_version("service.iptvhelperfixes"),
             "plugin.video.xstream-player": _addon_version("plugin.video.xstream-player"),
+            "skin.benjie": _addon_version("skin.benjie"),
             "skin.bingie": _addon_version("skin.bingie"),
+            "skin": xbmc.getSkinDir(),
             "plugin.video.tmdb.bingie.helper": _addon_version("plugin.video.tmdb.bingie.helper"),
         },
     }

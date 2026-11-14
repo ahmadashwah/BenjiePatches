@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- IPTV Helper Fixes: black screen + spinner while a play request is being resolved
+     (skin dialogs with a <visible> condition open and close themselves, so this
+     one shows while Window(Home).Property(PlaybackLoading) is set by XStream
+     Player's play_stream and the info dialog's Play buttons, and the service
+     clears it when playback starts). The spinner hides while a select
+     dialog (e.g. choosing a server) is showing so it never competes with it. -->
+<window type="dialog" id="1160">
+    <visible>!Player.HasVideo + String.IsEqual(Window(Home).Property(PlaybackLoading),1)</visible>
+    <onload>AlarmClock(ClosePlaybackLoading,ClearProperty(PlaybackLoading,Home),01:00,silent)</onload>
+    <onunload condition="System.HasAlarm(ClosePlaybackLoading)">CancelAlarm(ClosePlaybackLoading,true)</onunload>
+    <controls>
+        <control type="image">
+            <left>0</left>
+            <top>0</top>
+            <width>1920</width>
+            <height>1080</height>
+            <texture>colors/color_black.png</texture>
+        </control>
+        <include content="Busy_Spinner">
+            <param name="visibility" value="!Window.IsActive(selectdialog) + !Window.IsActive(DialogSelect.xml)" />
+        </include>
+    </controls>
+</window>
