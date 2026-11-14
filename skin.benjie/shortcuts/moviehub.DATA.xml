@@ -1,26 +1,35 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- BINGIE -->
+<?xml version='1.0' encoding='UTF-8'?>
 <shortcuts>
-    <shortcut>
-        <label>$VAR[DefMovieHubName]</label>
-        <label2 />
-        <icon />
-        <thumb />
-        <action>$VAR[DefMovieHubContent]</action>
-    </shortcut>
-    <shortcut>
-        <label>$VAR[DefMovieHub1Name]</label>
-        <label2 />
-        <icon />
-        <thumb />
-        <action>$VAR[DefMovieHub1Content]</action>
-    </shortcut>
-    <shortcut>
-        <label>$VAR[DefMovieHub2Name]</label>
-        <label2 />
-        <icon />
-        <thumb />
-        <action>$VAR[DefMovieHub2Content]</action>
-    </shortcut>
-    
-</shortcuts>
+	<shortcut>
+		<defaultID>var-defmoviehubname</defaultID>
+		<label>$VAR[DefMovieHubName]</label>
+		<label2 />
+		<icon>DefaultShortcut.png</icon>
+		<thumb />
+		<action>$VAR[DefMovieHubContent]</action>
+		</shortcut>
+	<shortcut>
+		<defaultID />
+		<label>Movies</label>
+		<label2>Video Add-On</label2>
+		<icon>DefaultShortcut.png</icon>
+		<thumb>thumb</thumb>
+		<action>ActivateWindow(Videos,"plugin://plugin.video.xstream-player/?mode=movies_menu&amp;profile_num=1",return)</action>
+		</shortcut>
+	<shortcut>
+		<defaultID>var-defmoviehub1name</defaultID>
+		<label>$VAR[DefMovieHub1Name]</label>
+		<label2 />
+		<icon>DefaultShortcut.png</icon>
+		<thumb />
+		<action>$VAR[DefMovieHub1Content]</action>
+		</shortcut>
+	<shortcut>
+		<defaultID>var-defmoviehub2name</defaultID>
+		<label>$VAR[DefMovieHub2Name]</label>
+		<label2 />
+		<icon>DefaultShortcut.png</icon>
+		<thumb />
+		<action>$VAR[DefMovieHub2Content]</action>
+		</shortcut>
+	</shortcuts>

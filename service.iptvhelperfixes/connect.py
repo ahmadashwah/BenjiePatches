@@ -1,10 +1,19 @@
 # -*- coding: utf-8 -*-
-"""Script entry for the settings buttons: RunScript(service.iptvhelperfixes,connect|disconnect)."""
+"""Script entry: RunScript(service.iptvhelperfixes,connect|disconnect|update).
+
+connect / disconnect are the settings buttons for the GitHub sign-in; update
+is the power menu's Update (via XStream Player's update_patch mode)."""
 import sys
 
-import github_login
+action = sys.argv[1] if len(sys.argv) > 1 else "connect"
+if action == "update":
+    import benjie_update
 
-if len(sys.argv) > 1 and sys.argv[1] == "disconnect":
-    github_login.disconnect()
+    benjie_update.run_interactive()
 else:
-    github_login.connect()
+    import github_login
+
+    if action == "disconnect":
+        github_login.disconnect()
+    else:
+        github_login.connect()

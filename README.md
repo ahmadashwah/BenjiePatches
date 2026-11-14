@@ -1,15 +1,55 @@
 # Kodi + Bingie + XStream Player — Full Replication Guide
 
-> **Since 1.8.0 the skin changes are built into a skin of their own:**
-> [Benjie 2.0](skin.benjie/) (`skin.benjie`), a modified version of the Bingie
-> skin by matke (GPL v2; what changed is in
-> [skin.benjie/CHANGES.md](skin.benjie/CHANGES.md)). `service.iptvhelperfixes`
-> no longer edits skin files. It installs/updates `skin.benjie` from this repo
-> (`skin.benjie-<version>.zip`) and moves a device still on Bingie over to it
-> once, copying Bingie's skin settings and home menu. The skin-patch sections
-> below describe what Benjie now contains; paths that say `skin.bingie` are
-> `skin.benjie` on Benjie. Release zips: `python3 tools/make_build.py --skin
-> --service` and `--installer`.
+## Install (one skin install)
+
+1. Install Kodi 21 (Omega) and open it once.
+2. **Settings → System → Add-ons → Unknown sources** on.
+3. **Settings → File manager → Add source**:
+   `https://ahmadashwah.github.io/BenjiePatches/`
+4. **Settings → Add-ons → Install from zip file** → that source →
+   `repository.benjie-1.0.0.zip`.
+5. **Install from repository → Benjie Repository → Look and feel → Skin →
+   Benjie 2.0 → Install.** Kodi installs everything it needs with it.
+6. Say **Switch** when asked to switch to the Benjie skin, then enter the IPTV
+   login when the welcome asks (or later, from the name at the top of the
+   side menu).
+
+Updates arrive like any other Kodi add-on update, and **Update** in the
+power menu checks right away.
+
+### What is in the Benjie repository (since 1.9.0)
+
+Everything that used to be patched at runtime is built in. Each fork keeps its
+add-on id (so logins, favourites and history stay put), its license, and a
+`BENJIE.md` crediting the original authors and listing the changes:
+
+| Add-on | Version | Based on |
+|---|---|---|
+| [skin.benjie](skin.benjie/) | 2.0.2.2 | Bingie 2.0.2 by matke (GPL v2), see [CHANGES.md](skin.benjie/CHANGES.md) |
+| [plugin.video.xstream-player](plugin.video.xstream-player/) | 2.1.5.1 | XStream Player 2.1.5 by Pesicp (MIT) |
+| [plugin.video.tmdb.bingie.helper](plugin.video.tmdb.bingie.helper/) | 1.0.3.1 | TMDb Bingie Helper 1.0.3 (GPL-3.0-or-later) |
+| [script.bingie.widgets](script.bingie.widgets/) | 1.0.1.1 | Bingie Widgets 1.0.1 by matke (GPL v2) |
+| script.bingie.helper, script.bingie.toolbox, script.module.bingie | unchanged | Bingie's own repository |
+| [service.iptvhelperfixes](service.iptvhelperfixes/) | 1.9.0 | this project: updates, Live TV and subtitle set-up, profile name, loading screen, sync, error reports |
+| [repository.benjie](repository.benjie/) | 1.0.0 | the repository add-on |
+
+Everything else (script modules, skinshortcuts, the studio logos, the Live TV
+add-on, OpenSubtitles) comes from Kodi's own repository; Kodi only accepts the
+add-ons it carries from there. Upstream updates of the forked add-ons no
+longer apply.
+
+Devices set up before 1.9.0 (Benjie Setup, or the service alone) get the same
+result from the service: it installs the Benjie repository and the Benjie
+builds once, and a device still on Bingie is moved to Benjie with its skin
+settings and home menu.
+
+**Publishing:** `python3 tools/make_build.py` writes `repo/` (served by GitHub
+Pages) and the release zips in the root, then commit and push. Test against a
+local copy first with `--test-url http://127.0.0.1:8099/repo/ --out <dir>`.
+
+The phases below are the history of how the fixes were found and what they
+do; they are now built into the add-ons above (paths that say `skin.bingie`
+are `skin.benjie`).
 
 Everything below is what it actually took to get from "fresh Kodi install" to
 the current working state: click a movie/show in Discover (or search for
@@ -58,13 +98,18 @@ phase below wires them together and fixes bugs that surfaced along the way.
 
 ## Phase 3 onward — two ways to apply the fixes
 
+> History: this is how the fixes were applied before 1.9.0. Today they are
+> built into the add-ons in the Benjie repository (see Install at the top),
+> and the patching service and `setup_xstream_fixes.py` described here are
+> gone.
+
 **Option A — Install the add-on (recommended, works on literally any device):**
 
 In Kodi, add `https://ahmadashwah.github.io/BenjiePatches/` as a source
 (Settings → File Manager → Add source), then **Settings → Add-ons → Install
 from zip file** → pick that source → select the current zip listed on the
 page (the filename includes the version number, e.g.
-`service.iptvhelperfixes180.zip`, so each release has its own unique
+`service.iptvhelperfixes1728.zip`, so each release has its own unique
 filename and never gets served stale from a cache).
 
 That's it — no computer, no command prompt, no keyboard needed, works
@@ -440,18 +485,8 @@ timestamp so whichever device watched something most recently wins.
 
 ---
 
-## One-step setup (new install)
+## Benjie Setup (retired in 1.9.0)
 
-In Kodi, add `https://ahmadashwah.github.io/BenjiePatches/` as a source
-(Settings → File Manager → Add source), then **Settings → Add-ons → Install
-from zip file** → that source → `service.benjie.setup-1.1.0.zip`.
-
-Kodi shows nothing after installing a zip and does not start its background
-part until Kodi is restarted, so then go to **Add-ons → Program add-ons →
-Benjie Setup** (or restart Kodi and it asks by itself). It asks "Set up Benjie
-now?"; say Set up. It copies the Benjie skin, the helper add-ons and their
-settings, turns them on and switches to the skin. Existing settings files are
-never overwritten, so a device that already has a login keeps it, and a
-device that used Bingie keeps its skin settings and home menu. It says
-"already set up" once it has run. Built by
-`python3 tools/make_build.py --installer` (source in `benjie-setup/`).
+The one-step `service.benjie.setup` zip is replaced by the Benjie repository
+(see Install at the top). Devices it set up are brought onto the repository
+by IPTV Helper Fixes 1.9.0.

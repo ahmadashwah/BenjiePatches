@@ -122,7 +122,9 @@
 
     <expression name="IsKnownMenuEntryPath">String.IsEqual(ListItem.Property(path), ActivateWindow(home,return)) | String.IsEqual(ListItem.Property(path), ActivateWindow(1110,return)) | String.IsEqual(ListItem.Property(path), ActivateWindow(1111,return)) | String.IsEqual(ListItem.Property(path), ActivateWindow(1112,return)) | String.IsEqual(ListItem.Property(path), ActivateWindow(1113,return)) | String.IsEqual(ListItem.Property(path), ActivateWindow(1114,return)) | String.IsEqual(ListItem.Property(path), ActivateWindow(1109,return)) | String.IsEqual(ListItem.Property(path), ActivateWindow(1119,return)) | String.IsEqual(ListItem.Property(path), ActivateWindow(1118,return)) | String.IsEqual(ListItem.Property(path), ActivateWindow(1120,return))</expression>
 
-    <expression name="IsFirstRun">!Skin.HasSetting(BingieFirstStartupDone) | !Skin.HasSetting(BingieSecondStartupDone)</expression>
+    <!-- Benjie: no first-run screens (Bingie's library settings / add video sources
+         prompts do not apply to an IPTV setup); Home opens straight away. -->
+    <expression name="IsFirstRun">false</expression>
 
     <expression name="IsActualKeyboardActive">Window.IsActive(virtualkeyboard) + String.IsEmpty(Window(Home).Property(SpaceSearchTerm)) + String.IsEmpty(Window(Home).Property(BackspaceSearchTerm))</expression>
 

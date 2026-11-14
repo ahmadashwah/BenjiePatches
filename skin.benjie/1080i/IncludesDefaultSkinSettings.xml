@@ -46,6 +46,7 @@
 	<onload condition="!Skin.HasSetting(HomeMenuDefaults46)">Skin.SetBool(EnableStudioLogoInfoDialog)</onload>
 	<!-- Benjie: auto-pause when the OSD opens is off by default (Bingie turned it on here). -->
 	<onload condition="!Skin.HasSetting(HomeMenuDefaults46)">Skin.SetBool(EnableBingieSearchFullKeyboard)</onload>
+	<onload condition="!Skin.HasSetting(HomeMenuDefaults46)">Skin.SetBool(view510_detailsshowinfo)</onload>
 	<onload condition="!Skin.HasSetting(HomeMenuDefaults46)">Skin.SetBool(ratings_IMDB)</onload>
 	<onload condition="!Skin.HasSetting(HomeMenuDefaults46)">Skin.SetBool(ratings_Top250)</onload>
 	<onload condition="!Skin.HasSetting(HomeMenuDefaults46)">Skin.SetBool(ratings_RT)</onload>

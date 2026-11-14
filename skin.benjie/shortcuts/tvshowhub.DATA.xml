@@ -1,26 +1,35 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- BINGIE -->
+<?xml version='1.0' encoding='UTF-8'?>
 <shortcuts>
-    <shortcut>
-        <label>$VAR[DefTVShowHubName]</label>
-        <label2 />
-        <icon />
-        <thumb />
-        <action>$VAR[DefTVShowHubContent]</action>
-    </shortcut>
-    <shortcut>
-        <label>$VAR[DefTVShowHub1Name]</label>
-        <label2 />
-        <icon />
-        <thumb />
-        <action>$VAR[DefTVShowHub1Content]</action>
-    </shortcut>
-    <shortcut>
-        <label>$VAR[DefTVShowHub2Name]</label>
-        <label2 />
-        <icon />
-        <thumb />
-        <action>$VAR[DefTVShowHub2Content]</action>
-    </shortcut>
-    
-</shortcuts>
+	<shortcut>
+		<defaultID>var-deftvshowhubname</defaultID>
+		<label>$VAR[DefTVShowHubName]</label>
+		<label2 />
+		<icon>DefaultShortcut.png</icon>
+		<thumb />
+		<action>$VAR[DefTVShowHubContent]</action>
+		</shortcut>
+	<shortcut>
+		<defaultID>var-deftvshowhub1name</defaultID>
+		<label>$VAR[DefTVShowHub1Name]</label>
+		<label2 />
+		<icon>DefaultShortcut.png</icon>
+		<thumb />
+		<action>$VAR[DefTVShowHub1Content]</action>
+		</shortcut>
+	<shortcut>
+		<defaultID>var-deftvshowhub2name</defaultID>
+		<label>$VAR[DefTVShowHub2Name]</label>
+		<label2 />
+		<icon>DefaultShortcut.png</icon>
+		<thumb />
+		<action>$VAR[DefTVShowHub2Content]</action>
+		</shortcut>
+	<shortcut>
+		<defaultID />
+		<label>Series</label>
+		<label2>Video Add-On</label2>
+		<icon>DefaultShortcut.png</icon>
+		<thumb>thumb</thumb>
+		<action>ActivateWindow(Videos,"plugin://plugin.video.xstream-player/?mode=series_menu&amp;profile_num=1",return)</action>
+		</shortcut>
+	</shortcuts>

@@ -4,8 +4,6 @@
 
     <!-- Startup window -->
     <variable name="StartUpWindow">
-        <value condition="!Skin.HasSetting(BingieFirstStartupDone)">1101</value>
-        <value condition="!Skin.HasSetting(BingieSecondStartupDone)">1102</value>
         <value>$INFO[System.StartupWindow]</value>
     </variable>
 

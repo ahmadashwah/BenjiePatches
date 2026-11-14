@@ -1,15 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Benjie: a modified version of the Bingie skin by matke (skin.bingie 2.0.2), GPL v2.0. See CHANGES.md. -->
-<addon id="skin.benjie" version="2.0.2.1" name="Benjie 2.0" provider-name="matke (Bingie), modified by ahmadashwah">
+<addon id="skin.benjie" version="2.0.2.2" name="Benjie 2.0" provider-name="matke (Bingie), modified by ahmadashwah">
 	<requires>
 		<import version="5.17.0" addon="xbmc.gui"/>
 		<import addon="script.bingie.helper" version="1.1.2"/>
 		<import addon="script.bingie.toolbox" version="1.0.0"/>
-		<import addon="script.bingie.widgets" version="1.0.1"/>
+		<import addon="script.bingie.widgets" version="1.0.1.1"/>
 		<import addon="script.skinshortcuts" version="2.0.3"/>
-		<import addon="resource.images.studios.coloured" version="1.0.0" />
-		<import addon="plugin.video.tmdb.bingie.helper" version="1.0.1" />
-		<import addon="plugin.program.autocompletion" version="2.1.3" />
+		<!-- Benjie: Kodi's own repository has 0.0.24 (Bingie asked for 1.0.0 from its repository). -->
+		<import addon="resource.images.studios.coloured" version="0.0.24" />
+		<import addon="plugin.video.tmdb.bingie.helper" version="1.0.3.1" />
+		<!-- Benjie: Kodi's own repository has 2.1.2, and Kodi takes add-ons it carries only from there. -->
+		<import addon="plugin.program.autocompletion" version="2.1.2" />
+		<!-- Benjie: everything else comes with the skin. -->
+		<import addon="plugin.video.xstream-player" version="2.1.5.1" />
+		<import addon="service.iptvhelperfixes" version="1.9.0" />
 	</requires>
 	<extension debugging="false" defaultthemename="Textures.xbt" effectslowdown="1" point="xbmc.gui.skin">
         <res aspect="16:9" default="true" folder="1080i" height="1080" width="1920" />

@@ -1,301 +1,160 @@
 #!/usr/bin/env python3
-"""Build a clean, shareable "build" zip of this Kodi setup.
+"""Builds the Benjie repository that GitHub Pages serves.
 
-    python3 tools/make_build.py [--out DIR] [--kodi-home DIR]
-    python3 tools/make_build.py --installer     # service.benjie.setup-<ver>.zip
-    python3 tools/make_build.py --skin --service  # release zips of the two repo add-ons
+    python3 tools/make_build.py                 # repo/ + the release zips in the repo root
+    python3 tools/make_build.py --test-url http://127.0.0.1:8099/repo/ --out /tmp/benjie-test
 
-The zip unpacks into Kodi's data folder (see INSTALL.txt inside it) and gives
-a fresh install: the Benjie skin (skin.benjie, from this repo) and every add-on
-it needs, the IPTV Helper Fixes service (from this repo, not the live copy),
-keymaps, skin settings and the Home / New & Popular layout. Skin settings and
-menus are taken from skin.benjie's data in the Kodi folder, or from
-skin.bingie's (renamed) if that Kodi has not switched yet. Personal data is left out: IPTV login, profile
-names, watch history and favourites, caches, thumbnails, databases, Trakt and
-other account tokens, and the owner's GitHub sync token.
+Every add-on Benjie hosts lives in this repo as source (the skin, the forked
+XStream Player / TMDb Bingie Helper / Bingie Widgets, the Bingie helper
+scripts, IPTV Helper Fixes and the repository add-on itself). This zips each
+one into repo/<id>/<id>-<version>.zip (the layout Kodi's repository add-ons
+read, with the icon/fanart next to it), writes repo/addons.xml and its .md5,
+and drops older versions. Everything else the skin needs comes from Kodi's
+own repository.
 
-Error reports: set BENJIE_DIAG_TOKEN to a GitHub token with the gist scope,
-ideally from a separate account made only for this, and the build reports into
-that account's gist (read them with tools/read_diagnostics.py). Anyone who
-unzips the build can read that token, so never use a personal one. Without it
-the build still works, and error reports stay on the device.
+In the repo root it also writes:
+  repository.benjie-<ver>.zip      what people install from zip (then the skin from it)
+  service.iptvhelperfixes<ver>.zip what the power menu's Update on older devices downloads
+  skin.benjie-<ver>.zip            what IPTV Helper Fixes 1.8.0 downloads for skin updates
 
-API keys for ratings (OMDb for IMDb, MDBList, fanart.tv) that are set in TMDb
-Bingie Helper are kept.
+--test-url builds the same into --out with the repository add-on pointing at
+another address (a local web server for testing); the repo is not touched.
 """
 import argparse
-import datetime
+import glob
+import hashlib
 import os
 import re
-import shutil
-import sqlite3
 import sys
-import tempfile
 import xml.etree.ElementTree as ET
 import zipfile
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DEFAULT_HOME = os.path.expanduser("~/Library/Application Support/Kodi")
-
-SKIN = "skin.benjie"
-OLD_SKIN = "skin.bingie"
-# Add-ons that come from this repo (the source of truth), not the live Kodi.
-REPO_ADDONS = (SKIN, "service.iptvhelperfixes")
-
-ROOT_ADDONS = [
-    SKIN,
-    "plugin.video.tmdb.bingie.helper",
-    "plugin.video.xstream-player",
+PAGES_URL = "https://ahmadashwah.github.io/BenjiePatches/repo/"
+HOSTED = [
+    "repository.benjie",
+    "skin.benjie",
     "service.iptvhelperfixes",
-    "service.subtitles.opensubtitles-com",
+    "plugin.video.xstream-player",
+    "plugin.video.tmdb.bingie.helper",
     "script.bingie.widgets",
+    "script.bingie.helper",
+    "script.bingie.toolbox",
+    "script.module.bingie",
 ]
-KODI_BUILTIN_PREFIXES = ("xbmc.", "kodi.resource", "resource.language.")
-# Platform-specific binaries come with Kodi or from its own repository, and
-# the ones on this Mac are for this Mac only.
-BINARY_PREFIXES = ("inputstream.", "pvr.", "kodi.binary.", "vfs.", "audiodecoder.", "game.", "peripheral.")
-INSTALLER_SKIP_ADDONS = {"resource.images.studios.coloured"}
 SKIP_NAMES = {"__pycache__", ".git", ".DS_Store"}
 SKIP_SUFFIXES = (".pyc", ".pyo")
 SKIP_CONTAINS = (".bak-", ".bak.", "addon.py.bak")
 
 
-def addon_info(path):
-    root = ET.parse(os.path.join(path, "addon.xml")).getroot()
-    imports = [i.get("addon") for i in root.iter("import") if i.get("addon")]
-    return root.get("version"), imports
-
-
-def collect_addons(kodi_home):
-    addons_dir = os.path.join(kodi_home, "addons")
-    chosen, todo = {}, list(ROOT_ADDONS)
-    while todo:
-        a = todo.pop()
-        if a in chosen or a.startswith(KODI_BUILTIN_PREFIXES) or a.startswith(BINARY_PREFIXES):
-            continue
-        path = os.path.join(REPO if a in REPO_ADDONS else addons_dir, a)
-        if not os.path.isfile(os.path.join(path, "addon.xml")):
-            print(f"  note: {a} is not installed here, skipping (Kodi fetches it if needed)")
-            continue
-        version, imports = addon_info(path)
-        chosen[a] = (path, version)
-        todo.extend(imports)
-    return chosen
-
-
-def want_file(name):
+def want(name):
     return name not in SKIP_NAMES and not name.endswith(SKIP_SUFFIXES) and not any(s in name for s in SKIP_CONTAINS)
 
 
-def add_tree(z, src, arc_root, kodi_home):
-    for dp, dns, fns in os.walk(src):
-        dns[:] = [d for d in dns if want_file(d)]
-        for fn in fns:
-            if not want_file(fn):
-                continue
-            full = os.path.join(dp, fn)
-            arc = os.path.join(arc_root, os.path.relpath(full, src))
-            if fn == "script-skinshortcuts-includes.xml":
-                # Generated file with this machine's absolute paths in it;
-                # make them portable so it works wherever Kodi's data lives.
-                with open(full, encoding="utf-8") as f:
-                    text = f.read()
-                z.writestr(arc, text.replace(os.path.join(kodi_home, "addons") + "/", "special://home/addons/"))
-            else:
-                z.write(full, arc)
+def addon_xml_text(addon_id, repo_url):
+    text = open(os.path.join(REPO, addon_id, "addon.xml"), encoding="utf-8").read()
+    if addon_id == "repository.benjie" and repo_url != PAGES_URL:
+        text = text.replace(PAGES_URL, repo_url)
+    return text
 
 
-# ---------------------------------------------------------------- userdata
-
-def scrub_xstream_settings(text):
-    """Drops every login/profile detail and machine-specific PVR id so the
-    new install starts with blank profiles."""
-    drop = re.compile(
-        r"^(profile_\d+_(name|xtream_url|xtream_username|xtream_password|m3u|epg_.*|source_type)"
-        r"|pvr_.*instance_id|last_pvr_profile|last_update_check|last_seen_version|active_pvr_profile)$"
-    )
-
-    def keep(m):
-        return "" if drop.match(m.group(1)) else m.group(0)
-
-    return re.sub(r'[ \t]*<setting id="([^"]+)"[^>]*?(?:/>|>[^<]*</setting>)\r?\n?', keep, text)
-
-
-def scrub_tmdb_helper_settings(text):
-    """Keeps rating API keys (OMDb, MDBList, fanart.tv); drops account
-    tokens (Trakt, TMDb user, TVDb)."""
-    drop = re.compile(r"^(trakt_.*|tmdb_user_token.*|tvdb_token.*)$")
-
-    def keep(m):
-        return "" if drop.match(m.group(1)) else m.group(0)
-
-    return re.sub(r'[ \t]*<setting id="([^"]+)"[^>]*?(?:/>|>[^<]*</setting>)\r?\n?', keep, text)
+def zip_addon(addon_id, out_zip, repo_url):
+    src = os.path.join(REPO, addon_id)
+    with zipfile.ZipFile(out_zip, "w", zipfile.ZIP_DEFLATED, compresslevel=6) as z:
+        for dp, dns, fns in os.walk(src):
+            dns[:] = sorted(d for d in dns if want(d))
+            for fn in sorted(fns):
+                if not want(fn):
+                    continue
+                full = os.path.join(dp, fn)
+                arc = addon_id + "/" + os.path.relpath(full, src).replace(os.sep, "/")
+                if arc == f"{addon_id}/addon.xml":
+                    z.writestr(arc, addon_xml_text(addon_id, repo_url))
+                else:
+                    z.write(full, arc)
 
 
-def service_settings(diag_token):
-    token = f'    <setting id="diag_token">{diag_token}</setting>\n' if diag_token else ""
-    return (
-        '<settings version="2">\n'
-        '    <setting id="diag_enabled">true</setting>\n' + token + "</settings>\n"
-    )
-
-
-GUISETTINGS = (
-    '<settings version="2">\n'
-    f'    <setting id="lookandfeel.skin">{SKIN}</setting>\n'
-    "</settings>\n"
-)
-
-
-def addons_db(kodi_home, addon_ids):
-    """A fresh Addons33.db marking the shipped add-ons as installed and
-    enabled, with the schema copied from this Kodi's own database."""
-    src = sqlite3.connect(os.path.join(kodi_home, "userdata", "Database", "Addons33.db"))
-    schema = [r[0] for r in src.execute("select sql from sqlite_master where sql is not null and name not like 'sqlite_%'")]
-    version_rows = src.execute("select * from version").fetchall()
-    src.close()
-    fd, path = tempfile.mkstemp(suffix=".db")
-    os.close(fd)
-    os.remove(path)
-    db = sqlite3.connect(path)
-    for stmt in schema:
-        db.execute(stmt)
-    for row in version_rows:
-        db.execute("insert into version values (%s)" % ",".join("?" * len(row)), row)
-    now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    for a in sorted(addon_ids):
-        db.execute(
-            "insert into installed (addonID, enabled, installDate, lastUpdated, lastUsed, origin) values (?,?,?,?,?,?)",
-            (a, 1, now, now, "", ""),
-        )
-    db.commit()
-    db.close()
-    return path
-
-
-INSTALL_TXT = """Benjie build {stamp}
-
-1. Install Kodi 21 (Omega) from kodi.tv or your device's app store, open it once,
-   then close it completely.
-2. Unzip this file into Kodi's data folder so that the "addons" and "userdata"
-   folders from the zip land inside it (merge/replace if asked):
-     macOS    ~/Library/Application Support/Kodi
-     Windows  %APPDATA%\\Kodi
-     Linux    ~/.kodi
-     Android  Android/data/org.xbmc.kodi/files/.kodi   (use a file manager)
-3. Start Kodi. The first start applies the setup and the second loads it, so
-   close Kodi and open it again once if the look is not right yet.
-4. Enter your login when asked (or tap the name at the top of the side
-   menu).
-
-Error reports (no logins or addresses) help fix problems; switch them off in
-the Helper Fixes add-on's settings.
-"""
+def assets(root):
+    """Icon/fanart/screenshot paths the add-on declares (or the legacy names)."""
+    meta = next((e for e in root.findall("extension") if e.get("point") == "xbmc.addon.metadata"), None)
+    found = []
+    if meta is not None and meta.find("assets") is not None:
+        found = [e.text.strip() for e in meta.find("assets") if e.text and e.text.strip()]
+    for legacy in ("icon.png", "fanart.jpg"):
+        if legacy not in found:
+            found.append(legacy)
+    return found
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--out", default=os.path.join(REPO, "dist"))
-    ap.add_argument("--kodi-home", default=DEFAULT_HOME)
-    ap.add_argument("--installer", action="store_true",
-                    help="build service.benjie.setup-<ver>.zip, a single add-on zip that sets everything up")
-    ap.add_argument("--skin", action="store_true",
-                    help=f"build {SKIN}-<ver>.zip (what the service downloads on existing devices)")
-    ap.add_argument("--service", action="store_true",
-                    help="build service.iptvhelperfixes<ver>.zip (what the power menu's Update downloads)")
+    ap.add_argument("--test-url", help="repository address to build for instead of GitHub Pages")
+    ap.add_argument("--out", help="output folder (default: this repo)")
     args = ap.parse_args()
-    if args.skin or args.service:
-        os.makedirs(args.out, exist_ok=True)
-        for a, enabled in ((SKIN, args.skin), ("service.iptvhelperfixes", args.service)):
-            if not enabled:
-                continue
-            src = os.path.join(REPO, a)
-            version = addon_info(src)[0]
-            name = f"{a}-{version}.zip" if a == SKIN else f"{a}{version.replace('.', '')}.zip"
-            out = os.path.join(args.out, name)
-            with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED, compresslevel=6) as z:
-                add_tree(z, src, a, args.kodi_home)
-            print(f"Built {out} ({os.path.getsize(out) / 1e6:.1f} MB)")
-        return
-    home = args.kodi_home
-    ud = os.path.join(home, "userdata")
-    if not os.path.isdir(os.path.join(home, "addons")):
-        sys.exit(f"No Kodi data folder at {home}")
+    repo_url = args.test_url or PAGES_URL
+    if not repo_url.endswith("/"):
+        repo_url += "/"
+    base = args.out or REPO
+    if args.test_url and not args.out:
+        sys.exit("--test-url needs --out, so the published repository is not changed")
+    repo_dir = os.path.join(base, "repo")
+    os.makedirs(repo_dir, exist_ok=True)
 
-    addons = collect_addons(home)
-    svc_version = addons["service.iptvhelperfixes"][1]
-    os.makedirs(args.out, exist_ok=True)
-    stamp = datetime.date.today().isoformat()
-    out = os.path.join(args.out, f"benjie-build-{svc_version}.zip")
-    diag_token = os.environ.get("BENJIE_DIAG_TOKEN", "").strip()
+    entries, versions = [], {}
+    for a in HOSTED:
+        text = addon_xml_text(a, repo_url)
+        root = ET.fromstring(text.encode("utf-8"))
+        if root.get("id") != a:
+            sys.exit(f"{a}/addon.xml has id {root.get('id')}")
+        version = root.get("version")
+        versions[a] = version
+        d = os.path.join(repo_dir, a)
+        os.makedirs(d, exist_ok=True)
+        target = os.path.join(d, f"{a}-{version}.zip")
+        for old in glob.glob(os.path.join(d, f"{a}-*.zip")) + glob.glob(os.path.join(d, f"{a}-*.zip.md5")):
+            if os.path.basename(old) not in (os.path.basename(target), os.path.basename(target) + ".md5"):
+                os.remove(old)
+        zip_addon(a, target, repo_url)
+        with open(target, "rb") as f:
+            md5 = hashlib.md5(f.read()).hexdigest()
+        with open(target + ".md5", "w") as f:
+            f.write(md5)
+        for rel in assets(root):
+            src = os.path.join(REPO, a, rel)
+            if os.path.isfile(src):
+                dst = os.path.join(d, rel)
+                os.makedirs(os.path.dirname(dst), exist_ok=True)
+                with open(src, "rb") as s, open(dst, "wb") as o:
+                    o.write(s.read())
+        text = text.lstrip(chr(0xFEFF))  # some add-ons start with a byte-order mark
+        entries.append(re.sub(r"^\s*<\?xml[^>]*\?>\s*", "", text).strip())
+        print(f"  {a} {version} ({os.path.getsize(target) / 1e6:.1f} MB)")
 
-    def write_payload(z, installer):
-        """The files that make up the build. For the one-step installer the
-        studio-logo pack (fetched from Kodi's own repository instead), the
-        Kodi settings file and the add-on database are left out: the installer
-        enables things and switches the skin through Kodi itself."""
-        for a, (path, version) in sorted(addons.items()):
-            if installer and a in INSTALLER_SKIP_ADDONS:
-                continue
-            print(f"  addon {a} {version}")
-            add_tree(z, path, f"addons/{a}", home)
+    addons_xml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<addons>\n' + "\n".join(entries) + "\n</addons>\n"
+    ET.fromstring(addons_xml.encode("utf-8"))  # must parse
+    with open(os.path.join(repo_dir, "addons.xml"), "w", encoding="utf-8", newline="\n") as f:
+        f.write(addons_xml)
+    with open(os.path.join(repo_dir, "addons.xml.md5"), "w") as f:
+        f.write(hashlib.md5(addons_xml.encode("utf-8")).hexdigest())
 
-        def put(arc, text):
-            z.writestr(arc, text)
-
-        def read(rel):
-            with open(os.path.join(ud, rel), encoding="utf-8") as f:
-                return f.read()
-
-        put("userdata/addon_data/service.iptvhelperfixes/settings.xml", service_settings(diag_token))
-        put("userdata/addon_data/plugin.video.xstream-player/settings.xml",
-            scrub_xstream_settings(read("addon_data/plugin.video.xstream-player/settings.xml")))
-        put("userdata/addon_data/plugin.video.tmdb.bingie.helper/settings.xml",
-            scrub_tmdb_helper_settings(read("addon_data/plugin.video.tmdb.bingie.helper/settings.xml")))
-        put("userdata/keymaps/xstream_backbutton.xml", read("keymaps/xstream_backbutton.xml"))
-        # Skin settings and menus: skin.benjie's own once this Kodi uses it,
-        # otherwise Bingie's, renamed (skinshortcuts writes the skin id into
-        # some entries, so the text is changed too).
-        src_skin = SKIN if os.path.isfile(os.path.join(ud, "addon_data", SKIN, "settings.xml")) else OLD_SKIN
-        print(f"  skin settings and menus from addon_data/{src_skin}")
-
-        def as_benjie(text):
-            return text.replace(OLD_SKIN, SKIN)
-
-        put(f"userdata/addon_data/{SKIN}/settings.xml", as_benjie(read(f"addon_data/{src_skin}/settings.xml")))
-        sk = os.path.join(ud, "addon_data", "script.skinshortcuts")
-        for fn in sorted(os.listdir(sk)):
-            if fn.startswith(src_skin + "-") and fn.endswith(".DATA.xml"):
-                put(f"userdata/addon_data/script.skinshortcuts/{SKIN}{fn[len(src_skin):]}",
-                    as_benjie(read(f"addon_data/script.skinshortcuts/{fn}")))
-        if not installer:
-            put("userdata/guisettings.xml", GUISETTINGS)
-            put("INSTALL.txt", INSTALL_TXT.format(stamp=stamp))
-            dbfile = addons_db(home, addons.keys())
-            z.write(dbfile, "userdata/Database/Addons33.db")
-            os.remove(dbfile)
-
-    if args.installer:
-        template = os.path.join(REPO, "benjie-setup", "service.benjie.setup")
-        setup_version = addon_info(template)[0]
-        out = os.path.join(args.out, f"service.benjie.setup-{setup_version}.zip")
-        fd, payload = tempfile.mkstemp(suffix=".zip")
-        os.close(fd)
-        with zipfile.ZipFile(payload, "w", zipfile.ZIP_DEFLATED, compresslevel=6) as pz:
-            write_payload(pz, True)
-        with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED, compresslevel=6) as z:
-            for fn in ("addon.xml", "service.py", "setup.py", "run.py"):
-                z.write(os.path.join(template, fn), f"service.benjie.setup/{fn}")
-            z.write(payload, "service.benjie.setup/payload.dat", compress_type=zipfile.ZIP_STORED)
-        os.remove(payload)
-    else:
-        with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED, compresslevel=6) as z:
-            write_payload(z, False)
-
-    mb = os.path.getsize(out) / 1e6
-    print(f"\nBuilt {out} ({mb:.0f} MB)")
-    print("Error reports:", "will go to the gist of the token in BENJIE_DIAG_TOKEN" if diag_token
-          else "no BENJIE_DIAG_TOKEN set, so they stay on the device")
+    # Release zips in the root of the output (the Pages site's top level).
+    root_zips = {
+        "repository.benjie": f"repository.benjie-{versions['repository.benjie']}.zip",
+        "service.iptvhelperfixes": f"service.iptvhelperfixes{versions['service.iptvhelperfixes'].replace('.', '')}.zip",
+        "skin.benjie": f"skin.benjie-{versions['skin.benjie']}.zip",
+    }
+    patterns = {
+        "repository.benjie": r"repository\.benjie-[\d.]+\.zip",
+        "service.iptvhelperfixes": r"service\.iptvhelperfixes\d+\.zip",
+        "skin.benjie": r"skin\.benjie-[\d.]+\.zip",
+    }
+    for a, name in root_zips.items():
+        for old in os.listdir(base):
+            if re.fullmatch(patterns[a], old) and old != name:
+                os.remove(os.path.join(base, old))
+        zip_addon(a, os.path.join(base, name), repo_url)
+        print(f"  root: {name}")
+    print(f"\nRepository written to {repo_dir} for {repo_url}")
 
 
 if __name__ == "__main__":

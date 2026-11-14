@@ -1,5 +1,23 @@
 # Changes from Bingie 2.0.2
 
+## 2.0.2.2 (2026-11-14)
+
+- `addon.xml`: requires the Benjie builds of XStream Player (2.1.5.1),
+  TMDb Bingie Helper (1.0.3.1) and Bingie Widgets (1.0.1.1) and IPTV Helper
+  Fixes (1.9.0), so installing the skin from the Benjie repository installs
+  everything. Studio logos and AutoCompletion are asked for at the versions
+  Kodi's own repository has (0.0.24 and 2.1.2).
+- `shortcuts/*.DATA.xml`: the Benjie build's home menu and rows are the
+  defaults (Search, Home, New & Popular, Shows, Movies, Live TV, Categories,
+  My List and their sub-menus).
+- `1080i/Includes.xml`, `1080i/IncludesVariables.xml`: no first-run screens
+  (Bingie's library-settings and add-video-sources prompts); Home opens
+  straight away.
+- `1080i/IncludesDefaultSkinSettings.xml`: the build's one non-default skin
+  setting (`view510_detailsshowinfo`) is a default.
+
+## 2.0.2.1
+
 Benjie 2.0 is skin.bingie 2.0.2 by matke, modified by ahmadashwah on
 2026-11-14 (GPL v2, section 2a). These are the changes; everything else is
 Bingie as released.
