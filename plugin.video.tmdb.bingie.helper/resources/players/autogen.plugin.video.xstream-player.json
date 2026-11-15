@@ -10,22 +10,22 @@
         "search_episode": ["showname", "season", "episode"]
     },
     "play_movie": [
-        "plugin://plugin.video.xstream-player/?mode=search_global&query={title_url}&stype=movie&profile_num=1",
+        "plugin://plugin.video.xstream-player/?mode=search_global&query={title_url}&stype=movie&pick_one=1&year={year}&profile_num=1",
         {"label": "(?i)^{title}\\s*\\({year}\\)", "dialog": "Auto"}
     ],
     "search_movie": [
-        "plugin://plugin.video.xstream-player/?mode=search_global&query={title_url}&stype=movie&profile_num=1",
+        "plugin://plugin.video.xstream-player/?mode=search_global&query={title_url}&stype=movie&pick_one=1&year={year}&profile_num=1",
         {"label": "(?i)^{title}\\s*\\({year}\\)", "dialog": "Auto"}
     ],
     "play_episode": [
-        "plugin://plugin.video.xstream-player/?mode=search_global&query={showname_url}&stype=series&profile_num=1",
-        {"label": "(?i)^{showname}\\s*\\(\\d\\d\\d\\d\\)\\s*\\(US\\)", "dialog": "Auto"},
+        "plugin://plugin.video.xstream-player/?mode=search_global&query={showname_url}&stype=series&pick_one=1&year={showyear}&profile_num=1",
+        {"label": "(?i)^{showname}\\s*\\(\\d\\d\\d\\d\\)", "dialog": "Auto"},
         {"season": "^{season}$", "dialog": "Auto"},
         {"label": "(?i).*S0*{season}E0*{episode}\\b.*", "return": "true", "dialog": "Auto"}
     ],
     "search_episode": [
-        "plugin://plugin.video.xstream-player/?mode=search_global&query={showname_url}&stype=series&profile_num=1",
-        {"label": "(?i)^{showname}\\s*\\(\\d\\d\\d\\d\\)\\s*\\(US\\)", "dialog": "Auto"},
+        "plugin://plugin.video.xstream-player/?mode=search_global&query={showname_url}&stype=series&pick_one=1&year={showyear}&profile_num=1",
+        {"label": "(?i)^{showname}\\s*\\(\\d\\d\\d\\d\\)", "dialog": "Auto"},
         {"season": "^{season}$", "dialog": "Auto"},
         {"label": "(?i).*S0*{season}E0*{episode}\\b.*", "return": "true", "dialog": "Auto"}
     ]

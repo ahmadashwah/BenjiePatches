@@ -9,8 +9,14 @@ from tmdbbingiehelper.lib.script.method.decorators import get_tmdb_id, map_kwarg
 def play_external(**kwargs):
     from tmdbbingiehelper.lib.addon.logger import kodi_log
     from tmdbbingiehelper.lib.player.players import Players
+    from tmdbbingiehelper.lib.player.loading import loading_start, loading_clear
     kodi_log(['lib.script.router - attempting to play\n', kwargs], 1)
-    Players(**kwargs).play()
+    loading_start()
+    try:
+        Players(**kwargs).play()
+    except Exception:
+        loading_clear()
+        raise
 
 
 def play_using(play_using, mode='play', **kwargs):

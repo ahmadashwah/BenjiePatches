@@ -920,12 +920,16 @@ class Players(PlayerProperties, PlayerDetails, PlayerMethods, PlayerHacks):
 
         # Check we have an actual path to open
         if not listitem.getPath() or listitem.getPath() == PLUGINPATH:
+            from tmdbbingiehelper.lib.player.loading import loading_clear
+            loading_clear()  # Bengie: nothing found or the picker was cancelled
             return
 
         action = self.configure_action(listitem, handle)
 
         # If a folder we need to resolve to dummy and then open folder
         if listitem.getProperty('is_folder') == 'true':
+            from tmdbbingiehelper.lib.player.loading import loading_clear
+            loading_clear()  # Bengie: opens a list, not a video
             self.playbrowse_folder(handle, action)
             return
 

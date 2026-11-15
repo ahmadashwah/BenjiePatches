@@ -24,7 +24,35 @@
             <texture>colors/color_black.png</texture>
         </control>
         <include content="Busy_Spinner">
+            <param name="size" value="160" />
             <param name="visibility" value="!Window.IsActive(selectdialog) + !Window.IsActive(DialogSelect.xml)" />
         </include>
+        <!-- Bengie (issue #6): how far along it is. TMDb Bingie Helper sets 5%
+             at the click, XStream Player raises it per step (search 15, show 30,
+             episodes 50, stream 75) and the service sets 90 when Kodi opens the
+             video. Real steps, not a timer, so it never runs ahead. -->
+        <control type="label">
+            <centertop>50%</centertop>
+            <centerleft>50%</centerleft>
+            <width>160</width>
+            <height>60</height>
+            <align>center</align>
+            <aligny>center</aligny>
+            <font>Bold26</font>
+            <textcolor>FFFFFFFF</textcolor>
+            <label>$INFO[Window(Home).Property(PlaybackLoadingPercent),,%]</label>
+            <visible>!String.IsEmpty(Window(Home).Property(PlaybackLoadingPercent))</visible>
+        </control>
+        <control type="label">
+            <left>0</left>
+            <top>640</top>
+            <width>1920</width>
+            <height>50</height>
+            <align>center</align>
+            <aligny>center</aligny>
+            <font>Reg30</font>
+            <textcolor>B3FFFFFF</textcolor>
+            <label>$INFO[Window(Home).Property(PlaybackLoadingStep)]</label>
+        </control>
     </controls>
 </window>

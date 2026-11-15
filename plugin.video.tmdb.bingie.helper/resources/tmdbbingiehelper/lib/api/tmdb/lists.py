@@ -106,6 +106,21 @@ class ListSeasons(ContainerDirectory):
         self.ib.cache_only = self.tmdb_cache_only = False
         self.precache_parent(tmdb_id)
         items = self.tmdb_api.get_season_list(tmdb_id, special_folders=get_setting('special_folders', 'int'), get_detailed=True)
+        # Bengie: a show with one season opens its episodes instead of a list
+        # with a single season in it (like Kodi's "flatten: if only one
+        # season" for library shows; issue #5). Only seasons that have aired
+        # count: an announced season with no date is hidden from the list
+        # anyway.
+        from datetime import date
+        today = date.today().isoformat()
+        seasons = [
+            i for i in (items or [])
+            if isinstance(i, dict) and not (i.get('infoproperties') or {}).get('IsSpecial')
+            and str((i.get('infolabels') or {}).get('season', '')).isdigit()
+            and int((i.get('infolabels') or {}).get('season')) > 0
+            and str((i.get('infolabels') or {}).get('premiered') or '9999')[:10] <= today]
+        if len(seasons) == 1:
+            return ListEpisodes.get_items(self, tmdb_id, seasons[0]['infolabels']['season'], **kwargs)
         self.container_content = convert_type('season', 'container')
         return items
 

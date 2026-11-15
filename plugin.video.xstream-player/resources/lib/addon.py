@@ -2182,6 +2182,44 @@ def _subtitle_search_info(name, stype, season_num=None):
     return out
 
 
+_SERIES_INFO_TTL = 600
+
+
+def _series_info(url, user, pwd, series_id):
+    """get_series_info, kept for 10 minutes. Playing an episode used to fetch
+    the same show three times in a row (show page, season page, play_stream);
+    the season fetch alone took 4 s of the ~9 s from click to picture
+    (issue #6)."""
+    name = f"series_info_{series_id}"
+    cached = _cache_load(name)
+    if (
+        isinstance(cached, dict)
+        and cached.get("_data")
+        and time.time() - float(cached.get("_ts", 0)) < _SERIES_INFO_TTL
+    ):
+        return cached["_data"]
+    info = IPTV.get_xtream_series_info(url, user, pwd, series_id)
+    if info:
+        try:
+            _cache_save(name, {"_ts": time.time(), "_data": info})
+        except Exception as e:
+            _log(f"series info not cached: {e}")
+    return info
+
+
+# Bengie: loading screen progress (issue #6). The TMDb player sets
+# PlaybackLoading at the click; each step after that says where it is.
+def _loading_stage(percent, label):
+    try:
+        win = xbmcgui.Window(10000)
+        if win.getProperty("PlaybackLoading") != "1":
+            return
+        win.setProperty("PlaybackLoadingPercent", str(percent))
+        win.setProperty("PlaybackLoadingStep", label)
+    except Exception:
+        pass
+
+
 def _show_playback_loading():
     """Black screen with the skin's spinner (Custom_1160_PlaybackLoading.xml,
     installed by the service; it shows while the Home property PlaybackLoading
@@ -2191,7 +2229,10 @@ def _show_playback_loading():
     playback starts; the window also clears it after 60s. Does nothing harmful if the
     skin doesn't have the window."""
     try:
-        xbmc.executebuiltin("SetProperty(PlaybackLoading,1,Home)")
+        win = xbmcgui.Window(10000)
+        win.setProperty("PlaybackLoading", "1")
+        win.setProperty("PlaybackLoadingPercent", "75")
+        win.setProperty("PlaybackLoadingStep", _t(30973))
     except Exception as e:
         _log(f"loading screen not shown: {e}")
 
@@ -2277,7 +2318,7 @@ def play_stream(
         # series info, so it is reused there rather than fetched twice.
         try:
             ecreds = _get_credentials_for_profile(pnum)
-            series_info_cache = IPTV.get_xtream_series_info(
+            series_info_cache = _series_info(
                 ecreds.get("xtream_url", ""),
                 ecreds.get("xtream_username", ""),
                 ecreds.get("xtream_password", ""),
@@ -2338,7 +2379,7 @@ def play_stream(
             xt_url = creds.get("xtream_url", "")
             xt_user = creds.get("xtream_username", "")
             xt_pwd = creds.get("xtream_password", "")
-            info = series_info_cache or IPTV.get_xtream_series_info(xt_url, xt_user, xt_pwd, series_id)
+            info = series_info_cache or _series_info(xt_url, xt_user, xt_pwd, series_id)
             eps = info.get("episodes", {}).get(season_num, [])
             for i, ep in enumerate(eps):
                 if str(ep.get("id", "")) == str(ep_id):
@@ -7302,7 +7343,8 @@ def xtream_series(series_id, profile_num=None):
     url = creds.get("xtream_url", "")
     user = creds.get("xtream_username", "")
     pwd = creds.get("xtream_password", "")
-    info = IPTV.get_xtream_series_info(url, user, pwd, series_id)
+    _loading_stage(30, _t(30971))
+    info = _series_info(url, user, pwd, series_id)
     episodes = info.get("episodes", {})
     xbmcplugin.setContent(addon_handle, "seasons")
     we = WatchedEpisodes(addon, profile_num=pnum)
@@ -8400,7 +8442,8 @@ def xtream_season(series_id, season_num, profile_num=None):
     url = creds.get("xtream_url", "")
     user = creds.get("xtream_username", "")
     pwd = creds.get("xtream_password", "")
-    info = IPTV.get_xtream_series_info(url, user, pwd, series_id)
+    _loading_stage(50, _t(30972))
+    info = _series_info(url, user, pwd, series_id)
     eps = info.get("episodes", {}).get(season_num, [])
     show_poster = info.get("info", {}).get("cover", "")
     xbmcplugin.setContent(addon_handle, "episodes")
@@ -8894,7 +8937,7 @@ def _save_search_history(history, profile_num=None):
     os.replace(tmp_file, history_path)
 
 
-def search_global(query=None, profile_num=None, stype=None):
+def search_global(query=None, profile_num=None, stype=None, pick_one=False, year=None):
     try:
         # If profile not specified, ask user which profile to search
         if profile_num is None:
@@ -8978,18 +9021,21 @@ def search_global(query=None, profile_num=None, stype=None):
                         xbmcplugin.endOfDirectory(addon_handle, succeeded=False)
                         return
                     query = kb
-            history = _load_search_history()
-            if query in history:
-                history.remove(query)
-            history.insert(0, query)
-            _save_search_history(history)
+            if not pick_one:
+                # The TMDb player's own lookups stay out of the user's
+                # search history.
+                history = _load_search_history()
+                if query in history:
+                    history.remove(query)
+                history.insert(0, query)
+                _save_search_history(history)
 
             creds = _get_credentials()
             has_xtream = bool(creds.get("xtream_url"))
             has_m3u = bool(creds.get("m3u_url"))
 
             if has_xtream:
-                unified_search(query, stype=stype)
+                unified_search(query, stype=stype, pick_one=pick_one, year=year)
             elif has_m3u:
                 search_m3u(query, stype=stype)
             else:
@@ -9004,7 +9050,36 @@ def search_global(query=None, profile_num=None, stype=None):
         xbmcplugin.endOfDirectory(addon_handle, succeeded=False)
 
 
-def unified_search(query, stype=None):
+# Bengie: which copy of a title the TMDb player takes when the provider has
+# several (one per language section: "AR-SUBS: Dark (2017) (DE)",
+# "FR: Dark (2017) (DE)", ...). Matched against the start of the tag, in
+# order; anything else comes after, in catalog order.
+_PREFERRED_COPY_ORDER = ("AR-SUBS", "EN", "AR")
+
+
+def _copy_rank(s, query, year):
+    """Sort key for pick_one searches: the copy whose clean title is the
+    searched name (and year, when known) first, then by language section."""
+    title, y = _display_title(s.get("name", ""))
+    exact = title.strip().lower() == (query or "").strip().lower()
+    if exact and year and y == year:
+        match = 0
+    elif exact:
+        match = 1
+    else:
+        match = 2
+    tag = (s.get("provider_tag") or "").upper()
+    lang = len(_PREFERRED_COPY_ORDER)
+    for i, p in enumerate(_PREFERRED_COPY_ORDER):
+        if tag == p or tag.startswith(p + "-"):
+            lang = i
+            break
+    return (match, lang)
+
+
+def unified_search(query, stype=None, pick_one=False, year=None):
+    if pick_one:
+        _loading_stage(15, _t(30970))
     creds = _get_credentials()
     url = creds.get("xtream_url", "")
     user = creds.get("xtream_username", "")
@@ -9073,6 +9148,15 @@ def unified_search(query, stype=None):
                 )
             ]
         results["series"] = series_results
+
+    if pick_one:
+        # Asked for by the TMDb player: it takes the first entry that matches,
+        # so put the preferred copy first instead of showing every language
+        # copy in a picker (issue #4). Python's sort keeps catalog order
+        # within a rank.
+        for t in ("movie", "series"):
+            if results.get(t):
+                results[t].sort(key=lambda s: _copy_rank(s, query, year))
 
     has_any = any(results.values())
     if not has_any:
@@ -9147,7 +9231,15 @@ def unified_search(query, stype=None):
                 # Tag shown only in the picker label (to tell apart multiple
                 # matches, e.g. different language/quality sources) — the
                 # actual title metadata used elsewhere stays clean.
-                picker_label = f"{display_title}  [{tag}]" if tag else display_title
+                label_title = display_title
+                if pick_one:
+                    # The TMDb player matches "Title (Year)"; the clean
+                    # title has no year, so movies always fell back to the
+                    # picker (issue #4).
+                    y = _display_title(name)[1] or info.get("year")
+                    if y and not re.search(r"\((?:19|20)\d\d\)", label_title):
+                        label_title = f"{label_title} ({y})"
+                picker_label = f"{label_title}  [{tag}]" if tag else label_title
                 li = xbmcgui.ListItem(label=picker_label)
                 info_tag = li.getVideoInfoTag()
                 info_tag.setMediaType("movie")
@@ -12293,7 +12385,14 @@ elif mode == "search_global":
     except (ValueError, TypeError):
         pnum = None
     stype = args.get("stype", [None])[0]
-    search_global(args.get("query", [None])[0], profile_num=pnum, stype=stype)
+    year_raw = args.get("year", [""])[0]
+    search_global(
+        args.get("query", [None])[0],
+        profile_num=pnum,
+        stype=stype,
+        pick_one=args.get("pick_one", [""])[0] == "1",
+        year=int(year_raw) if year_raw.isdigit() else None,
+    )
 elif mode == "search_all_combined":
     search_all_profiles_combined(args.get("query", [""])[0])
 elif mode == "search_m3u":

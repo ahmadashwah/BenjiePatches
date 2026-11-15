@@ -578,5 +578,9 @@
   "30889": "Global Search",
   "30890": "Cleared {0} provider metadata files",
   "30891": "Provider metadata cache",
-  "30892": "EPG channel IDs do not match M3U. Guide will be empty."
+  "30892": "EPG channel IDs do not match M3U. Guide will be empty.",
+  "30970": "جارٍ البحث عن العنوان",
+  "30971": "جارٍ تحميل المسلسل",
+  "30972": "جارٍ تحميل الحلقات",
+  "30973": "جارٍ تشغيل البث"
 }

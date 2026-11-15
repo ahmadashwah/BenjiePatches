@@ -1,5 +1,25 @@
 # Changes from Bingie 2.0.2
 
+## 2.0.2.8 (2026-11-14)
+
+- `1080i/Custom_1160_PlaybackLoading.xml`: the loading screen shows how far
+  along it is: a percentage inside the spinner and the current step below it
+  (finding the title, loading the show, loading the episodes, starting the
+  stream). The steps are real, not a timer. TMDb Bingie Helper 1.0.3.4 now
+  shows the screen right at the click; it used to show up about 6.5 s
+  after it (issue #6).
+- Comes with:
+  - XStream Player 2.1.5.4: plays the preferred language copy of a show or
+    movie (AR-SUBS, then EN, then other AR) without a picker (issue #4). It
+    also keeps a show's details for 10 minutes, so it no longer downloads
+    them three times per episode; from click to picture is now about 7 s
+    instead of 9 s.
+  - IPTV Helper Fixes 1.9.5: brings back the Kodi settings from Bingie's
+    first-run screen once per device: no ".." entries, focus on the next
+    unwatched episode, Select resumes (issue #5).
+  - TMDb Bingie Helper 1.0.3.4: a show with one aired season opens its
+    episodes directly.
+
 ## 2.0.2.7 (2026-11-14)
 
 - `1080i/IncludesBingie.xml`: clicking a Continue Watching tile plays it and

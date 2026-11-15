@@ -16,10 +16,16 @@ class Router():
     def play_external(self):
         from tmdbbingiehelper.lib.player.players import Players
         from tmdbbingiehelper.lib.api.tmdb.api import TMDb
+        from tmdbbingiehelper.lib.player.loading import loading_start, loading_clear
         kodi_log(['lib.container.router - Attempting to play item\n', self.params], 1)
-        if not self.params.get('tmdb_id'):
-            self.params['tmdb_id'] = TMDb().get_tmdb_id(**self.params)
-        Players(**self.params).play(handle=self.handle if self.handle != -1 else None)
+        loading_start()
+        try:
+            if not self.params.get('tmdb_id'):
+                self.params['tmdb_id'] = TMDb().get_tmdb_id(**self.params)
+            Players(**self.params).play(handle=self.handle if self.handle != -1 else None)
+        except Exception:
+            loading_clear()
+            raise
 
     def context_related(self):
         from tmdbbingiehelper.lib.script.method.context_menu import related_lists

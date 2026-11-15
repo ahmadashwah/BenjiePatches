@@ -26,6 +26,7 @@ import xml.etree.ElementTree as ET
 
 import xbmc
 import xbmcaddon
+import xbmcgui
 import xbmcvfs
 
 import error_report
@@ -329,7 +330,16 @@ class _PlaybackWatcher(xbmc.Player):
 
     @staticmethod
     def _close():
-        xbmc.executebuiltin("ClearProperty(PlaybackLoading,Home)")
+        win = xbmcgui.Window(10000)
+        for prop in ("PlaybackLoading", "PlaybackLoadingPercent", "PlaybackLoadingStep"):
+            win.clearProperty(prop)
+
+    def onPlayBackStarted(self):
+        # Kodi has the stream and is opening it (about 1.5 s before the
+        # picture). Bengie: the loading screen's last step (issue #6).
+        win = xbmcgui.Window(10000)
+        if win.getProperty("PlaybackLoading") == "1":
+            win.setProperty("PlaybackLoadingPercent", "90")
 
     def onAVStarted(self):
         self._close()
@@ -421,6 +431,31 @@ def disable_versioncheck_once():
         f.write("done")
 
 
+# Kodi settings Bingie's first-run screen used to apply (Bengie removed that
+# screen in skin 2.0.2.2, issue #5).
+NAVIGATION_SETTINGS = (
+    ("filelists.showparentdiritems", False),  # no ".." entry at the top of lists
+    ("videolibrary.flattentvshows", 1),  # a show with one season opens its episodes
+    ("videolibrary.tvshowsselectfirstunwatcheditem", 2),  # focus the next unwatched episode
+    ("myvideos.selectaction", 2),  # Select resumes a started video (Bingie's choice)
+)
+
+
+def apply_navigation_settings_once():
+    """Once per device; a flag file keeps later changes in Kodi's settings."""
+    marker = os.path.join(KODI_PROFILE, "addon_data", ADDON_ID, "navigation_settings.flag")
+    if os.path.isfile(marker):
+        return
+    failed = [name for name, value in NAVIGATION_SETTINGS if not _set_kodi_setting(name, value)]
+    if failed:
+        log(f"Navigation settings not applied: {failed}; will retry.", xbmc.LOGWARNING)
+        return
+    os.makedirs(os.path.dirname(marker), exist_ok=True)
+    with open(marker, "w") as f:
+        f.write("done")
+    log("Applied Bingie's navigation settings (no '..' entries, one-season shows open their episodes).")
+
+
 def setup_subtitles():
     """One-time: installs and enables the official OpenSubtitles.com add-on (service.subtitles.opensubtitles-com -- NOT service.subtitles.opensubtitles, which is the legacy OpenSubtitles.org one),
     sets the preferred subtitle languages to Arabic and English, and makes
@@ -488,6 +523,7 @@ def run_checks():
     log("Checking Bengie...")
     install_backbutton_keymap()
     disable_versioncheck_once()
+    apply_navigation_settings_once()
     try:
         benjie_update.run(xbmc.Monitor())
     except Exception:
