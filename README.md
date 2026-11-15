@@ -43,9 +43,16 @@ result from the service: it installs the Benjie repository and the Benjie
 builds once, and a device still on Bingie is moved to Benjie with its skin
 settings and home menu.
 
-**Publishing:** `python3 tools/make_build.py` writes `repo/` (served by GitHub
-Pages) and the release zips in the root, then commit and push. Test against a
-local copy first with `--test-url http://127.0.0.1:8099/repo/ --out <dir>`.
+**Publishing:** change the code, then `python3 tools/make_build.py`, commit
+and push. One version: the build bumps every Benjie add-on whose files changed
+since the last release, bumps the skin whenever anything changed, and sets the
+skin's requirements to the current version of everything, so updating the skin
+brings everything else along (Kodi's add-on updates or the power menu's Update
+do it on every device). A version you raise by hand is kept. `--check` shows
+what a release would bump; the last release is recorded in
+`repo/benjie-release.json`. Changelogs (`<news>`) are still written by hand.
+Test against a local copy first with `--test-url http://127.0.0.1:8099/repo/
+--out <dir>` (that does not bump anything).
 
 The phases below are the history of how the fixes were found and what they
 do; they are now built into the add-ons above (paths that say `skin.bingie`
