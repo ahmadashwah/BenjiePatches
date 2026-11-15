@@ -1,5 +1,11 @@
 # Changes from Bingie 2.0.2
 
+## 2.0.2.6 (2026-11-14)
+
+- `1080i/DialogExtendedProgressBar.xml`: Kodi's "PVR manager is starting up"
+  progress (shown at every launch) is hidden; other background progress
+  (library scans, add-on installs) still shows.
+
 ## 2.0.2.5 (2026-11-14)
 
 - `1080i/IncludesDefaultSkinSettings.xml`: no Trakt Manager button on the info

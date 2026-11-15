@@ -22,6 +22,7 @@ import os
 import re
 import threading
 import time
+import xml.etree.ElementTree as ET
 
 import xbmc
 import xbmcaddon
@@ -235,6 +236,41 @@ def ensure_live_tv(delay=90):
 
     _live_tv_thread = threading.Thread(target=_work, daemon=True)
     _live_tv_thread.start()
+
+
+def disable_empty_live_tv_instance():
+    """The Live TV add-on keeps a leftover "Migrated Add-on Config" instance
+    (instance 1) with no playlist or guide once XStream Player has set up its
+    own instances; it starts as an extra Live TV client at every launch and
+    logs load errors for nothing. Switched off once, only when it is exactly
+    that empty leftover and XStream's own instance exists (takes effect at the
+    next Kodi start)."""
+    d = os.path.join(KODI_PROFILE, "addon_data", "pvr.iptvsimple")
+    first = os.path.join(d, "instance-settings-1.xml")
+    if not os.path.isfile(first):
+        return
+    try:
+        others = [f for f in os.listdir(d) if f.startswith("instance-settings-") and f != "instance-settings-1.xml"]
+        if not any("XStream Player" in open(os.path.join(d, f), encoding="utf-8", errors="replace").read() for f in others):
+            return
+        root = ET.parse(first).getroot()
+    except (OSError, ET.ParseError):
+        return
+    s = {el.get("id"): (el.text or "").strip() for el in root.iter("setting")}
+    if s.get("kodi_addon_instance_name") != "Migrated Add-on Config" or s.get("kodi_addon_instance_enabled") == "false":
+        return
+    if s.get("m3uPath") or s.get("m3uUrl") or s.get("epgPath") or s.get("epgUrl"):
+        return  # it has a source of its own: leave it
+    for el in root.iter("setting"):
+        if el.get("id") == "kodi_addon_instance_enabled":
+            el.text = "false"
+            el.attrib.pop("default", None)
+            break
+    else:
+        el = ET.SubElement(root, "setting", id="kodi_addon_instance_enabled")
+        el.text = "false"
+    ET.ElementTree(root).write(first, encoding="utf-8", xml_declaration=False)
+    log("Switched off the empty leftover Live TV instance (\"Migrated Add-on Config\"); takes effect at the next start.")
 
 
 def refresh_empty_guide():
@@ -468,6 +504,7 @@ def run_checks():
     ensure_live_tv()
     try:
         refresh_empty_guide()
+        disable_empty_live_tv_instance()
     except Exception as e:
         log(f"Guide check failed: {e}", xbmc.LOGWARNING)
     threading.Thread(target=_offer_github_sync, daemon=True).start()

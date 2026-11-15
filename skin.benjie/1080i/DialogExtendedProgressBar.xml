@@ -4,17 +4,21 @@
 	<animation effect="fade" start="0" end="100" time="300">WindowOpen</animation>
 	<animation effect="fade" start="100" end="0" time="200">WindowClose</animation>
 	<controls>
+		<!-- Bengie: Kodi's "PVR manager is starting up" progress showed at every
+		     launch; it is hidden (other background tasks still show). -->
 		<!-- Vignette Mask -->
 		<control type="image">
 			<width>1920</width>
 			<height>290</height>
 			<texture background="true" flipy="true">overlays/osd_gradient.png</texture>
+			<visible>!String.Contains(Control.GetLabel(30),$LOCALIZE[19235]) + !String.Contains(Control.GetLabel(31),$LOCALIZE[19235])</visible>
 		</control>
 		<control type="group">
 			<right>20</right>
 			<width>80</width>
 			<top>10</top>
             <visible>!Window.IsActive(notification) + !Window.IsActive(fullscreenvideo) + !Window.IsVisible(startup)</visible>
+            <visible>!String.Contains(Control.GetLabel(30),$LOCALIZE[19235]) + !String.Contains(Control.GetLabel(31),$LOCALIZE[19235])</visible>
 			<control type="image">
 				<left>20</left>
 				<top>10</top>

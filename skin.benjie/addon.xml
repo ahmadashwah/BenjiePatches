@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Bengie: a modified version of the Bingie skin by matke (skin.bingie 2.0.2), GPL v2.0. See CHANGES.md. -->
-<addon id="skin.benjie" version="2.0.2.5" name="Bengie 2.0" provider-name="matke (Bingie), modified by ahmadashwah">
+<addon id="skin.benjie" version="2.0.2.6" name="Bengie 2.0" provider-name="matke (Bingie), modified by ahmadashwah">
 	<requires>
 		<import version="5.17.0" addon="xbmc.gui"/>
 		<import addon="script.bingie.helper" version="1.1.2"/>
@@ -14,7 +14,7 @@
 		<import addon="plugin.program.autocompletion" version="2.1.2" />
 		<!-- Bengie: everything else comes with the skin. -->
 		<import addon="plugin.video.xstream-player" version="2.1.5.3" />
-		<import addon="service.iptvhelperfixes" version="1.9.3" />
+		<import addon="service.iptvhelperfixes" version="1.9.4" />
 		<import addon="script.module.bingie" version="1.0.1" />
 	</requires>
 	<extension debugging="false" defaultthemename="Textures.xbt" effectslowdown="1" point="xbmc.gui.skin">
