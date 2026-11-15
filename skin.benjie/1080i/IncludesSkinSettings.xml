@@ -2418,6 +2418,13 @@
             <label>$LOCALIZE[31264]</label>
             <onclick>Skin.ToggleSetting(EnableSnowAnimation)</onclick>
             <selected>Skin.HasSetting(EnableSnowAnimation)</selected>
-        </control>		
+        </control>
+		<!-- Bengie: Touch mode (issue #19): on-screen Back buttons for touchscreens -->
+        <control type="radiobutton" id="31590">
+            <include>SkinSettings_Button</include>
+            <label>$LOCALIZE[31590]</label>
+            <onclick>Skin.ToggleSetting(TouchMode)</onclick>
+            <selected>Skin.HasSetting(TouchMode)</selected>
+        </control>
     </include>
 </includes>

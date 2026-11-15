@@ -128,5 +128,6 @@
 		<!--Header-->
         <include>Header</include>
         <include condition="Skin.HasSetting(DebugGrid) | Skin.HasSetting(DebugInfo)">DebugInfo</include>
+		<include>Bengie_TouchBackButton</include>
 	</controls>
 </window>

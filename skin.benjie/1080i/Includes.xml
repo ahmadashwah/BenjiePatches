@@ -274,6 +274,30 @@
         </definition>
     </include>
 
+    <!-- Bengie (issue #19): an on-screen Back button for touchscreens, top right, shown only
+         with Touch mode on (skin settings). Not in the remote's navigation: only a tap or a
+         click reaches it. -->
+    <include name="Bengie_TouchBackButton">
+        <control type="button" id="1192">
+            <right>40</right>
+            <top>30</top>
+            <width>200</width>
+            <height>72</height>
+            <font>Reg30</font>
+            <textoffsetx>0</textoffsetx>
+            <align>center</align>
+            <aligny>center</aligny>
+            <label>‹  $LOCALIZE[31592]</label>
+            <textcolor>FFFFFFFF</textcolor>
+            <focusedcolor>$INFO[Skin.String(ButtonFocusTextColor)]</focusedcolor>
+            <texturenofocus border="10" colordiffuse="99202020">diffuse/panel.png</texturenofocus>
+            <texturefocus border="10" colordiffuse="$INFO[Skin.String(ButtonFocusColor)]">diffuse/panel.png</texturefocus>
+            <pulseonselect>false</pulseonselect>
+            <onclick>Action(Back)</onclick>
+            <visible>Skin.HasSetting(TouchMode)</visible>
+        </control>
+    </include>
+
     <!--Keyboard-->
     <include name="EditTextKeyboard">
         <font>Reg45</font>

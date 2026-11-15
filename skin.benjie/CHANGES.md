@@ -1,5 +1,18 @@
 # Changes from Bingie 2.0.2
 
+## 2.0.2.10 (2026-11-15)
+
+- Touch mode, a new switch in the skin settings (General, Advanced): shows an
+  on-screen "‹ Back" button at the top right of the info page, the Search page
+  and video lists, so a touchscreen without keys can leave them (issue #19).
+  Off by default; remotes see no change. (`1080i/Includes.xml`
+  `Bengie_TouchBackButton`, `1080i/IncludesSkinSettings.xml`,
+  `1080i/DialogVideoInfo.xml`, `1080i/MyVideoNav.xml`, strings 31590-31592.)
+- `1080i/Custom_1109_BingieSearch.xml`: tapping (or clicking) the search text
+  or the "full keyboard" hint opens the full keyboard; with Touch mode on the
+  hint says "Tap here for full keyboard" instead of "Press up…" (issue #16).
+  Pressing Up still works.
+
 ## 2.0.2.9 (2026-11-15)
 
 - `1080i/Custom_1161_SearchTermChanged.xml` (new): the Search page searches

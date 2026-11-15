@@ -26,5 +26,6 @@
         <include condition="!Skin.HasSetting(UseBingieInfoDialog)">BingieAltInfo</include>
 		<include condition="String.IsEqual(ListItem.Property(tmdb_type),person)">TMDB_Helper_Cast</include>
 		<include condition="Skin.HasSetting(DebugGrid) | Skin.HasSetting(DebugInfo)">DebugInfo</include>
+		<include>Bengie_TouchBackButton</include>
 	</controls>
 </window>

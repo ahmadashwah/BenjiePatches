@@ -2377,3 +2377,15 @@ msgstr ""
 msgctxt "#31579"
 msgid "color for play icon"
 msgstr ""
+
+msgctxt "#31590"
+msgid "Touch mode"
+msgstr ""
+
+msgctxt "#31591"
+msgid "Tap here for full keyboard"
+msgstr ""
+
+msgctxt "#31592"
+msgid "Back"
+msgstr ""

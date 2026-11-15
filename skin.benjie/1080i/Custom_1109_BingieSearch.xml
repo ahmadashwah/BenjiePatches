@@ -36,13 +36,29 @@
 		<!-- VirtualKeyboardLabel -->
 		<control type="group">
 			<include>SearchSuggestionsAnim</include>		
-            <control type="label">
-				<top>11</top>
-				<left>137</left>
-                <width>auto</width>
+            <!-- Bengie (issue #16): the hint is also a button, so a tap opens the full keyboard
+                 (pressing Up still does). With Touch mode on it says "Tap here". The new term
+                 is searched by Custom_1161_SearchTermChanged.xml. Not in the remote's
+                 navigation. -->
+            <control type="button" id="1193">
+				<top>4</top>
+				<left>127</left>
+                <width>600</width>
+                <height>60</height>
 				<font>Reg32</font>
-                <label>$LOCALIZE[31230]</label>
-				<visible>Skin.HasSetting(EnableBingieSearchFullKeyboard) + !$EXP[IsActualKeyboardActive]</visible>				
+                <textoffsetx>10</textoffsetx>
+                <align>left</align>
+                <aligny>center</aligny>
+                <label>$VAR[Bengie_FullKeyboardHint]</label>
+                <textcolor>FFFFFFFF</textcolor>
+                <focusedcolor>FFFFFFFF</focusedcolor>
+                <texturenofocus />
+                <texturefocus border="10" colordiffuse="33FFFFFF">diffuse/panel.png</texturefocus>
+                <pulseonselect>false</pulseonselect>
+                <onclick>Skin.SetString(CustomSearchTerm)</onclick>
+                <ondown>9000</ondown>
+                <onright>1194</onright>
+				<visible>Skin.HasSetting(EnableBingieSearchFullKeyboard) + !$EXP[IsActualKeyboardActive]</visible>
             </control>
 		</control>
         <!-- Pseudo-Keyboard Layout -->
@@ -186,6 +202,25 @@
             </control>
         </control>
 		
+        <!-- Bengie (issue #16): tapping the search text opens the full keyboard with it, as
+             phones and tablets do. Over the text, invisible except a faint highlight under
+             the mouse; not in the remote's navigation. -->
+        <control type="button" id="1194">
+            <left>640</left>
+            <top>30</top>
+            <width>1040</width>
+            <height>76</height>
+            <label />
+            <texturenofocus />
+            <texturefocus border="10" colordiffuse="1AFFFFFF">diffuse/panel.png</texturefocus>
+            <pulseonselect>false</pulseonselect>
+            <onclick>Skin.SetString(CustomSearchTerm)</onclick>
+            <onleft>9000</onleft>
+            <ondown condition="Integer.IsGreater(Container(77777).NumItems,0)">77777</ondown>
+            <ondown condition="!Integer.IsGreater(Container(77777).NumItems,0)">9000</ondown>
+            <visible>!$EXP[IsActualKeyboardActive]</visible>
+        </control>
+
         <!-- Initial Msg / No Results Label -->
         <control type="label">
             <top>280</top>
@@ -244,6 +279,7 @@
         </include>
         <!-- Main Menu -->
         <include>BingieSideBladeMainMenu</include>
+        <include>Bengie_TouchBackButton</include>
 		<!-- Snow Effect -->
         <include condition="Skin.HasSetting(EnableSnowAnimation)">SnowAnimation</include>
 		<control type="videowindow">
