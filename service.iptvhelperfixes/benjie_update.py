@@ -190,7 +190,15 @@ def update_all(monitor, force=False, progress=None):
     for a in (REPO_ADDON,) + ((SKIN,) if xbmc.getSkinDir() == OLD_SKIN else ()):
         if a in listing and not installed_version(a):
             wanted.add(a)
-            wanted.update(d for d in listing[a][1] if not installed_version(d))
+    # Bengie add-ons an update newly needs and that aren't installed yet (the
+    # skin needs script.benjie.bundle from skin 2.0.2.9 on, and the bundle
+    # needs the rest), followed all the way down.
+    todo = list(wanted)
+    while todo:
+        for d in listing.get(todo.pop(), (None, []))[1]:
+            if d in listing and d not in wanted and not installed_version(d):
+                wanted.add(d)
+                todo.append(d)
 
     done = []
     order = _order(wanted, listing)

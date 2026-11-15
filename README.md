@@ -49,11 +49,16 @@ builds once, and a device still on Bingie is moved to Bengie with its skin
 settings and home menu.
 
 **Publishing:** change the code, then `python3 tools/make_build.py`, commit
-and push. One version: the build bumps every Bengie add-on whose files changed
-since the last release, bumps the skin whenever anything changed, and sets the
-skin's requirements to the current version of everything, so updating the skin
-brings everything else along (Kodi's add-on updates or the power menu's Update
-do it on every device). A version you raise by hand is kept. `--check` shows
+and push. One release: the build bumps every Bengie add-on whose files changed
+since the last release, then bumps the bundle (`script.benjie.bundle`, no
+code) and sets its requirements to the current version of everything, so
+updating the bundle brings everything along (Kodi's add-on updates or the
+power menu's Update do it on every device). The skin requires the bundle and is
+bumped only when its own files changed: every new skin version makes Skin
+Shortcuts rebuild the menus and reload the skin, which isn't needed when only
+XStream Player or another add-on changed. (Skins up to 2.0.2.8 require each
+add-on directly; the next skin release switches to the bundle by itself.) A
+version you raise by hand is kept. `--check` shows
 what a release would bump; the last release is recorded in
 `repo/benjie-release.json`. Changelogs (`<news>`) are still written by hand.
 Test against a local copy first with `--test-url http://127.0.0.1:8099/repo/

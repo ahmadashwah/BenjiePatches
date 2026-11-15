@@ -11,6 +11,10 @@
   "fingerprint": "1e48b78fd384549f4cbc346b6232ba5f97cddad01098d28f48ca3d9454d495ff",
   "version": "1.0.1"
  },
+ "script.benjie.bundle": {
+  "fingerprint": "5566bbcba7141b3b990bfa179050077e4009bfc2cd413d335d7d5079f4e041eb",
+  "version": "1.0.0"
+ },
  "script.bingie.helper": {
   "fingerprint": "2e9184e28ab6f72020600af1c0f2a9b3f00085848858d03adceba293fdfbe253",
   "version": "1.1.2"
@@ -28,8 +32,8 @@
   "version": "1.0.1"
  },
  "service.iptvhelperfixes": {
-  "fingerprint": "c1294705202f039656c97dc2b9f7920575b6a0cdc387a110e132b2a57459612b",
-  "version": "1.9.5"
+  "fingerprint": "36439198e037681241a62b20f816d763b538da73c3988eeae90acb6c12653bd8",
+  "version": "1.9.6"
  },
  "skin.benjie": {
   "fingerprint": "d0f23798057326aa1194d97f906278f5c2dee68073e58b4aa3d798150d882014",

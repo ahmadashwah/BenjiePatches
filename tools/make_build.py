@@ -5,11 +5,14 @@
     python3 tools/make_build.py --check         # only show what a release would bump
     python3 tools/make_build.py --test-url http://127.0.0.1:8099/repo/ --out /tmp/benjie-test
 
-One version: a release run bumps every Bengie add-on whose files changed since
-the last release (last number +1, unless you already raised it by hand), bumps
-the skin whenever anything changed, and sets the skin's requirements to the
-current version of every Bengie add-on. Updating the skin therefore brings
-everything else to the same release. The last release is recorded in
+One release: a release run bumps every Bengie add-on whose files changed since
+the last release (last number +1, unless you already raised it by hand). The
+bundle add-on (script.benjie.bundle, no code) is bumped whenever any of them
+changed and requires the current version of each, so updating it brings
+everything to the same release; the skin requires the bundle. The skin itself
+is bumped only when its own files changed: a new skin version makes Skin
+Shortcuts rebuild the menus and reload the skin, which is not needed when only
+XStream Player or another add-on changed. The last release is recorded in
 repo/benjie-release.json. Changelogs (<news>) are still yours to write.
 
 Every add-on Bengie hosts lives in this repo as source (the skin, the forked
@@ -42,6 +45,7 @@ PAGES_URL = "https://ahmadashwah.github.io/BenjiePatches/repo/"
 HOSTED = [
     "repository.benjie",
     "skin.benjie",
+    "script.benjie.bundle",
     "service.iptvhelperfixes",
     "plugin.video.xstream-player",
     "plugin.video.tmdb.bingie.helper",
@@ -59,19 +63,26 @@ def want(name):
     return name not in SKIP_NAMES and not name.endswith(SKIP_SUFFIXES) and not any(s in name for s in SKIP_CONTAINS)
 
 
-# ------------------------------------------------------------ one version
+# ------------------------------------------------------------ one release
 #
-# The skin is the one version that matters: whenever any Bengie add-on
-# changed since the last release, that add-on's version is bumped, the skin
-# is bumped too, and the skin's requirements are set to the current version
-# of every Bengie add-on. Updating the skin therefore always brings everything
-# else up to the same release. What was released is recorded (a fingerprint of
-# each add-on's files) in repo/benjie-release.json.
+# Whenever a Bengie add-on changed since the last release, its version is
+# bumped. The bundle (no code) is then bumped as well and its requirements set
+# to the current version of every Bengie add-on, so updating the bundle brings
+# everything up to the same release. The skin requires the bundle and is only
+# bumped when its own files changed (a new skin version makes Skin Shortcuts
+# rebuild the menus). What was released is recorded (a fingerprint of each
+# add-on's files) in repo/benjie-release.json.
 
 SKIN = "skin.benjie"
+BUNDLE = "script.benjie.bundle"
 STATE_FILE = os.path.join(REPO, "repo", "benjie-release.json")
-# Bengie add-ons the skin requires (everything hosted except the repository add-on).
-SKIN_REQUIRES = [a for a in HOSTED if a not in ("repository.benjie", SKIN)]
+# Bengie add-ons the bundle requires (everything hosted except the repository
+# add-on, the skin and the bundle itself).
+BUNDLE_REQUIRES = [a for a in HOSTED if a not in ("repository.benjie", SKIN, BUNDLE)]
+
+
+def _import_re(dep):
+    return re.compile(r'(<import\b[^>]*\baddon="%s"[^>]*?\bversion=")[^"]*(")' % re.escape(dep))
 
 
 def _addon_tag_re():
@@ -84,12 +95,14 @@ def read_version(addon_id):
 
 def normalized_addon_xml(addon_id, text):
     """addon.xml with the parts this script manages blanked out, so changing
-    them does not count as a change: the add-on's own version and, in the
-    skin, the versions it requires of the other Bengie add-ons."""
+    them does not count as a change: the add-on's own version, the versions
+    the bundle requires and the bundle version the skin requires."""
     text = _addon_tag_re().sub(r"\1\3", text, count=1)
-    if addon_id == SKIN:
-        for dep in SKIN_REQUIRES:
-            text = re.sub(r'(<import\b[^>]*\baddon="%s"[^>]*?\bversion=")[^"]*(")' % re.escape(dep), r"\1\2", text)
+    # The skin also ignores the versions of its old direct requirements (up to
+    # 2.0.2.8), as the fingerprints recorded for those releases did.
+    managed = BUNDLE_REQUIRES if addon_id == BUNDLE else [BUNDLE] + BUNDLE_REQUIRES if addon_id == SKIN else []
+    for dep in managed:
+        text = _import_re(dep).sub(r"\1\2", text)
     return text
 
 
@@ -137,25 +150,40 @@ def set_version(addon_id, version):
     write_addon_xml(addon_id, lambda t: _addon_tag_re().sub(lambda m: m.group(1) + version + m.group(3), t, count=1))
 
 
-def set_skin_requirements(versions, add_missing):
-    """Sets the skin's required versions of the Bengie add-ons. Requirements
-    the skin does not list yet are only added when the skin itself is being
-    bumped, so a released skin version never changes without a new number."""
+def set_requirements(addon_id, deps, versions, add_missing):
+    """Sets the versions addon_id requires of deps. Requirements it does not
+    list yet are only added when it is being bumped itself, so a released
+    version never changes without a new number."""
     def edit(text):
-        for dep in SKIN_REQUIRES:
-            pat = re.compile(r'(<import\b[^>]*\baddon="%s"[^>]*?\bversion=")[^"]*(")' % re.escape(dep))
+        for dep in deps:
+            pat = _import_re(dep)
             if pat.search(text):
                 text = pat.sub(lambda m: m.group(1) + versions[dep] + m.group(2), text)
             elif add_missing:
                 text = text.replace("</requires>", f'\t<import addon="{dep}" version="{versions[dep]}" />\n\t</requires>', 1)
-                print(f"  skin now requires {dep} {versions[dep]}")
+                print(f"  {addon_id} now requires {dep} {versions[dep]}")
+        return text
+
+    write_addon_xml(addon_id, edit)
+
+
+def swap_skin_to_bundle():
+    """Removes the skin's direct requirements of Bengie add-ons (the bundle
+    requires them) along with the old "everything else comes with the skin"
+    comment; set_requirements then adds the bundle."""
+    def edit(text):
+        for dep in BUNDLE_REQUIRES:
+            text, n = re.subn(r'[ \t]*<import\b[^>]*\baddon="%s"[^>]*/>[ \t]*\r?\n' % re.escape(dep), "", text)
+            if n:
+                print(f"  {SKIN}: {dep} now comes through {BUNDLE}")
+        text = re.sub(r'[ \t]*<!-- Bengie: everything else comes with the skin\. -->[ \t]*\r?\n', "", text)
         return text
 
     write_addon_xml(SKIN, edit)
 
 
 def sync_versions(dry_run=False):
-    """Bumps what changed since the last release and ties the skin to the
+    """Bumps what changed since the last release and ties the bundle to the
     current version of everything. Returns {id: version} after the bump."""
     import json
 
@@ -176,9 +204,16 @@ def sync_versions(dry_run=False):
         # Bump unless the version was already raised by hand since the release.
         if released and versions[a] == released:
             bumps[a] = bumped(versions[a])
-    skin_needs_bump = bool(changed) and SKIN not in bumps and versions[SKIN] == state.get(SKIN, {}).get("version")
-    if skin_needs_bump:
-        bumps[SKIN] = bumped(versions[SKIN])
+    # The bundle follows every Bengie add-on; the skin only its own files.
+    bundle_needs_bump = (
+        any(a in changed for a in BUNDLE_REQUIRES)
+        and BUNDLE not in bumps
+        and versions[BUNDLE] == state.get(BUNDLE, {}).get("version")
+    )
+    if bundle_needs_bump:
+        bumps[BUNDLE] = bumped(versions[BUNDLE])
+    if changed and SKIN not in changed:
+        print(f"  {SKIN} unchanged: stays {versions[SKIN]} (no menu rebuild on devices)")
     for a, v in bumps.items():
         print(f"  bump {a}: {versions[a]} -> {v}")
     if changed and not bumps:
@@ -189,11 +224,16 @@ def sync_versions(dry_run=False):
     if dry_run:
         return versions
     for a, v in bumps.items():
-        if a != SKIN:
-            set_version(a, v)
+        set_version(a, v)
+    set_requirements(BUNDLE, BUNDLE_REQUIRES, versions, add_missing=BUNDLE in bumps)
+    # The skin's bundle requirement is a minimum; it only moves when the skin
+    # is released anyway (so the skin never changes just for it). Skins up to
+    # 2.0.2.8 required each Bengie add-on directly: the first skin release
+    # after the bundle swaps those for the bundle. (Not earlier: IPTV Helper
+    # Fixes 1.9.5's updater doesn't install new dependencies; 1.9.6 does.)
     if SKIN in bumps:
-        set_version(SKIN, bumps[SKIN])
-    set_skin_requirements(versions, add_missing=SKIN in bumps)
+        swap_skin_to_bundle()
+        set_requirements(SKIN, [BUNDLE], versions, add_missing=True)
     # Record what is being released (fingerprints after the edits above).
     os.makedirs(os.path.dirname(STATE_FILE), exist_ok=True)
     record = {a: {"version": read_version(a), "fingerprint": fingerprint(a)} for a in HOSTED}
