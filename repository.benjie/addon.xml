@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="repository.benjie" name="Benjie Repository" version="1.0.0" provider-name="ahmadashwah">
-    <extension point="xbmc.addon.repository" name="Benjie Repository">
+<addon id="repository.benjie" name="Bengie Repository" version="1.0.1" provider-name="ahmadashwah">
+    <extension point="xbmc.addon.repository" name="Bengie Repository">
         <dir>
             <info compressed="false">https://ahmadashwah.github.io/BenjiePatches/repo/addons.xml</info>
             <checksum>https://ahmadashwah.github.io/BenjiePatches/repo/addons.xml.md5</checksum>
@@ -8,8 +8,8 @@
         </dir>
     </extension>
     <extension point="xbmc.addon.metadata">
-        <summary lang="en_GB">The Benjie skin and its add-ons</summary>
-        <description lang="en_GB">Install the Benjie 2.0 skin from here (Look and feel, Skin) and Kodi installs everything it needs with it: the Benjie builds of XStream Player, TMDb Bingie Helper and Bingie Widgets, the Bingie helper scripts and IPTV Helper Fixes. Updates arrive like any other add-on update. Benjie is a modified version of the Bingie skin by matke; the forked add-ons credit their original authors.</description>
+        <summary lang="en_GB">The Bengie skin and its add-ons</summary>
+        <description lang="en_GB">Install the Bengie 2.0 skin from here (Look and feel, Skin) and Kodi installs everything it needs with it: the Bengie builds of XStream Player, TMDb Bingie Helper and Bingie Widgets, the Bingie helper scripts and IPTV Helper Fixes. Updates arrive like any other add-on update. Bengie is a modified version of the Bingie skin by matke; the forked add-ons credit their original authors.</description>
         <platform>all</platform>
         <license>MIT</license>
         <source>https://github.com/ahmadashwah/BenjiePatches</source>

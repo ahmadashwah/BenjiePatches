@@ -5,11 +5,11 @@ macOS, Linux) using Kodi's own built-in Python — no external Python
 install, terminal, or keyboard required.
 
 Since 1.9.0 nothing is patched: the skin (skin.benjie), XStream Player, TMDb
-Bingie Helper and Bingie Widgets come from the Benjie repository with every
+Bingie Helper and Bingie Widgets come from the Bengie repository with every
 fix built in. What this service still does, every few minutes while Kodi runs:
-  - Keeps the Benjie add-ons current and moves a device off skin.bingie once
-    (benjie_update: installs the Benjie repository on older devices, then
-    any newer Benjie add-on it lists).
+  - Keeps the Bengie add-ons current and moves a device off skin.bingie once
+    (benjie_update: installs the Bengie repository on older devices, then
+    any newer Bengie add-on it lists).
   - Back-button keymap, subtitle set-up, Live TV set-up after a login.
   - Publishes the IPTV profile name for the side menu header, closes the
     playback loading screen once a video starts, keeps the Netflix Top 10
@@ -388,7 +388,7 @@ RECHECK_INTERVAL_SECONDS = 300
 
 def run_checks():
     """One pass of all checks."""
-    log("Checking Benjie...")
+    log("Checking Bengie...")
     install_backbutton_keymap()
     try:
         benjie_update.run(xbmc.Monitor())

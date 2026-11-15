@@ -1,20 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Benjie: a modified version of the Bingie skin by matke (skin.bingie 2.0.2), GPL v2.0. See CHANGES.md. -->
-<addon id="skin.benjie" version="2.0.2.3" name="Benjie 2.0" provider-name="matke (Bingie), modified by ahmadashwah">
+<!-- Bengie: a modified version of the Bingie skin by matke (skin.bingie 2.0.2), GPL v2.0. See CHANGES.md. -->
+<addon id="skin.benjie" version="2.0.2.4" name="Bengie 2.0" provider-name="matke (Bingie), modified by ahmadashwah">
 	<requires>
 		<import version="5.17.0" addon="xbmc.gui"/>
 		<import addon="script.bingie.helper" version="1.1.2"/>
 		<import addon="script.bingie.toolbox" version="1.0.0"/>
-		<import addon="script.bingie.widgets" version="1.0.1.1"/>
+		<import addon="script.bingie.widgets" version="1.0.1.2"/>
 		<import addon="script.skinshortcuts" version="2.0.3"/>
-		<!-- Benjie: Kodi's own repository has 0.0.24 (Bingie asked for 1.0.0 from its repository). -->
+		<!-- Bengie: Kodi's own repository has 0.0.24 (Bingie asked for 1.0.0 from its repository). -->
 		<import addon="resource.images.studios.coloured" version="0.0.24" />
-		<import addon="plugin.video.tmdb.bingie.helper" version="1.0.3.1" />
-		<!-- Benjie: Kodi's own repository has 2.1.2, and Kodi takes add-ons it carries only from there. -->
+		<import addon="plugin.video.tmdb.bingie.helper" version="1.0.3.2" />
+		<!-- Bengie: Kodi's own repository has 2.1.2, and Kodi takes add-ons it carries only from there. -->
 		<import addon="plugin.program.autocompletion" version="2.1.2" />
-		<!-- Benjie: everything else comes with the skin. -->
-		<import addon="plugin.video.xstream-player" version="2.1.5.1" />
-		<import addon="service.iptvhelperfixes" version="1.9.1" />
+		<!-- Bengie: everything else comes with the skin. -->
+		<import addon="plugin.video.xstream-player" version="2.1.5.2" />
+		<import addon="service.iptvhelperfixes" version="1.9.2" />
 		<import addon="script.module.bingie" version="1.0.1" />
 	</requires>
 	<extension debugging="false" defaultthemename="Textures.xbt" effectslowdown="1" point="xbmc.gui.skin">
@@ -26,7 +26,7 @@
 		<summary lang="es_ES">Kodi con diseño Netflix.</summary>
 		<summary lang="es_AR">Kodi con diseño Netflix.</summary>
 		<summary lang="es_MX">Kodi con diseño Netflix.</summary>
-		<description lang="en_GB">Benjie is a modified version of the Bingie skin (skin.bingie 2.0.2) by matke, with the IPTV Helper Fixes skin changes built in: XStream Player rows on Home and New and Popular, Arabic search, a loading screen while playback starts, a Live TV menu entry, an Update entry in the power menu and more. All credit for the original skin goes to the Bingie authors. Licensed under the GPL v2.0, like Bingie.</description>
+		<description lang="en_GB">Bengie is a modified version of the Bingie skin (skin.bingie 2.0.2) by matke, with the IPTV Helper Fixes skin changes built in: XStream Player rows on Home and New and Popular, Arabic search, a loading screen while playback starts, a Live TV menu entry, an Update entry in the power menu and more. All credit for the original skin goes to the Bingie authors. Licensed under the GPL v2.0, like Bingie.</description>
 		<description lang="zh_CN">Bingie -你最喜欢的电影和节目的主界面！</description>
 		<description lang="es_ES">Bingie - tu hogar de películas y series favoritas!</description>
 		<description lang="es_AR">Bingie - tu hogar de películas y series favoritas!</description>

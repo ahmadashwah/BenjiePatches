@@ -1,5 +1,11 @@
 # Changes from Bingie 2.0.2
 
+## 2.0.2.4 (2026-11-14)
+
+- The name is Bengie (as in binge-watching) everywhere people see it: "Bengie
+  2.0", "Bengie Repository", descriptions and messages. The add-on ids stay
+  `skin.benjie` and `repository.benjie`, so nothing moves on devices.
+
 ## 2.0.2.3 (2026-11-14)
 
 - `1080i/IncludesDefaultSkinSettings.xml`: no startup intro by default, and
@@ -15,12 +21,12 @@
 
 ## 2.0.2.2 (2026-11-14)
 
-- `addon.xml`: requires the Benjie builds of XStream Player (2.1.5.1),
+- `addon.xml`: requires the Bengie builds of XStream Player (2.1.5.1),
   TMDb Bingie Helper (1.0.3.1) and Bingie Widgets (1.0.1.1) and IPTV Helper
-  Fixes (1.9.0), so installing the skin from the Benjie repository installs
+  Fixes (1.9.0), so installing the skin from the Bengie repository installs
   everything. Studio logos and AutoCompletion are asked for at the versions
   Kodi's own repository has (0.0.24 and 2.1.2).
-- `shortcuts/*.DATA.xml`: the Benjie build's home menu and rows are the
+- `shortcuts/*.DATA.xml`: the Bengie build's home menu and rows are the
   defaults (Search, Home, New & Popular, Shows, Movies, Live TV, Categories,
   My List and their sub-menus).
 - `1080i/Includes.xml`, `1080i/IncludesVariables.xml`: no first-run screens
@@ -31,12 +37,12 @@
 
 ## 2.0.2.1
 
-Benjie 2.0 is skin.bingie 2.0.2 by matke, modified by ahmadashwah on
+Bengie 2.0 is skin.bingie 2.0.2 by matke, modified by ahmadashwah on
 2026-11-14 (GPL v2, section 2a). These are the changes; everything else is
 Bingie as released.
 
 Identity
-- `addon.xml`: id `skin.benjie`, name "Benjie 2.0", version 2.0.2.1, credit
+- `addon.xml`: id `skin.benjie`, name "Bengie 2.0", version 2.0.2.1, credit
   to the Bingie authors in the provider name and description, source link.
 - References to `skin.bingie` inside the skin (skinshortcuts' generated
   includes, the language file headers) now say `skin.benjie`.

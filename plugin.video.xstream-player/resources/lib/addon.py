@@ -7968,14 +7968,14 @@ def _version_tuple(v):
 
 def update_patch():
     """Power-menu "Update": downloads the newest IPTV Helper Fixes (the
-    Benjie patches) from the GitHub repo and installs it over the current one,
+    Bengie patches) from the GitHub repo and installs it over the current one,
     then offers to restart Kodi so it takes effect. Lists the repo through
     GitHub's API (raw.githubusercontent.com serves files a few minutes stale)
     and reads the version from the downloaded zip itself.
 
-    Benjie build: IPTV Helper Fixes 1.9.0 and later has its own updater that
-    updates every Benjie add-on (skin, this player, the helpers, the service)
-    from the Benjie repository, so Update hands over to it; the old
+    Bengie build: IPTV Helper Fixes 1.9.0 and later has its own updater that
+    updates every Bengie add-on (skin, this player, the helpers, the service)
+    from the Bengie repository, so Update hands over to it; the old
     service-only download below stays as the fallback."""
     import urllib.request
 

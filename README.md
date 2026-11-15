@@ -7,44 +7,49 @@
 3. **Settings → File manager → Add source**:
    `https://ahmadashwah.github.io/BenjiePatches/`
 4. **Settings → Add-ons → Install from zip file** → that source →
-   `repository.benjie-1.0.0.zip`.
-5. **Install from repository → Benjie Repository → Look and feel → Skin →
-   Benjie 2.0 → Install.** Kodi installs everything it needs with it.
-6. Say **Switch** when asked to switch to the Benjie skin, then enter the IPTV
+   `repository.benjie-1.0.1.zip`.
+5. **Install from repository → Bengie Repository → Look and feel → Skin →
+   Bengie 2.0 → Install.** Kodi installs everything it needs with it.
+6. Say **Switch** when asked to switch to the Bengie skin, then enter the IPTV
    login when the welcome asks (or later, from the name at the top of the
    side menu).
 
 Updates arrive like any other Kodi add-on update, and **Update** in the
 power menu checks right away.
 
-### What is in the Benjie repository (since 1.9.0)
+### What is in the Bengie repository (since 1.9.0)
 
 Everything that used to be patched at runtime is built in. Each fork keeps its
 add-on id (so logins, favourites and history stay put), its license, and a
 `BENJIE.md` crediting the original authors and listing the changes:
 
-| Add-on | Version | Based on |
-|---|---|---|
-| [skin.benjie](skin.benjie/) | 2.0.2.2 | Bingie 2.0.2 by matke (GPL v2), see [CHANGES.md](skin.benjie/CHANGES.md) |
-| [plugin.video.xstream-player](plugin.video.xstream-player/) | 2.1.5.1 | XStream Player 2.1.5 by Pesicp (MIT) |
-| [plugin.video.tmdb.bingie.helper](plugin.video.tmdb.bingie.helper/) | 1.0.3.1 | TMDb Bingie Helper 1.0.3 (GPL-3.0-or-later) |
-| [script.bingie.widgets](script.bingie.widgets/) | 1.0.1.1 | Bingie Widgets 1.0.1 by matke (GPL v2) |
-| script.bingie.helper, script.bingie.toolbox, script.module.bingie | unchanged | Bingie's own repository |
-| [service.iptvhelperfixes](service.iptvhelperfixes/) | 1.9.0 | this project: updates, Live TV and subtitle set-up, profile name, loading screen, sync, error reports |
-| [repository.benjie](repository.benjie/) | 1.0.0 | the repository add-on |
+Current versions are in [repo/benjie-release.json](repo/benjie-release.json).
+
+| Add-on | Based on |
+|---|---|
+| [skin.benjie](skin.benjie/) ("Bengie 2.0") | Bingie 2.0.2 by matke (GPL v2), see [CHANGES.md](skin.benjie/CHANGES.md) |
+| [plugin.video.xstream-player](plugin.video.xstream-player/) | XStream Player 2.1.5 by Pesicp (MIT) |
+| [plugin.video.tmdb.bingie.helper](plugin.video.tmdb.bingie.helper/) | TMDb Bingie Helper 1.0.3 (GPL-3.0-or-later) |
+| [script.bingie.widgets](script.bingie.widgets/) | Bingie Widgets 1.0.1 by matke (GPL v2) |
+| script.bingie.helper, script.bingie.toolbox, script.module.bingie | Bingie's own repository, unchanged |
+| [service.iptvhelperfixes](service.iptvhelperfixes/) | this project: updates, Live TV and subtitle set-up, profile name, loading screen, sync, error reports |
+| [repository.benjie](repository.benjie/) ("Bengie Repository") | the repository add-on |
+
+The add-on ids keep the original spelling (`skin.benjie`, `repository.benjie`,
+the `BenjiePatches` repo and web address); the name people see is Bengie.
 
 Everything else (script modules, skinshortcuts, the studio logos, the Live TV
 add-on, OpenSubtitles) comes from Kodi's own repository; Kodi only accepts the
 add-ons it carries from there. Upstream updates of the forked add-ons no
 longer apply.
 
-Devices set up before 1.9.0 (Benjie Setup, or the service alone) get the same
-result from the service: it installs the Benjie repository and the Benjie
-builds once, and a device still on Bingie is moved to Benjie with its skin
+Devices set up before 1.9.0 (Bengie Setup, or the service alone) get the same
+result from the service: it installs the Bengie repository and the Bengie
+builds once, and a device still on Bingie is moved to Bengie with its skin
 settings and home menu.
 
 **Publishing:** change the code, then `python3 tools/make_build.py`, commit
-and push. One version: the build bumps every Benjie add-on whose files changed
+and push. One version: the build bumps every Bengie add-on whose files changed
 since the last release, bumps the skin whenever anything changed, and sets the
 skin's requirements to the current version of everything, so updating the skin
 brings everything else along (Kodi's add-on updates or the power menu's Update
@@ -106,7 +111,7 @@ phase below wires them together and fixes bugs that surfaced along the way.
 ## Phase 3 onward — two ways to apply the fixes
 
 > History: this is how the fixes were applied before 1.9.0. Today they are
-> built into the add-ons in the Benjie repository (see Install at the top),
+> built into the add-ons in the Bengie repository (see Install at the top),
 > and the patching service and `setup_xstream_fixes.py` described here are
 > gone.
 
@@ -492,8 +497,8 @@ timestamp so whichever device watched something most recently wins.
 
 ---
 
-## Benjie Setup (retired in 1.9.0)
+## Bengie Setup (retired in 1.9.0)
 
-The one-step `service.benjie.setup` zip is replaced by the Benjie repository
+The one-step `service.benjie.setup` zip is replaced by the Bengie repository
 (see Install at the top). Devices it set up are brought onto the repository
 by IPTV Helper Fixes 1.9.0.

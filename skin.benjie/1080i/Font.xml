@@ -748,7 +748,7 @@
 			<linespacing>1.04</linespacing>
         </font>
 	</fontset>
-	<!-- Benjie: Inter is the default (it has Arabic letters; Bingie's default, Netflix Sans, had none,
+	<!-- Bengie: Inter is the default (it has Arabic letters; Bingie's default, Netflix Sans, had none,
          so Arabic titles showed as boxes, and Netflix Sans is Netflix's own font). -->
     <fontset id="Default" unicode="true">
 		<!-- ==================== -->

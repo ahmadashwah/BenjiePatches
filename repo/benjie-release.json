@@ -1,15 +1,15 @@
 {
  "plugin.video.tmdb.bingie.helper": {
-  "fingerprint": "6c5caff7377858242b47e88765c1fe2654a3c4bbbc0af9c589591a05954eeb1b",
-  "version": "1.0.3.1"
+  "fingerprint": "40f98590092352b4ae2f2a9c90ae40e7f5cd5358a31bcc1cd3c4509b100b5d2f",
+  "version": "1.0.3.2"
  },
  "plugin.video.xstream-player": {
-  "fingerprint": "3b08bda261339e55bb03b495912beadfe3872f600cadb29b73774c031ea78836",
-  "version": "2.1.5.1"
+  "fingerprint": "bfabaa4b286a27e62b197266bc432fcdf3a49101f45fe4e7752a126ac3ddfad8",
+  "version": "2.1.5.2"
  },
  "repository.benjie": {
-  "fingerprint": "11c156c683e260ccdc58fe7885668e58c0546d54427a0e64fa92f5ed4f61bd25",
-  "version": "1.0.0"
+  "fingerprint": "1e48b78fd384549f4cbc346b6232ba5f97cddad01098d28f48ca3d9454d495ff",
+  "version": "1.0.1"
  },
  "script.bingie.helper": {
   "fingerprint": "2e9184e28ab6f72020600af1c0f2a9b3f00085848858d03adceba293fdfbe253",
@@ -20,19 +20,19 @@
   "version": "1.0.0"
  },
  "script.bingie.widgets": {
-  "fingerprint": "8170c58e53ba3a133a851c6c5093a87447205b9c156ab9732abcdaaa6dc5012f",
-  "version": "1.0.1.1"
+  "fingerprint": "89f662f1532bfb20a9fe9d0d975cc192fa800912e557108c8f8094f9a207010f",
+  "version": "1.0.1.2"
  },
  "script.module.bingie": {
   "fingerprint": "3c10c24ce213651becf49d814ce61d960c5ca9ecaaa50c393b2abc37e0f1c92c",
   "version": "1.0.1"
  },
  "service.iptvhelperfixes": {
-  "fingerprint": "43c1a6b7d9e7de87b795673e94a8a40b9eb8aff24d0d9c39584a6583e9b426e2",
-  "version": "1.9.1"
+  "fingerprint": "d0c3d5f0bf86db7b502cef55223dfe16fd5d8cc2365ffb44c41958df7e044f48",
+  "version": "1.9.2"
  },
  "skin.benjie": {
-  "fingerprint": "1a0817c1a371590be63474ca8cee1b3ef923ba9529632d8bb2657e41afd758f1",
-  "version": "2.0.2.3"
+  "fingerprint": "0d1e38ea78d0ad45fb64f91b2865f9901609c1baee39a46e072025a62b27c979",
+  "version": "2.0.2.4"
  }
 }

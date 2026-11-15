@@ -44,7 +44,7 @@
 	<onload condition="!Skin.HasSetting(HomeMenuDefaults46)">Skin.SetString(WidgetsGlobalLimit,25)</onload>
 	<onload condition="!Skin.HasSetting(HomeMenuDefaults46)">Skin.SetString(SearchLimit,20)</onload>
 	<onload condition="!Skin.HasSetting(HomeMenuDefaults46)">Skin.SetBool(EnableStudioLogoInfoDialog)</onload>
-	<!-- Benjie: auto-pause when the OSD opens is off by default (Bingie turned it on here). -->
+	<!-- Bengie: auto-pause when the OSD opens is off by default (Bingie turned it on here). -->
 	<onload condition="!Skin.HasSetting(HomeMenuDefaults46)">Skin.SetBool(EnableBingieSearchFullKeyboard)</onload>
 	<onload condition="!Skin.HasSetting(HomeMenuDefaults46)">Skin.SetBool(view510_detailsshowinfo)</onload>
 	<onload condition="!Skin.HasSetting(HomeMenuDefaults46)">Skin.SetBool(ratings_IMDB)</onload>
@@ -374,7 +374,7 @@
         <onload condition="!Skin.String(View514_DisplayInfo.label)">Skin.SetString(View514_DisplayInfo.label,$LOCALIZE[1223])</onload>
 		<onload condition="!Skin.String(cast_number)">Skin.SetString(cast_number,20)</onload>
         <onload condition="!Skin.String(cast_number.label)">Skin.SetString(cast_number.label,20 [LOWERCASE]$LOCALIZE[29994][/LOWERCASE])</onload>
-		<!-- Benjie: no startup intro by default. The 10 s intro video hid Home (so no
+		<!-- Bengie: no startup intro by default. The 10 s intro video hid Home (so no
 		     artwork loaded until it ended) and made every Home row load twice;
 		     measured on one CPU core, Home's first images came at 16 s with it and
 		     5 s without. Switched off once on devices that had it; choosing an

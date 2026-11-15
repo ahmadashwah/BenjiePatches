@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
-"""Benjie updater: keeps every Benjie add-on current from the Benjie
+"""Bengie updater: keeps every Bengie add-on current from the Bengie
 repository, and moves a device that is still on skin.bingie over to
 skin.benjie once.
 
 New installs get everything from the repository (install repository.benjie,
-then the Benjie skin, and Kodi pulls in the rest). Devices set up before the
-repository existed (Benjie Setup, or IPTV Helper Fixes 1.8.0 and earlier) do
-not have it, so this installs repository.benjie itself, then any Benjie add-on
+then the Bengie skin, and Kodi pulls in the rest). Devices set up before the
+repository existed (Bengie Setup, or IPTV Helper Fixes 1.8.0 and earlier) do
+not have it, so this installs repository.benjie itself, then any Bengie add-on
 that the repository has a newer version of (the forked XStream Player, TMDb
 Bingie Helper and Bingie Widgets, the skin, this service), straight from the
 repository's zips. It checks twice a day, and at once when the power menu's
@@ -88,7 +88,7 @@ def _fetch(url):
 
 
 def repo_addons():
-    """{id: (version, [ids of Benjie add-ons it needs])} from the repository."""
+    """{id: (version, [ids of Bengie add-ons it needs])} from the repository."""
     root = ET.fromstring(_fetch(REPO_URL + "addons.xml"))
     ids = {a.get("id") for a in root.findall("addon")}
     return {
@@ -159,11 +159,11 @@ def _register_and_enable(addon_ids, monitor):
         if not xbmc.getCondVisibility(f"System.AddonIsEnabled({a})"):
             res = _rpc("Addons.SetAddonEnabled", addonid=a, enabled=True)
             if "error" in res:
-                log(f"Benjie update: could not enable {a}: {res['error'].get('message')}", xbmc.LOGWARNING)
+                log(f"Bengie update: could not enable {a}: {res['error'].get('message')}", xbmc.LOGWARNING)
 
 
 def update_all(monitor, force=False, progress=None):
-    """Installs the repository if missing and every Benjie add-on that is
+    """Installs the repository if missing and every Bengie add-on that is
     out of date (plus skin.benjie on a device still on Bingie). Returns the
     list of (id, old version, new version) installed, or None when skipped
     or the repository could not be read."""
@@ -177,7 +177,7 @@ def update_all(monitor, force=False, progress=None):
     try:
         listing = repo_addons()
     except Exception as e:
-        log(f"Benjie update: could not read the Benjie repository: {e}", xbmc.LOGWARNING)
+        log(f"Bengie update: could not read the Bengie repository: {e}", xbmc.LOGWARNING)
         if force:
             raise
         return None
@@ -201,9 +201,9 @@ def update_all(monitor, force=False, progress=None):
         try:
             _install(a, listing[a][0])
             done.append((a, old, listing[a][0]))
-            log(f"Benjie update: {a} {old or '(new)'} -> {listing[a][0]}")
+            log(f"Bengie update: {a} {old or '(new)'} -> {listing[a][0]}")
         except Exception as e:
-            log(f"Benjie update: {a} failed: {e}", xbmc.LOGWARNING)
+            log(f"Bengie update: {a} failed: {e}", xbmc.LOGWARNING)
     if done:
         _register_and_enable([a for a, _, _ in done], monitor)
     return done
@@ -295,26 +295,26 @@ def migrate_once(monitor):
     if current not in (OLD_SKIN, DEFAULT_SKIN) or not xbmc.getCondVisibility(f"System.AddonIsEnabled({SKIN})"):
         return
     if not _safe_to_switch():
-        log("Benjie skin: waiting for Home (nothing playing) to switch skins.")
+        log("Bengie skin: waiting for Home (nothing playing) to switch skins.")
         return
     if current == DEFAULT_SKIN:
         import xbmcgui
 
-        if not xbmcgui.Dialog().yesno("Benjie", "Switch to the Benjie skin now?", yeslabel="Switch", nolabel="Not now"):
+        if not xbmcgui.Dialog().yesno("Bengie", "Switch to the Bengie skin now?", yeslabel="Switch", nolabel="Not now"):
             _mark_migrated("declined on the default skin")
-            log("Benjie skin: switching from the default skin declined; not asking again.")
+            log("Bengie skin: switching from the default skin declined; not asking again.")
             return
         if switch_skin(monitor):
             _mark_migrated("switched from the default skin")
-            log("Benjie skin: switched from the default skin.")
+            log("Bengie skin: switched from the default skin.")
         return
     n = copy_skin_data()
-    log(f"Benjie skin: copied {n} Bingie settings/menu files to skin.benjie.")
+    log(f"Bengie skin: copied {n} Bingie settings/menu files to skin.benjie.")
     if switch_skin(monitor):
         _mark_migrated("switched from skin.bingie")
-        log("Benjie skin: switched from Bingie to Benjie.")
+        log("Bengie skin: switched from Bingie to Bengie.")
     else:
-        log("Benjie skin: the skin switch did not stick; will try again.", xbmc.LOGWARNING)
+        log("Bengie skin: the skin switch did not stick; will try again.", xbmc.LOGWARNING)
 
 
 def run(monitor):
@@ -332,7 +332,7 @@ def run_interactive():
 
     dialog = xbmcgui.Dialog()
     progress = xbmcgui.DialogProgress()
-    progress.create("Update", "Checking the Benjie repository...")
+    progress.create("Update", "Checking the Bengie repository...")
     try:
         done = update_all(xbmc.Monitor(), force=True, progress=progress)
     except Exception as e:

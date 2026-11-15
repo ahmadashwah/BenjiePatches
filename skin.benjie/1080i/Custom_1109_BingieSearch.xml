@@ -10,7 +10,7 @@
 	<onunload>ClearProperty(KeepSuggestions)</onunload>
     <backgroundcolor>$VAR[BingiePanelColor]</backgroundcolor>
     <include>CustomBingieWinProps</include>
-    <!-- Benjie: the full (typing) keyboard is the only search mode, on every device. -->
+    <!-- Bengie: the full (typing) keyboard is the only search mode, on every device. -->
 	<onload condition="!Skin.HasSetting(EnableBingieSearchFullKeyboard)">Skin.SetBool(EnableBingieSearchFullKeyboard)</onload>
     <onload condition="String.IsEmpty(Skin.String(CustomSearchTerm))">SetProperty(CustomSearch,1,home)</onload>
 	<onload condition="String.IsEmpty(Skin.String(CustomSearchTerm))">AlarmClock(OpenSearchKeyboard,Skin.SetString(CustomSearchTerm),00:00,silent)</onload>

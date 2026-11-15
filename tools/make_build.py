@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
-"""Builds the Benjie repository that GitHub Pages serves.
+"""Builds the Bengie repository that GitHub Pages serves.
 
     python3 tools/make_build.py                 # release: bump versions, repo/ + root zips
     python3 tools/make_build.py --check         # only show what a release would bump
     python3 tools/make_build.py --test-url http://127.0.0.1:8099/repo/ --out /tmp/benjie-test
 
-One version: a release run bumps every Benjie add-on whose files changed since
+One version: a release run bumps every Bengie add-on whose files changed since
 the last release (last number +1, unless you already raised it by hand), bumps
 the skin whenever anything changed, and sets the skin's requirements to the
-current version of every Benjie add-on. Updating the skin therefore brings
+current version of every Bengie add-on. Updating the skin therefore brings
 everything else to the same release. The last release is recorded in
 repo/benjie-release.json. Changelogs (<news>) are still yours to write.
 
-Every add-on Benjie hosts lives in this repo as source (the skin, the forked
+Every add-on Bengie hosts lives in this repo as source (the skin, the forked
 XStream Player / TMDb Bingie Helper / Bingie Widgets, the Bingie helper
 scripts, IPTV Helper Fixes and the repository add-on itself). This zips each
 one into repo/<id>/<id>-<version>.zip (the layout Kodi's repository add-ons
@@ -61,16 +61,16 @@ def want(name):
 
 # ------------------------------------------------------------ one version
 #
-# The skin is the one version that matters: whenever any Benjie add-on
+# The skin is the one version that matters: whenever any Bengie add-on
 # changed since the last release, that add-on's version is bumped, the skin
 # is bumped too, and the skin's requirements are set to the current version
-# of every Benjie add-on. Updating the skin therefore always brings everything
+# of every Bengie add-on. Updating the skin therefore always brings everything
 # else up to the same release. What was released is recorded (a fingerprint of
 # each add-on's files) in repo/benjie-release.json.
 
 SKIN = "skin.benjie"
 STATE_FILE = os.path.join(REPO, "repo", "benjie-release.json")
-# Benjie add-ons the skin requires (everything hosted except the repository add-on).
+# Bengie add-ons the skin requires (everything hosted except the repository add-on).
 SKIN_REQUIRES = [a for a in HOSTED if a not in ("repository.benjie", SKIN)]
 
 
@@ -85,7 +85,7 @@ def read_version(addon_id):
 def normalized_addon_xml(addon_id, text):
     """addon.xml with the parts this script manages blanked out, so changing
     them does not count as a change: the add-on's own version and, in the
-    skin, the versions it requires of the other Benjie add-ons."""
+    skin, the versions it requires of the other Bengie add-ons."""
     text = _addon_tag_re().sub(r"\1\3", text, count=1)
     if addon_id == SKIN:
         for dep in SKIN_REQUIRES:
@@ -138,7 +138,7 @@ def set_version(addon_id, version):
 
 
 def set_skin_requirements(versions, add_missing):
-    """Sets the skin's required versions of the Benjie add-ons. Requirements
+    """Sets the skin's required versions of the Bengie add-ons. Requirements
     the skin does not list yet are only added when the skin itself is being
     bumped, so a released skin version never changes without a new number."""
     def edit(text):
@@ -328,6 +328,16 @@ def main():
                 os.remove(os.path.join(base, old))
         zip_addon(a, os.path.join(base, name), repo_url)
         print(f"  root: {name}")
+    # The release page and README link the repository zip by name; keep the
+    # link on the current file (older ones were just removed).
+    if not args.test_url:
+        for page in ("index.html", "README.md"):
+            p = os.path.join(REPO, page)
+            text = open(p, encoding="utf-8").read()
+            new = re.sub(patterns["repository.benjie"], root_zips["repository.benjie"], text)
+            if new != text:
+                open(p, "w", encoding="utf-8", newline="").write(new)
+                print(f"  {page}: now links {root_zips['repository.benjie']}")
     print(f"\nRepository written to {repo_dir} for {repo_url}")
 
 
