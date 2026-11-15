@@ -1,5 +1,28 @@
 # Changes from Bingie 2.0.2
 
+## 2.0.2.9 (2026-11-15)
+
+- `1080i/Custom_1161_SearchTermChanged.xml` (new): the Search page searches
+  whatever was typed, however it was typed. The first search, typed in the
+  keyboard the page opens by itself, used to show "There are no matches for
+  your search" because nothing ever asked for its results (issue #15).
+- `1080i/Custom_1109_BingieSearch.xml`, `1080i/IncludesBingieSearch.xml`:
+  Arabic search works.
+  - The XStream Player results were only in the shipped copy of the menu file
+    that Skin Shortcuts regenerates, so they were lost on devices after any
+    menu rebuild. They're now a normal skin include.
+  - Both result sets are always on the page: XStream Player for Arabic terms,
+    TMDb for the rest. Before, the choice was made when the page opened, so an
+    Arabic term typed on the page was searched on TMDb and found nothing
+    (issue #14).
+- Comes with:
+  - IPTV Helper Fixes 1.9.7: adds Kodi's Arabic keyboard layout once, next to
+    English; the keyboard's layout button switches between them (issue #14).
+  - XStream Player 2.1.5.5: the skin's search rows no longer write XStream's
+    search history (the movie and series searches ran at the same moment and
+    one failed on Windows with "file in use"), and an empty row shows nothing
+    instead of a blank "No results" tile.
+
 ## 2.0.2.8 (2026-11-14)
 
 - `1080i/Custom_1160_PlaybackLoading.xml`: the loading screen shows how far

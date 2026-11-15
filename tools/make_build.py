@@ -79,6 +79,12 @@ STATE_FILE = os.path.join(REPO, "repo", "benjie-release.json")
 # Bengie add-ons the bundle requires (everything hosted except the repository
 # add-on, the skin and the bundle itself).
 BUNDLE_REQUIRES = [a for a in HOSTED if a not in ("repository.benjie", SKIN, BUNDLE)]
+# Off until devices have IPTV Helper Fixes 1.9.7 or later (released
+# 2026-11-15): older versions' updater (the power menu's Update and the
+# service's own check) doesn't install an add-on that an update newly
+# requires, so a skin that requires the bundle could arrive without it. Turn
+# it on for a skin release a few weeks after that.
+SKIN_USES_BUNDLE = False
 
 
 def _import_re(dep):
@@ -228,10 +234,9 @@ def sync_versions(dry_run=False):
     set_requirements(BUNDLE, BUNDLE_REQUIRES, versions, add_missing=BUNDLE in bumps)
     # The skin's bundle requirement is a minimum; it only moves when the skin
     # is released anyway (so the skin never changes just for it). Skins up to
-    # 2.0.2.8 required each Bengie add-on directly: the first skin release
-    # after the bundle swaps those for the bundle. (Not earlier: IPTV Helper
-    # Fixes 1.9.5's updater doesn't install new dependencies; 1.9.6 does.)
-    if SKIN in bumps:
+    # 2.0.2.x required each Bengie add-on directly; once SKIN_USES_BUNDLE is
+    # on, the next skin release swaps those for the bundle.
+    if SKIN in bumps and SKIN_USES_BUNDLE:
         swap_skin_to_bundle()
         set_requirements(SKIN, [BUNDLE], versions, add_missing=True)
     # Record what is being released (fingerprints after the edits above).

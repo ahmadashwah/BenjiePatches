@@ -13,6 +13,10 @@
     <!-- Bengie: the full (typing) keyboard is the only search mode, on every device. -->
 	<onload condition="!Skin.HasSetting(EnableBingieSearchFullKeyboard)">Skin.SetBool(EnableBingieSearchFullKeyboard)</onload>
     <onload condition="String.IsEmpty(Skin.String(CustomSearchTerm))">SetProperty(CustomSearch,1,home)</onload>
+	<!-- Bengie (issue #15): the results are refreshed by Custom_1161_SearchTermChanged.xml
+	     whenever the search term changes. The keyboard this alarm opens used to leave them
+	     unrefreshed: the refresh (CustomSearch) had happened at load, before anything was
+	     typed, so the first search showed "no matches". -->
 	<onload condition="String.IsEmpty(Skin.String(CustomSearchTerm))">AlarmClock(OpenSearchKeyboard,Skin.SetString(CustomSearchTerm),00:00,silent)</onload>
 	<onload condition="String.IsEmpty(Window.Property(SearchPosterAnimation))">SetProperty(SearchPosterAnimation,1)</onload>
 	<onload>ClearProperty(CurrentSearchWidgetID,Home)</onload>
@@ -212,9 +216,14 @@
 			<onleft condition="!String.IsEmpty(Skin.String(CustomSearchTerm))">11</onleft>
             <onback condition="String.IsEmpty(Skin.String(CustomSearchTerm)) + !String.IsEmpty(Window.Property(SuggestionPath))">1007</onback>
 			<onback condition="!String.IsEmpty(Skin.String(CustomSearchTerm))">11</onback>
-			<include condition="$EXP[IsArabicSearchTerm]">skinshortcuts-template-xtreamsearch</include>
-			<include condition="!$EXP[IsArabicSearchTerm] + [Library.HasContent(Movies) | Library.HasContent(TVShows)]">skinshortcuts-template-search</include>
-			<include condition="!$EXP[IsArabicSearchTerm] + !Library.HasContent(Movies) + !Library.HasContent(TVShows)">skinshortcuts-template-tmdbsearch</include>
+			<!-- Bengie (issue #14): both result sets are always there; their paths
+			     (IncludesBingieSearch.xml) are empty unless the term fits: XStream Player's
+			     catalog for Arabic terms, TMDb for the rest. An include condition is only
+			     checked when the page opens, so an Arabic term typed on the page used to be
+			     searched on TMDb (no results) until the page was opened again. -->
+			<include>Bengie_XtreamSearch</include>
+			<include condition="Library.HasContent(Movies) | Library.HasContent(TVShows)">skinshortcuts-template-search</include>
+			<include condition="!Library.HasContent(Movies) + !Library.HasContent(TVShows)">skinshortcuts-template-tmdbsearch</include>
 			<!-- Suggestions Result -->
             <include content="SearchResultWidget">
                 <param name="id" value="500" />

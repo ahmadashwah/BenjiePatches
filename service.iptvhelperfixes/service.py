@@ -456,6 +456,35 @@ def apply_navigation_settings_once():
     log("Applied Bingie's navigation settings (no '..' entries, one-season shows open their episodes).")
 
 
+ARABIC_LAYOUT = "Arabic QWERTY"
+
+
+def add_arabic_keyboard_once():
+    """Once per device: adds Kodi's Arabic keyboard layout next to the ones
+    already on (usually only English QWERTY), so Arabic titles can be typed on
+    screen; the keyboard's layout button switches between them (issue #14).
+    A flag file keeps a later removal in Kodi's settings."""
+    marker = os.path.join(KODI_PROFILE, "addon_data", ADDON_ID, "arabic_keyboard.flag")
+    if os.path.isfile(marker):
+        return
+    reply = json.loads(xbmc.executeJSONRPC(json.dumps({
+        "jsonrpc": "2.0", "id": 1, "method": "Settings.GetSettingValue",
+        "params": {"setting": "locale.keyboardlayouts"},
+    })))
+    layouts = (reply.get("result") or {}).get("value")
+    if not isinstance(layouts, list):
+        log(f"Keyboard layouts not readable: {reply.get('error')}; will retry.", xbmc.LOGWARNING)
+        return
+    if ARABIC_LAYOUT not in layouts:
+        if not _set_kodi_setting("locale.keyboardlayouts", layouts + [ARABIC_LAYOUT]):
+            log("Could not add the Arabic keyboard layout; will retry.", xbmc.LOGWARNING)
+            return
+        log(f"Added the Arabic keyboard layout ({', '.join(layouts + [ARABIC_LAYOUT])}).")
+    os.makedirs(os.path.dirname(marker), exist_ok=True)
+    with open(marker, "w") as f:
+        f.write("done")
+
+
 def setup_subtitles():
     """One-time: installs and enables the official OpenSubtitles.com add-on (service.subtitles.opensubtitles-com -- NOT service.subtitles.opensubtitles, which is the legacy OpenSubtitles.org one),
     sets the preferred subtitle languages to Arabic and English, and makes
@@ -524,6 +553,7 @@ def run_checks():
     install_backbutton_keymap()
     disable_versioncheck_once()
     apply_navigation_settings_once()
+    add_arabic_keyboard_once()
     try:
         benjie_update.run(xbmc.Monitor())
     except Exception:

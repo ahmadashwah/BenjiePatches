@@ -193,7 +193,9 @@ def update_all(monitor, force=False, progress=None):
     # Bengie add-ons an update newly needs and that aren't installed yet (the
     # skin needs script.benjie.bundle from skin 2.0.2.9 on, and the bundle
     # needs the rest), followed all the way down.
-    todo = list(wanted)
+    # Also what an installed add-on already needs but is missing (a device
+    # that got such an update from an older updater repairs itself).
+    todo = list(wanted) + [a for a in listing if installed_version(a)]
     while todo:
         for d in listing.get(todo.pop(), (None, []))[1]:
             if d in listing and d not in wanted and not installed_version(d):

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Bengie (issue #15): refreshes the Search page's results whenever the search term
+     changes, however it changed (the keyboard that opens by itself, Up, a suggestion).
+     Like Custom_1156_ForceRefreshSearch.xml it opens for a moment and closes itself: it
+     shows while the term differs from the one last refreshed, records the term and sets
+     CustomSearch (the results panels load while that is set; window 1156 clears it).
+     Without it, a term typed in the keyboard the page opens on load was never searched,
+     so the first search showed "There are no matches for your search". -->
+<window type="dialog" id="1161">
+	<!-- Waits until the keyboard has closed: the term is already set while it is closing,
+	     but the results' path needs the search label (987), which shows only after it. -->
+	<visible>Window.IsActive(1109) + !Window.IsActive(virtualkeyboard) + !$EXP[IsActualKeyboardActive] + !String.IsEqual(Skin.String(CustomSearchTerm),Window(Home).Property(BengieSearchedTerm))</visible>
+	<!-- The refresh goes through an alarm: set from here directly, window 1156 cleared it
+	     again before the Search page had shown its results panels, so nothing loaded. -->
+	<onload>AlarmClock(BengieSearchRefresh,SetProperty(CustomSearch,1,home),00:01,silent)</onload>
+	<onload>SetProperty(BengieSearchedTerm,$ESCINFO[Skin.String(CustomSearchTerm)],home)</onload>
+	<controls/>
+</window>

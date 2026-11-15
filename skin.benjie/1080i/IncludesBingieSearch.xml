@@ -2,37 +2,40 @@
 <!-- BINGIE -->
 <includes>
     <!-- VARS -->
+    <!-- Bengie (issue #14): the TMDb search paths are empty for Arabic terms and the
+         XStream Player ones for the rest, so the Search page can show the right results for
+         whatever is typed without being reopened (see Custom_1109_BingieSearch.xml). -->
     <variable name="SearchString">
         <value condition="!String.IsEmpty(Skin.String(CustomSearchTerm))">$INFO[Skin.String(CustomSearchTerm)]</value>
         <value condition="!String.IsEmpty(Window.Property(SuggestionPath)) + [ControlGroup(77777).HasFocus() | Control.HasFocus(1007) | [Control.HasFocus(900) + !String.IsEmpty(Window.Property(KeepSuggestions))]]">$INFO[Container(1007).ListItem.Label]</value>
     </variable>
 	
 	<variable name="SearchTMDBAll">
-        <value condition="!String.IsEmpty(Control.GetLabel(987)) + !String.IsEmpty(Skin.String(CustomSearchTerm))">plugin://plugin.video.tmdb.bingie.helper?info=search&amp;tmdb_type=both&amp;nextpage=false&amp;query=</value>
+        <value condition="!String.IsEmpty(Control.GetLabel(987)) + !String.IsEmpty(Skin.String(CustomSearchTerm)) + !$EXP[IsArabicSearchTerm]">plugin://plugin.video.tmdb.bingie.helper?info=search&amp;tmdb_type=both&amp;nextpage=false&amp;query=</value>
     </variable>
 
 	<variable name="SearchXtreamMovies">
-        <value condition="!String.IsEmpty(Control.GetLabel(987)) + !String.IsEmpty(Skin.String(CustomSearchTerm))">plugin://plugin.video.xstream-player/?mode=search_global&amp;profile_num=1&amp;stype=movie&amp;query=</value>
+        <value condition="!String.IsEmpty(Control.GetLabel(987)) + !String.IsEmpty(Skin.String(CustomSearchTerm)) + $EXP[IsArabicSearchTerm]">plugin://plugin.video.xstream-player/?mode=search_global&amp;widget=1&amp;profile_num=1&amp;stype=movie&amp;query=</value>
     </variable>
 
 	<variable name="SearchXtreamSeries">
-        <value condition="!String.IsEmpty(Control.GetLabel(987)) + !String.IsEmpty(Skin.String(CustomSearchTerm))">plugin://plugin.video.xstream-player/?mode=search_global&amp;profile_num=1&amp;stype=series&amp;query=</value>
+        <value condition="!String.IsEmpty(Control.GetLabel(987)) + !String.IsEmpty(Skin.String(CustomSearchTerm)) + $EXP[IsArabicSearchTerm]">plugin://plugin.video.xstream-player/?mode=search_global&amp;widget=1&amp;profile_num=1&amp;stype=series&amp;query=</value>
     </variable>
 	
 	<variable name="SearchTMDBMovies">
-        <value condition="!String.IsEmpty(Control.GetLabel(987)) + !String.IsEmpty(Skin.String(CustomSearchTerm))">plugin://plugin.video.tmdb.bingie.helper?info=search&amp;tmdb_type=movie&amp;nextpage=false&amp;query=</value>
+        <value condition="!String.IsEmpty(Control.GetLabel(987)) + !String.IsEmpty(Skin.String(CustomSearchTerm)) + !$EXP[IsArabicSearchTerm]">plugin://plugin.video.tmdb.bingie.helper?info=search&amp;tmdb_type=movie&amp;nextpage=false&amp;query=</value>
     </variable>
 	
 	<variable name="SearchTMDBCollections">
-        <value condition="!String.IsEmpty(Control.GetLabel(987)) + !String.IsEmpty(Skin.String(CustomSearchTerm))">plugin://plugin.video.tmdb.bingie.helper?info=search&amp;tmdb_type=collection&amp;nextpage=false&amp;query=</value>       
+        <value condition="!String.IsEmpty(Control.GetLabel(987)) + !String.IsEmpty(Skin.String(CustomSearchTerm)) + !$EXP[IsArabicSearchTerm]">plugin://plugin.video.tmdb.bingie.helper?info=search&amp;tmdb_type=collection&amp;nextpage=false&amp;query=</value>       
     </variable>
 	
 	<variable name="SearchTMDBShows">
-        <value condition="!String.IsEmpty(Control.GetLabel(987)) + !String.IsEmpty(Skin.String(CustomSearchTerm))">plugin://plugin.video.tmdb.bingie.helper?info=search&amp;tmdb_type=tv&amp;nextpage=false&amp;query=</value>       
+        <value condition="!String.IsEmpty(Control.GetLabel(987)) + !String.IsEmpty(Skin.String(CustomSearchTerm)) + !$EXP[IsArabicSearchTerm]">plugin://plugin.video.tmdb.bingie.helper?info=search&amp;tmdb_type=tv&amp;nextpage=false&amp;query=</value>       
     </variable>
 	
 	<variable name="SearchTMDBPeople">
-        <value condition="!String.IsEmpty(Control.GetLabel(987)) + !String.IsEmpty(Skin.String(CustomSearchTerm))">plugin://plugin.video.tmdb.bingie.helper?info=search&amp;tmdb_type=person&amp;nextpage=false&amp;query=</value>       
+        <value condition="!String.IsEmpty(Control.GetLabel(987)) + !String.IsEmpty(Skin.String(CustomSearchTerm)) + !$EXP[IsArabicSearchTerm]">plugin://plugin.video.tmdb.bingie.helper?info=search&amp;tmdb_type=person&amp;nextpage=false&amp;query=</value>       
     </variable>
 
     <variable name="EmptySearchResultsString">
@@ -1144,6 +1147,42 @@
                 </control>
             </control>
         </definition>
+    </include>
+
+    <!-- Bengie (issue #14): XStream Player's catalog results for Arabic search terms (movies,
+         then series). They used to be a "skinshortcuts-template-xtreamsearch" include that
+         existed only in the shipped script-skinshortcuts-includes.xml; Skin Shortcuts rewrites
+         that file from shortcuts/template.xml whenever it rebuilds the menus (every skin
+         update), so on devices it was gone and Arabic search showed nothing. -->
+    <include name="Bengie_XtreamSearch">
+        <include content="Object_SearchList_Template">
+            <param name="id" value="5044" />
+            <param name="groupid" value="7544" />
+            <param name="path" value="$VAR[SearchXtreamMovies]" />
+            <param name="path2" value="" />
+            <param name="label" value="$LOCALIZE[342]" />
+            <param name="widgetLimit" value="$INFO[Skin.String(WidgetsGlobalLimit)]" />
+            <param name="layout" value="PosterPanelBingie" />
+            <param name="layoutwidth" value="295" />
+            <param name="layoutheight" value="420" />
+            <param name="height" value="975" />
+            <param name="widgetTags" value="WidgetTagOverlayDisable" />
+            <param name="widgetTarget" value="videos" />
+        </include>
+        <include content="Object_SearchList_Template">
+            <param name="id" value="5045" />
+            <param name="groupid" value="7545" />
+            <param name="path" value="$VAR[SearchXtreamSeries]" />
+            <param name="path2" value="" />
+            <param name="label" value="$LOCALIZE[31566]" />
+            <param name="widgetLimit" value="$INFO[Skin.String(WidgetsGlobalLimit)]" />
+            <param name="layout" value="PosterPanelBingie" />
+            <param name="layoutwidth" value="295" />
+            <param name="layoutheight" value="420" />
+            <param name="height" value="975" />
+            <param name="widgetTags" value="WidgetTagOverlayDisable" />
+            <param name="widgetTarget" value="videos" />
+        </include>
     </include>
 
 </includes>

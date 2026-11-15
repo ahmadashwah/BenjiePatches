@@ -8937,7 +8937,7 @@ def _save_search_history(history, profile_num=None):
     os.replace(tmp_file, history_path)
 
 
-def search_global(query=None, profile_num=None, stype=None, pick_one=False, year=None):
+def search_global(query=None, profile_num=None, stype=None, pick_one=False, year=None, widget=False):
     try:
         # If profile not specified, ask user which profile to search
         if profile_num is None:
@@ -9021,21 +9021,27 @@ def search_global(query=None, profile_num=None, stype=None, pick_one=False, year
                         xbmcplugin.endOfDirectory(addon_handle, succeeded=False)
                         return
                     query = kb
-            if not pick_one:
-                # The TMDb player's own lookups stay out of the user's
-                # search history.
-                history = _load_search_history()
-                if query in history:
-                    history.remove(query)
-                history.insert(0, query)
-                _save_search_history(history)
+            if not pick_one and not widget:
+                # The TMDb player's own lookups and the skin's search rows
+                # stay out of the user's search history. (The skin loads its
+                # movie and series rows at the same moment; both writing the
+                # history file made one fail on Windows with "file in use",
+                # and that ended its search with no results.)
+                try:
+                    history = _load_search_history()
+                    if query in history:
+                        history.remove(query)
+                    history.insert(0, query)
+                    _save_search_history(history)
+                except Exception as e:
+                    _log(f"search history not saved: {e}")
 
             creds = _get_credentials()
             has_xtream = bool(creds.get("xtream_url"))
             has_m3u = bool(creds.get("m3u_url"))
 
             if has_xtream:
-                unified_search(query, stype=stype, pick_one=pick_one, year=year)
+                unified_search(query, stype=stype, pick_one=pick_one, year=year, widget=widget)
             elif has_m3u:
                 search_m3u(query, stype=stype)
             else:
@@ -9077,7 +9083,7 @@ def _copy_rank(s, query, year):
     return (match, lang)
 
 
-def unified_search(query, stype=None, pick_one=False, year=None):
+def unified_search(query, stype=None, pick_one=False, year=None, widget=False):
     if pick_one:
         _loading_stage(15, _t(30970))
     creds = _get_credentials()
@@ -9159,6 +9165,11 @@ def unified_search(query, stype=None, pick_one=False, year=None):
                 results[t].sort(key=lambda s: _copy_rank(s, query, year))
 
     has_any = any(results.values())
+    if not has_any and widget:
+        # A skin row: empty means the row hides; a "No results" entry would
+        # show as a blank tile and count as one result.
+        xbmcplugin.endOfDirectory(addon_handle)
+        return
     if not has_any:
         li = xbmcgui.ListItem(label=_t(30223))
         xbmcplugin.addDirectoryItem(
@@ -12392,6 +12403,7 @@ elif mode == "search_global":
         stype=stype,
         pick_one=args.get("pick_one", [""])[0] == "1",
         year=int(year_raw) if year_raw.isdigit() else None,
+        widget=args.get("widget", [""])[0] == "1",
     )
 elif mode == "search_all_combined":
     search_all_profiles_combined(args.get("query", [""])[0])
