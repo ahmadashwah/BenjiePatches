@@ -172,22 +172,23 @@ def _offer_github_sync():
         log(f"GitHub offer skipped: {e}", xbmc.LOGWARNING)
 
 
-def ensure_live_tv():
+def ensure_live_tv(delay=90):
     """A new install shows an empty Live TV list: the Live TV add-on
     (pvr.iptvsimple) is not installed, or not switched on, and XStream
     Player's channel sync has never run. Once an IPTV login exists, installs
     and enables that add-on if needed and runs the channel sync, with limits
     so it never loops: at most 3 install attempts, and a sync only when there
     are no channels and none was started in the last 12 hours. Runs in the
-    background, a minute and a half after start so the Live TV add-on has had
-    its chance to load by itself."""
+    background; at Kodi start a minute and a half in, so the Live TV add-on
+    has had its chance to load by itself, and right away (delay=0) when a
+    login has just been entered (see live_tv_after_login)."""
     global _live_tv_thread
     if _live_tv_thread is not None and _live_tv_thread.is_alive():
         return
 
     def _work():
         monitor = xbmc.Monitor()
-        if monitor.waitForAbort(90) or not _has_iptv_login():
+        if (delay and monitor.waitForAbort(delay)) or not _has_iptv_login():
             return
         path = _live_tv_state_path()
         try:
@@ -234,6 +235,16 @@ def ensure_live_tv():
 
     _live_tv_thread = threading.Thread(target=_work, daemon=True)
     _live_tv_thread.start()
+
+
+def live_tv_after_login():
+    """Called every 30 s: as soon as an IPTV login exists while Live TV is not
+    switched on yet, sets it up straight away instead of on the next 5-minute
+    pass (the side menu's Live TV entry appears once it is on)."""
+    if xbmc.getCondVisibility("System.HasPVRAddon"):
+        return
+    if _has_iptv_login():
+        ensure_live_tv(delay=0)
 
 
 class _PlaybackWatcher(xbmc.Player):
@@ -439,6 +450,10 @@ def main():
             waited += 30
             error_report.heartbeat()
             update_profile_label()
+            try:
+                live_tv_after_login()
+            except Exception as e:
+                log(f"Live TV check failed: {e}", xbmc.LOGWARNING)
             if benjie_update.switch_pending():
                 # Waiting for Home to switch skins: try again every 30s, then
                 # show the welcome as soon as it is done.

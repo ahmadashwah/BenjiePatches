@@ -28,11 +28,11 @@
   "version": "1.0.1"
  },
  "service.iptvhelperfixes": {
-  "fingerprint": "a73c9c62437aab634173dc76c840cd0c85ac09fc41f7b57e4800b7c94946c242",
-  "version": "1.9.0"
+  "fingerprint": "43c1a6b7d9e7de87b795673e94a8a40b9eb8aff24d0d9c39584a6583e9b426e2",
+  "version": "1.9.1"
  },
  "skin.benjie": {
-  "fingerprint": "24da572816bd08737337df5cd3cbfb9673adb9c10c72e528100b3b5b443d8e0f",
-  "version": "2.0.2.2"
+  "fingerprint": "1a0817c1a371590be63474ca8cee1b3ef923ba9529632d8bb2657e41afd758f1",
+  "version": "2.0.2.3"
  }
 }

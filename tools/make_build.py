@@ -211,7 +211,18 @@ def addon_xml_text(addon_id, repo_url):
 
 
 def zip_addon(addon_id, out_zip, repo_url):
+    """Reproducible zip: fixed timestamps and permissions, sorted entries, so
+    an add-on whose files did not change gives a byte-identical zip (no
+    repository churn for add-ons a release did not touch)."""
     src = os.path.join(REPO, addon_id)
+
+    def put(z, arc, data):
+        info = zipfile.ZipInfo(arc, date_time=(2026, 1, 1, 0, 0, 0))
+        info.compress_type = zipfile.ZIP_DEFLATED
+        info.external_attr = 0o644 << 16
+        info.create_system = 3
+        z.writestr(info, data, compresslevel=6)
+
     with zipfile.ZipFile(out_zip, "w", zipfile.ZIP_DEFLATED, compresslevel=6) as z:
         for dp, dns, fns in os.walk(src):
             dns[:] = sorted(d for d in dns if want(d))
@@ -221,9 +232,10 @@ def zip_addon(addon_id, out_zip, repo_url):
                 full = os.path.join(dp, fn)
                 arc = addon_id + "/" + os.path.relpath(full, src).replace(os.sep, "/")
                 if arc == f"{addon_id}/addon.xml":
-                    z.writestr(arc, addon_xml_text(addon_id, repo_url))
+                    put(z, arc, addon_xml_text(addon_id, repo_url).encode("utf-8"))
                 else:
-                    z.write(full, arc)
+                    with open(full, "rb") as f:
+                        put(z, arc, f.read())
 
 
 def assets(root):

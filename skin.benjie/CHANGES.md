@@ -1,5 +1,18 @@
 # Changes from Bingie 2.0.2
 
+## 2.0.2.3 (2026-11-14)
+
+- `1080i/IncludesDefaultSkinSettings.xml`: no startup intro by default, and
+  switched off once on devices that had it (choosing an intro again in the
+  skin settings sticks). The 10-second intro video hid Home, so no artwork
+  loaded until it ended, and it made every Home row load twice. Measured on
+  one CPU core from a cold cache: first pictures on Home at 5 s instead of
+  16 s, Home complete at 11 s instead of 21 s, 9 row loads instead of 18.
+- `1080i/Font.xml`, `fonts/`: the default font is Inter, which has Arabic
+  letters (Bingie's default, Netflix Sans, had none, so Arabic titles, cast
+  and plots showed as boxes). The Netflix Sans files, Netflix's own font,
+  are removed.
+
 ## 2.0.2.2 (2026-11-14)
 
 - `addon.xml`: requires the Benjie builds of XStream Player (2.1.5.1),
