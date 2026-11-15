@@ -5,8 +5,14 @@
      Player's play_stream and the info dialog's Play buttons, and the service
      clears it when playback starts). The spinner hides while a select
      dialog (e.g. choosing a server) is showing so it never competes with it. -->
+<!-- Bengie: the whole screen (not only the spinner) steps aside while a dialog
+     that needs an answer is open: a resume menu, a server or source picker, a
+     yes/no or OK question, the keyboard, a progress box. Opened after them, it
+     used to cover them (the "Resume from" menu was hidden behind it, so the
+     spinner seemed stuck). It comes back by itself once the dialog closes. -->
 <window type="dialog" id="1160">
     <visible>!Player.HasVideo + String.IsEqual(Window(Home).Property(PlaybackLoading),1)</visible>
+    <visible>!Window.IsActive(contextmenu) + !Window.IsActive(selectdialog) + !Window.IsActive(yesnodialog) + !Window.IsActive(okdialog) + !Window.IsActive(virtualkeyboard) + !Window.IsActive(numericinput) + !Window.IsActive(progressdialog)</visible>
     <onload>AlarmClock(ClosePlaybackLoading,ClearProperty(PlaybackLoading,Home),01:00,silent)</onload>
     <onunload condition="System.HasAlarm(ClosePlaybackLoading)">CancelAlarm(ClosePlaybackLoading,true)</onunload>
     <controls>

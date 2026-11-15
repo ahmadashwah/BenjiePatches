@@ -90,6 +90,10 @@
              choice already made, not a show to browse into, so they should
              just play on click instead of stopping at an info screen first. -->
         <onclick condition="String.Contains(Container($PARAM[widgetid]).ListItem.FileNameAndPath,mode=play_stream)">SetProperty(PlaybackLoading,1,Home)</onclick>
+        <!-- Bengie: and play it. A container with its own onclick actions runs
+             those instead of Kodi's default "play the item", so the line above
+             alone showed the loading screen and never started playback. -->
+        <onclick condition="String.Contains(Container($PARAM[widgetid]).ListItem.FileNameAndPath,mode=play_stream)">PlayMedia($ESCINFO[Container($PARAM[widgetid]).ListItem.FileNameAndPath],resume)</onclick>
         <onclick condition="[String.IsEqual(Container($PARAM[widgetid]).ListItem.DBType,movie) | String.IsEqual(Container($PARAM[widgetid]).ListItem.DBType,tvshow) | String.IsEqual(Container($PARAM[widgetid]).ListItem.DBType,episode) | !String.IsEmpty(Container($PARAM[widgetid]).ListItem.AddonName)] + !String.Contains(Container($PARAM[widgetid]).ListItem.FileNameAndPath,mode=play_stream)">Action(info)</onclick>
     </include>
 

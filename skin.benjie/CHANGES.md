@@ -1,5 +1,15 @@
 # Changes from Bingie 2.0.2
 
+## 2.0.2.7 (2026-11-14)
+
+- `1080i/IncludesBingie.xml`: clicking a Continue Watching tile plays it and
+  resumes where it stopped. It only set the loading flag before, so the
+  loading screen showed and nothing played (issue #1).
+- `1080i/Custom_1160_PlaybackLoading.xml`: the loading screen steps aside
+  while a dialog that needs an answer is open (resume menu, picker, yes/no,
+  OK, keyboard, progress) and comes back afterwards; it used to cover them, so
+  the "Resume from" menu was hidden and the spinner seemed stuck (issue #2).
+
 ## 2.0.2.6 (2026-11-14)
 
 - `1080i/DialogExtendedProgressBar.xml`: Kodi's "PVR manager is starting up"
