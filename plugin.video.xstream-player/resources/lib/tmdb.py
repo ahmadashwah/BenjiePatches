@@ -125,7 +125,7 @@ class TMDB:
         # Parse poster
         poster = src.get("poster_path") or search.get("poster_path")
         if poster:
-            result["poster_url"] = f"https://image.tmdb.org/t/p/w500{poster}"
+            result["poster_url"] = f"https://image.tmdb.org/t/p/w342{poster}"
 
         # Parse cast
         if credits and credits.get("cast"):

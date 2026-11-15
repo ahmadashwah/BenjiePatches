@@ -18,6 +18,12 @@ from profiles import ProfileManager
 from lang import _t
 from iptv import _validate_url
 
+# Writing XML (the XMLTV export for the Live TV guide) always uses the
+# standard library: defusedxml only provides the parsing functions, so building
+# the export with it failed ("module 'defusedxml.ElementTree' has no attribute
+# 'Element'") and the Live TV guide was written empty. Bengie fix.
+import xml.etree.ElementTree as _BUILD_ET
+
 # Use defusedxml if available; otherwise block DOCTYPE/ENTITY payloads.
 try:
     from defusedxml import ElementTree as ET
@@ -494,18 +500,18 @@ class EPG:
         try:
             # Export all EPG data — time window filtering caused empty exports
             # when provider timestamps fell outside the hardcoded window.
-            root = ET.Element("tv")
+            root = _BUILD_ET.Element("tv")
             exported_channels = set()
             for channel_id, progs in self.programs.items():
                 channel_has_progs = False
                 for prog in progs:
                     if channel_id not in exported_channels:
-                        ch_el = ET.SubElement(root, "channel", {"id": str(channel_id)})
-                        disp = ET.SubElement(ch_el, "display-name")
+                        ch_el = _BUILD_ET.SubElement(root, "channel", {"id": str(channel_id)})
+                        disp = _BUILD_ET.SubElement(ch_el, "display-name")
                         disp.text = str(self.channel_names.get(channel_id, channel_id))
                         exported_channels.add(channel_id)
                     channel_has_progs = True
-                    prog_el = ET.SubElement(
+                    prog_el = _BUILD_ET.SubElement(
                         root,
                         "programme",
                         {
@@ -514,16 +520,16 @@ class EPG:
                             "channel": str(channel_id),
                         },
                     )
-                    title_el = ET.SubElement(prog_el, "title")
+                    title_el = _BUILD_ET.SubElement(prog_el, "title")
                     title_el.text = prog.get("title", "Unknown")
                     if prog.get("desc"):
-                        desc_el = ET.SubElement(prog_el, "desc")
+                        desc_el = _BUILD_ET.SubElement(prog_el, "desc")
                         desc_el.text = prog["desc"]
                     if prog.get("icon"):
-                        icon_el = ET.SubElement(prog_el, "icon", {"src": prog["icon"]})
+                        icon_el = _BUILD_ET.SubElement(prog_el, "icon", {"src": prog["icon"]})
                 if channel_has_progs:
                     _epg_log(f"Exported channel {channel_id} with programs in window")
-            tree = ET.ElementTree(root)
+            tree = _BUILD_ET.ElementTree(root)
             self._ensure_profile()
             tmp_path = dest_path + f".tmp.{uuid.uuid4().hex[:8]}"
             with open(tmp_path, "wb") as f:

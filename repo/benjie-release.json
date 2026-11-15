@@ -1,11 +1,11 @@
 {
  "plugin.video.tmdb.bingie.helper": {
-  "fingerprint": "40f98590092352b4ae2f2a9c90ae40e7f5cd5358a31bcc1cd3c4509b100b5d2f",
-  "version": "1.0.3.2"
+  "fingerprint": "7fb24625771056f18976cd13125b0c9152515c5b0fe1ece105842d750ea36e78",
+  "version": "1.0.3.3"
  },
  "plugin.video.xstream-player": {
-  "fingerprint": "bfabaa4b286a27e62b197266bc432fcdf3a49101f45fe4e7752a126ac3ddfad8",
-  "version": "2.1.5.2"
+  "fingerprint": "9f0c099031757f8e49e457abc499c35bae25e046d6851c07cfefb45e96618399",
+  "version": "2.1.5.3"
  },
  "repository.benjie": {
   "fingerprint": "1e48b78fd384549f4cbc346b6232ba5f97cddad01098d28f48ca3d9454d495ff",
@@ -28,11 +28,11 @@
   "version": "1.0.1"
  },
  "service.iptvhelperfixes": {
-  "fingerprint": "d0c3d5f0bf86db7b502cef55223dfe16fd5d8cc2365ffb44c41958df7e044f48",
-  "version": "1.9.2"
+  "fingerprint": "06601265245a79e59a38f1a2823bb67519e4ea7a61d35d1264d575a7b1b7c6e9",
+  "version": "1.9.3"
  },
  "skin.benjie": {
-  "fingerprint": "0d1e38ea78d0ad45fb64f91b2865f9901609c1baee39a46e072025a62b27c979",
-  "version": "2.0.2.4"
+  "fingerprint": "6e80c9ffec175ca0a1d8fa09ed92b1aaece9dee460cd8e5e5d52fb6e088b6b84",
+  "version": "2.0.2.5"
  }
 }

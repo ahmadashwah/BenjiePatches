@@ -1,5 +1,13 @@
 # Changes from Bingie 2.0.2
 
+## 2.0.2.5 (2026-11-14)
+
+- `1080i/IncludesDefaultSkinSettings.xml`: no Trakt Manager button on the info
+  screen (this setup does not use Trakt) and no "BINGIE" logo in the corner of
+  Home and the hubs (it covered the last row's tiles); both switched off once
+  on devices that had them, and switching them back on in the skin settings
+  sticks.
+
 ## 2.0.2.4 (2026-11-14)
 
 - The name is Bengie (as in binge-watching) everywhere people see it: "Bengie

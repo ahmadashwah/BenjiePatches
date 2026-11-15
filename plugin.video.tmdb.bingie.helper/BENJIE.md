@@ -6,3 +6,4 @@ A modified version of plugin.video.tmdb.bingie.helper 1.0.3 by jurialmunkey, mat
 
 - resources/tmdbbingiehelper/lib/items/trakt.py: watched status and progress come from XStream Player's watch history before Trakt.
 - resources/settings.xml: XStream Player is the default player for movies and episodes.
+- resources/tmdbbingiehelper/lib/addon/consts.py: the default artwork preset uses w342 posters and w300 logos (backdrops stay w1280).

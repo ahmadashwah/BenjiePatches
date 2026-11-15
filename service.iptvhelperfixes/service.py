@@ -237,6 +237,44 @@ def ensure_live_tv(delay=90):
     _live_tv_thread.start()
 
 
+def refresh_empty_guide():
+    """XStream Player 2.1.5.1 and earlier wrote the Live TV guide empty (its
+    XMLTV export used defusedxml, which cannot build XML). With the fixed
+    player, a channel sync writes the real guide; this runs that sync when the
+    guide file has no programmes, at most every 12 hours."""
+    xs_data = os.path.join(KODI_PROFILE, "addon_data", "plugin.video.xstream-player")
+    try:
+        guides = [f for f in os.listdir(xs_data) if f.startswith("pvr_epg_") and f.endswith(".xml")]
+    except OSError:
+        return
+    if not guides or not xbmc.getCondVisibility("System.HasPVRAddon") or not _has_iptv_login():
+        return
+    empty = []
+    for g in guides:
+        try:
+            with open(os.path.join(xs_data, g), "r", encoding="utf-8", errors="replace") as f:
+                if "<programme" not in f.read(65536):
+                    empty.append(g)
+        except OSError:
+            pass
+    if not empty:
+        return
+    path = _live_tv_state_path()
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            state = json.load(f)
+    except (OSError, ValueError):
+        state = {}
+    if time.time() - state.get("last_guide_sync", 0) < 12 * 3600:
+        return
+    state["last_guide_sync"] = time.time()
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(state, f)
+    log(f"Live TV guide is empty ({', '.join(empty)}): running XStream Player's channel sync to rebuild it.")
+    xbmc.executebuiltin("RunPlugin(plugin://plugin.video.xstream-player/?mode=pvr_sync_silent)")
+
+
 def live_tv_after_login():
     """Called every 30 s: as soon as an IPTV login exists while Live TV is not
     switched on yet, sets it up straight away instead of on the next 5-minute
@@ -324,6 +362,29 @@ def _set_kodi_setting(name, value):
     return reply.get("result") is True
 
 
+def disable_versioncheck_once():
+    """Once per device: switches off Kodi's own update checker
+    (service.xbmc.versioncheck). It took about 6 s of CPU at every start
+    (measured on one core), competing with Home's rows on slow boxes, and only
+    reports new Kodi releases. A flag file keeps it from repeating, so turning
+    it back on in Kodi's add-on settings sticks."""
+    marker = os.path.join(KODI_PROFILE, "addon_data", ADDON_ID, "versioncheck_off.flag")
+    if os.path.isfile(marker):
+        return
+    if xbmc.getCondVisibility("System.AddonIsEnabled(service.xbmc.versioncheck)"):
+        reply = json.loads(xbmc.executeJSONRPC(json.dumps({
+            "jsonrpc": "2.0", "id": 1, "method": "Addons.SetAddonEnabled",
+            "params": {"addonid": "service.xbmc.versioncheck", "enabled": False},
+        })))
+        if reply.get("result") != "OK":
+            log(f"Could not switch off Kodi's version check: {reply.get('error')}", xbmc.LOGWARNING)
+            return
+        log("Switched off Kodi's version check (one-time; saves its start-up work).")
+    os.makedirs(os.path.dirname(marker), exist_ok=True)
+    with open(marker, "w") as f:
+        f.write("done")
+
+
 def setup_subtitles():
     """One-time: installs and enables the official OpenSubtitles.com add-on (service.subtitles.opensubtitles-com -- NOT service.subtitles.opensubtitles, which is the legacy OpenSubtitles.org one),
     sets the preferred subtitle languages to Arabic and English, and makes
@@ -390,6 +451,7 @@ def run_checks():
     """One pass of all checks."""
     log("Checking Bengie...")
     install_backbutton_keymap()
+    disable_versioncheck_once()
     try:
         benjie_update.run(xbmc.Monitor())
     except Exception:
@@ -404,6 +466,10 @@ def run_checks():
         setup_subtitles()
         threading.Thread(target=first_run_welcome, daemon=True).start()
     ensure_live_tv()
+    try:
+        refresh_empty_guide()
+    except Exception as e:
+        log(f"Guide check failed: {e}", xbmc.LOGWARNING)
     threading.Thread(target=_offer_github_sync, daemon=True).start()
     warm_netflix_top10()
     try:

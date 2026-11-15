@@ -37,6 +37,60 @@ pm = ProfileManager(addon)
 # Uppercase-only so real titles like "Spider-Man: Far From Home" aren't touched.
 _PROVIDER_PREFIX_RE = re.compile(r"^[A-Z0-9\-]{1,15}:\s*")
 
+# Bengie: display-only clean-up of catalog names, for what the skin shows
+# (title, hero panel, info screen). The original name is still what playback,
+# history and favourites use. Removes the "coming soon" marker ("(قريباً)",
+# often padded with tatweels), brackets around the whole name, and trailing
+# "(2005)" / "(US)" style year and region tags; the year is returned so it
+# can still be set as metadata.
+_COMING_SOON_RE = re.compile("\\(?\\s*قريبا[ً]?\\s*\\)?")
+_TRAILING_TAG_RE = re.compile(r"\s*[\(\[]\s*((?:19|20)\d\d|[A-Z]{2,3})\s*[\)\]]\s*$")
+
+
+_TMDB_SIZE_RE = re.compile(r"(image\.tmdb\.org/t/p/)[^/]+/")
+# Art that came back through Kodi (Files.GetDirectory) is wrapped and encoded:
+# image://https%3a%2f%2fimage.tmdb.org%2ft%2fp%2fw500%2f....jpg/
+_TMDB_SIZE_ENC_RE = re.compile(r"(image\.tmdb\.org%2ft%2fp%2f)[^%/]+(%2f)", re.I)
+
+
+def _tile_poster(url):
+    """Bengie: TMDb posters at w342 for row tiles (about 290x440 on a 1080p
+    screen). Provider catalogs often link w600_and_h900 posters: about three
+    times the pixels to download and decode, which slow boxes feel with a
+    screen full of tiles. Other hosts are left as they are."""
+    if url and "image.tmdb.org/t/p/" in url:
+        return _TMDB_SIZE_RE.sub(r"\1w342/", url, count=1)
+    if url and "image.tmdb.org%2ft%2fp%2f" in url.lower():
+        return _TMDB_SIZE_ENC_RE.sub(r"\1w342\2", url, count=1)
+    return url
+
+
+def _display_title(name):
+    """("The Office (2005) (US)") -> ("The Office", 2005)."""
+    if not name:
+        return name, None
+    t = name.replace("ـ", "")  # tatweel (elongation) characters
+    t = _PROVIDER_PREFIX_RE.sub("", t, count=1)
+    t = t.strip()
+    if t.startswith("[") and t.endswith("]"):
+        t = t[1:-1].strip()
+    t = _COMING_SOON_RE.sub(" ", t)
+    year = None
+    # "Monsters, Inc. (2001) شركة المرعبين المحدودة": a Latin title, its year,
+    # then the Arabic title; keep the part before the year.
+    m = re.match(r"^(.*?[A-Za-z].*?)\s*\(((?:19|20)\d\d)\)\s+[؀-ۿ].*$", t)
+    if m:
+        t, year = m.group(1), int(m.group(2))
+    while True:
+        m = _TRAILING_TAG_RE.search(t)
+        if not m:
+            break
+        if m.group(1).isdigit() and year is None:
+            year = int(m.group(1))
+        t = t[:m.start()]
+    t = re.sub(r"\s{2,}", " ", t).strip(" -")
+    return (t or name.strip()), year
+
 
 class _LazyFavorites:
     """Proxy that defers Favorites(addon, 'global') load until first attribute access."""
@@ -7058,11 +7112,13 @@ def xtream_streams(stype, cat_id, page=1, adult="0", profile_num=None):
             play_url = IPTV.build_xtream_stream_url(url, user, pwd, s, "movie")
             # No base_url for Home rows = cache-only (no per-movie request).
             info = _enrich_movie_info(s, None if home_widget else url, user, pwd)
-            label = name
+            label, shown_year = _display_title(name)
+            if shown_year and not info.get("year"):
+                info["year"] = str(shown_year)
             li = xbmcgui.ListItem(label=label)
             info_tag = li.getVideoInfoTag()
             info_tag.setMediaType("movie")
-            info_tag.setTitle(name)
+            info_tag.setTitle(label)
             header_parts = []
             if info.get("year"):
                 header_parts.append(info["year"])
@@ -7108,9 +7164,10 @@ def xtream_streams(stype, cat_id, page=1, adult="0", profile_num=None):
                     info_tag.setCast(cast_list)
             art = {}
             if info["poster_url"]:
-                art["icon"] = info["poster_url"]
-                art["thumb"] = info["poster_url"]
-                art["poster"] = info["poster_url"]
+                tile = _tile_poster(info["poster_url"])
+                art["icon"] = tile
+                art["thumb"] = tile
+                art["poster"] = tile
             else:
                 art["icon"] = "DefaultMovies.png"
             li.setArt(art)
@@ -7145,13 +7202,15 @@ def xtream_streams(stype, cat_id, page=1, adult="0", profile_num=None):
         elif stype == "series":
             sid = str(s.get("series_id", ""))
             info = _enrich_series_info(s, url, user, pwd)
-            label = name
+            label, shown_year = _display_title(name)
+            if shown_year and not info.get("year"):
+                info["year"] = str(shown_year)
             q = {"mode": "xtream_series", "series_id": sid, "profile_num": pnum}
             series_url = build_url(q)
             li = xbmcgui.ListItem(label=label)
             info_tag = li.getVideoInfoTag()
             info_tag.setMediaType("tvshow")
-            info_tag.setTitle(name)
+            info_tag.setTitle(label)
             header_parts = []
             if info.get("year"):
                 header_parts.append(info["year"])
@@ -7192,9 +7251,10 @@ def xtream_streams(stype, cat_id, page=1, adult="0", profile_num=None):
                     info_tag.setCast(cast_list)
             art = {}
             if info["poster_url"]:
-                art["icon"] = info["poster_url"]
-                art["thumb"] = info["poster_url"]
-                art["poster"] = info["poster_url"]
+                tile = _tile_poster(info["poster_url"])
+                art["icon"] = tile
+                art["thumb"] = tile
+                art["poster"] = tile
             li.setArt(art)
             if we and we.get_watched_count(sid) > 0:
                 info_tag.setPlaycount(1)
@@ -7851,6 +7911,9 @@ def _emit_tmdb_items(items, kind, ranked):
         if cast:
             tag.setCast(cast)
         art = {k: v for k, v in (it.get("art") or {}).items() if v}
+        for k in ("poster", "icon"):  # not thumb: TMDb Helper's thumb can be landscape
+            if art.get(k):
+                art[k] = _tile_poster(art[k])
         if art:
             li.setArt(art)
         if ranked:
@@ -11884,6 +11947,9 @@ def continue_watching_menu(only_stype=None):
         # poster) data saved at play time -- cache-only, so this only helps
         # for content whose info was already fetched elsewhere (browsing,
         # search, a prior play), never blocking on a fresh network call.
+        # Bengie: details for the hero panel and info screen (plot, year,
+        # genre, rating, backdrop), from the same cache-only data.
+        meta = {}
         if stype == "movie":
             m = re.search(r"/(\d+)\.[a-zA-Z0-9]+$", url)
             if m:
@@ -11892,9 +11958,21 @@ def continue_watching_menu(only_stype=None):
                     name = info["clean_name"]
                 if info.get("poster_url"):
                     icon = info["poster_url"]
+                meta = {
+                    "plot": info.get("plot"), "year": info.get("year"), "genre": info.get("genre"),
+                    "rating": info.get("rating"), "fanart": info.get("backdrop_url"),
+                }
         elif stype == "series":
             match = _get_series_lookup(pnum).get(str(series_id)) if series_id else None
             if match:
+                backdrops = match.get("backdrop_path") or []
+                meta = {
+                    "plot": match.get("plot"),
+                    "year": (match.get("releaseDate") or match.get("release_date") or "")[:4],
+                    "genre": match.get("genre"),
+                    "rating": match.get("rating"),
+                    "fanart": backdrops[0] if isinstance(backdrops, list) and backdrops else "",
+                }
                 if match.get("name"):
                     name = _PROVIDER_PREFIX_RE.sub("", match["name"], count=1).strip() or match["name"]
                 if match.get("cover"):
@@ -11935,7 +12013,23 @@ def continue_watching_menu(only_stype=None):
             info_tag.setEpisode(int(ep_match.group(2)))
         else:
             info_tag.setMediaType("video")
-        info_tag.setTitle(name)
+        shown, shown_year = _display_title(_SHOW_NAME_TRUNC_RE.sub("", name).strip() or name)
+        info_tag.setTitle(shown)
+        try:
+            year = int(str(meta.get("year") or shown_year or 0)[:4])
+        except (TypeError, ValueError):
+            year = 0
+        if year:
+            info_tag.setYear(year)
+        if meta.get("plot"):
+            info_tag.setPlot(str(meta["plot"]))
+        if meta.get("genre"):
+            info_tag.setGenres([g.strip() for g in re.split(r"[,/]", str(meta["genre"])) if g.strip()])
+        try:
+            if meta.get("rating"):
+                info_tag.setRating(float(meta["rating"]))
+        except (TypeError, ValueError):
+            pass
         info_tag.setResumePoint(display_pct, 100)
         if not icon and stype == "movie":
             # Cheap fallback: check the small per-item VOD info cache (if
@@ -11951,7 +12045,10 @@ def continue_watching_menu(only_stype=None):
                         or cached_info.get("stream_icon", "")
                     )
         if icon:
-            li.setArt({"icon": icon, "thumb": icon})
+            art = {"icon": _tile_poster(icon), "thumb": _tile_poster(icon), "poster": _tile_poster(icon)}
+            if meta.get("fanart"):
+                art["fanart"] = meta["fanart"]
+            li.setArt(art)
         else:
             li.setArt({"icon": "DefaultMovies.png" if stype == "movie" else "DefaultTVShows.png"})
 
