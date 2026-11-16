@@ -62,6 +62,10 @@ def warm_netflix_top10():
         return
     if not xbmc.getCondVisibility("System.HasAddon(plugin.video.xstream-player)"):
         return
+    if _starting():
+        # Bengie: Home has just loaded both rows itself; warming them again
+        # right away only doubled the startup work. The next check (5 min) does it.
+        return
 
     def _run():
         for kind in ("tv", "movie"):
@@ -587,8 +591,39 @@ def run_checks():
         log(f"[diag] cycle failed: {e}", xbmc.LOGWARNING)
 
 
+# Bengie: background work waits until Kodi has been up this long, so Home's
+# rows have the processor to themselves while it starts.
+STARTUP_QUIET_SECONDS = 120
+_started_at = time.time()
+_queued_refreshes_run = False
+
+
+def _starting():
+    return time.time() - _started_at < STARTUP_QUIET_SECONDS
+
+
+def run_queued_catalog_refreshes():
+    """Starts the catalog refreshes XStream Player queued during startup
+    (BengieCatalogRefreshQueue, "stype:profile" items), once."""
+    global _queued_refreshes_run
+    if _queued_refreshes_run or _starting():
+        return
+    _queued_refreshes_run = True
+    win = xbmcgui.Window(10000)
+    queued = [j for j in win.getProperty("BengieCatalogRefreshQueue").split(",") if j]
+    win.clearProperty("BengieCatalogRefreshQueue")
+    for job in queued:
+        stype, _, pnum = job.partition(":")
+        if stype in ("movie", "series", "live") and pnum.isdigit():
+            log(f"Catalog refresh after startup: {stype} (profile {pnum}).")
+            xbmc.executebuiltin(
+                f"RunPlugin(plugin://plugin.video.xstream-player/?mode=refresh_catalog&stype={stype}&profile_num={pnum})"
+            )
+
+
 def main():
     monitor = xbmc.Monitor()
+    xbmcgui.Window(10000).setProperty("BengieStartedAt", str(_started_at))
     if monitor.waitForAbort(5):
         return  # Kodi is already shutting down
 
@@ -619,6 +654,7 @@ def main():
             waited += 30
             error_report.heartbeat()
             update_profile_label()
+            run_queued_catalog_refreshes()
             try:
                 live_tv_after_login()
             except Exception as e:
