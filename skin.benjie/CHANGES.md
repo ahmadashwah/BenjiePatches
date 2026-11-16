@@ -1,5 +1,16 @@
 # Changes from Bingie 2.0.2
 
+## 2.0.2.12 (2026-11-15)
+
+- Search keyboard (`1080i/IncludesBingieKeyboard.xml`, `IncludesBingieSearch.xml`,
+  `Includes.xml`):
+  - Results appear beside the keyboard while typing: TMDb for Latin text,
+    XStream Player's shows and movies for Arabic (`IsArabicLiveTerm`); each
+    letter refreshes them. Right from the keys moves into them, and a result
+    opens its information page.
+  - Back keeps what was typed (it presses Done) instead of discarding it, so
+    the check mark is optional.
+
 ## 2.0.2.11 (2026-11-15)
 
 - Rows moved between Home and New & Popular (`1080i/IncludesPaths.xml`,

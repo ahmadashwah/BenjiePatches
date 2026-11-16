@@ -2,6 +2,41 @@
 <!-- BINGIE -->
 <includes>
     <!-- ######## Bingie Search Mini Keyboard ######## -->
+    <!-- Bengie: Back on the search keyboard presses Done (300), keeping what was typed. -->
+    <include name="Bengie_KeyboardBack">
+        <onback>SendClick(300)</onback>
+    </include>
+
+    <!-- Bengie: one row of live search results beside the search keyboard. -->
+    <include name="Bengie_LiveResults">
+        <definition>
+            <control type="panel" id="$PARAM[id]">
+                <width>1188</width>
+                <height>440</height>
+                <orientation>horizontal</orientation>
+                <onleft>9999</onleft>
+                <scrolltime tween="quadratic">300</scrolltime>
+                <onclick>Action(Info)</onclick>
+                <visible>Container($PARAM[id]).IsUpdating | Integer.IsGreater(Container($PARAM[id]).NumItems,0)</visible>
+                <itemlayout width="297" height="430">
+                    <control type="group">
+                        <width>295</width>
+                        <height>420</height>
+                        <include>PosterPanelBingieLayout</include>
+                    </control>
+                </itemlayout>
+                <focusedlayout width="297" height="430">
+                    <control type="group">
+                        <width>295</width>
+                        <height>420</height>
+                        <include>PosterPanelBingieLayoutFocus</include>
+                    </control>
+                </focusedlayout>
+                <content target="videos" limit="20">$PARAM[path]$INFO[Control.GetLabel(312).index(1)]</content>
+            </control>
+        </definition>
+    </include>
+
     <include name="BingieSearchMiniKeyboard">
         <!-- Keyboard Edit -->
         <control type="edit" id="312">
@@ -21,6 +56,7 @@
             <texturenofocus/>
             <ondown>9999</ondown>
             <onleft>9999</onleft>
+            <include>Bengie_KeyboardBack</include>
         </control>
 
         <!-- keyboard  -->
@@ -36,7 +72,8 @@
                 <height>search_key_size</height>
                 <itemgap>-10</itemgap>
                 <orientation>horizontal</orientation>
-                <onright>312</onright>
+                <onright condition="[Integer.IsGreater(Container(5091).NumItems,0) | Integer.IsGreater(Container(5092).NumItems,0) | Integer.IsGreater(Container(5093).NumItems,0)]">5090</onright>
+                <onright condition="![Integer.IsGreater(Container(5091).NumItems,0) | Integer.IsGreater(Container(5092).NumItems,0) | Integer.IsGreater(Container(5093).NumItems,0)]">312</onright>
                 <onup>312</onup>
                 <ondown>2000</ondown>
                 <!-- SPACE -->
@@ -53,6 +90,7 @@
                     <textureradioonnofocus colordiffuse="$INFO[Skin.String(BingieButtonTextColor)]">bingie/keyboard/space.png</textureradioonnofocus>
                     <textureradiooffnofocus colordiffuse="$INFO[Skin.String(BingieButtonTextColor)]">bingie/keyboard/space.png</textureradiooffnofocus>
                     <include>SearchKeyDefs</include>
+                    <include>Bengie_KeyboardBack</include>
                     <onup>312</onup>
                     <ondown>2000</ondown>
                 </control>
@@ -70,6 +108,7 @@
                     <textureradioonnofocus colordiffuse="$INFO[Skin.String(BingieButtonTextColor)]">bingie/keyboard/backspace.png</textureradioonnofocus>
                     <textureradiooffnofocus colordiffuse="$INFO[Skin.String(BingieButtonTextColor)]">bingie/keyboard/backspace.png</textureradiooffnofocus>
                     <include>SearchKeyDefs</include>
+                    <include>Bengie_KeyboardBack</include>
                     <onup>312</onup>
                     <ondown>2000</ondown>
                 </control>
@@ -80,7 +119,8 @@
                 <height>search_key_size</height>
                 <itemgap>-10</itemgap>
                 <orientation>horizontal</orientation>
-                <onright>312</onright>
+                <onright condition="[Integer.IsGreater(Container(5091).NumItems,0) | Integer.IsGreater(Container(5092).NumItems,0) | Integer.IsGreater(Container(5093).NumItems,0)]">5090</onright>
+                <onright condition="![Integer.IsGreater(Container(5091).NumItems,0) | Integer.IsGreater(Container(5092).NumItems,0) | Integer.IsGreater(Container(5093).NumItems,0)]">312</onright>
                 <onup>1000</onup>
                 <ondown>3000</ondown>
                 <!-- START OF QWERTY -->
@@ -121,7 +161,8 @@
                 <height>search_key_size</height>
                 <itemgap>-10</itemgap>
                 <orientation>horizontal</orientation>
-                <onright>312</onright>
+                <onright condition="[Integer.IsGreater(Container(5091).NumItems,0) | Integer.IsGreater(Container(5092).NumItems,0) | Integer.IsGreater(Container(5093).NumItems,0)]">5090</onright>
+                <onright condition="![Integer.IsGreater(Container(5091).NumItems,0) | Integer.IsGreater(Container(5092).NumItems,0) | Integer.IsGreater(Container(5093).NumItems,0)]">312</onright>
                 <onup>2000</onup>
                 <ondown>4000</ondown>
                 <include content="NativeSearchKey">
@@ -163,7 +204,8 @@
                 <itemgap>-10</itemgap>
                 <height>search_key_size</height>
                 <orientation>horizontal</orientation>
-                <onright>312</onright>
+                <onright condition="[Integer.IsGreater(Container(5091).NumItems,0) | Integer.IsGreater(Container(5092).NumItems,0) | Integer.IsGreater(Container(5093).NumItems,0)]">5090</onright>
+                <onright condition="![Integer.IsGreater(Container(5091).NumItems,0) | Integer.IsGreater(Container(5092).NumItems,0) | Integer.IsGreater(Container(5093).NumItems,0)]">312</onright>
                 <onup>3000</onup>
                 <ondown>5000</ondown>
                 <include content="NativeSearchKey">
@@ -203,7 +245,8 @@
                 <height>search_key_size</height>
                 <itemgap>-10</itemgap>
                 <orientation>horizontal</orientation>
-                <onright>312</onright>
+                <onright condition="[Integer.IsGreater(Container(5091).NumItems,0) | Integer.IsGreater(Container(5092).NumItems,0) | Integer.IsGreater(Container(5093).NumItems,0)]">5090</onright>
+                <onright condition="![Integer.IsGreater(Container(5091).NumItems,0) | Integer.IsGreater(Container(5092).NumItems,0) | Integer.IsGreater(Container(5093).NumItems,0)]">312</onright>
                 <onup>4000</onup>
                 <ondown>6000</ondown>
                 <include content="NativeSearchKey">
@@ -243,7 +286,8 @@
                 <height>search_key_size</height>
                 <itemgap>-10</itemgap>
                 <orientation>horizontal</orientation>
-                <onright>312</onright>
+                <onright condition="[Integer.IsGreater(Container(5091).NumItems,0) | Integer.IsGreater(Container(5092).NumItems,0) | Integer.IsGreater(Container(5093).NumItems,0)]">5090</onright>
+                <onright condition="![Integer.IsGreater(Container(5091).NumItems,0) | Integer.IsGreater(Container(5092).NumItems,0) | Integer.IsGreater(Container(5093).NumItems,0)]">312</onright>
                 <onup>5000</onup>
                 <ondown>7000</ondown>
 				<include content="NativeSearchKey">
@@ -284,7 +328,8 @@
                 <height>search_key_size</height>
                 <itemgap>-10</itemgap>
                 <orientation>horizontal</orientation>
-                <onright>312</onright>
+                <onright condition="[Integer.IsGreater(Container(5091).NumItems,0) | Integer.IsGreater(Container(5092).NumItems,0) | Integer.IsGreater(Container(5093).NumItems,0)]">5090</onright>
+                <onright condition="![Integer.IsGreater(Container(5091).NumItems,0) | Integer.IsGreater(Container(5092).NumItems,0) | Integer.IsGreater(Container(5093).NumItems,0)]">312</onright>
                 <onup>6000</onup>
                 <ondown>8000</ondown>
                 <include content="NativeSearchKey">
@@ -324,7 +369,8 @@
                 <height>search_key_size</height>
                 <itemgap>-10</itemgap>
                 <orientation>horizontal</orientation>
-                <onright>312</onright>
+                <onright condition="[Integer.IsGreater(Container(5091).NumItems,0) | Integer.IsGreater(Container(5092).NumItems,0) | Integer.IsGreater(Container(5093).NumItems,0)]">5090</onright>
+                <onright condition="![Integer.IsGreater(Container(5091).NumItems,0) | Integer.IsGreater(Container(5092).NumItems,0) | Integer.IsGreater(Container(5093).NumItems,0)]">312</onright>
                 <onup>7000</onup>
                 <ondown>9000</ondown>
                 <!-- 1 -->
@@ -372,7 +418,8 @@
                 <onright>77777</onright>
                 <itemgap>-10</itemgap>
                 <orientation>horizontal</orientation>
-                <onright>312</onright>
+                <onright condition="[Integer.IsGreater(Container(5091).NumItems,0) | Integer.IsGreater(Container(5092).NumItems,0) | Integer.IsGreater(Container(5093).NumItems,0)]">5090</onright>
+                <onright condition="![Integer.IsGreater(Container(5091).NumItems,0) | Integer.IsGreater(Container(5092).NumItems,0) | Integer.IsGreater(Container(5093).NumItems,0)]">312</onright>
                 <onup>8000</onup>
                 <ondown>10000</ondown>
                 <!-- 7 -->
@@ -420,7 +467,8 @@
                 <height>search_key_size</height>
                 <itemgap>-10</itemgap>
                 <orientation>horizontal</orientation>
-                <onright>312</onright>
+                <onright condition="[Integer.IsGreater(Container(5091).NumItems,0) | Integer.IsGreater(Container(5092).NumItems,0) | Integer.IsGreater(Container(5093).NumItems,0)]">5090</onright>
+                <onright condition="![Integer.IsGreater(Container(5091).NumItems,0) | Integer.IsGreater(Container(5092).NumItems,0) | Integer.IsGreater(Container(5093).NumItems,0)]">312</onright>
                 <onup>9000</onup>
                 <!-- Cancel Button -->
                 <control type="radiobutton" id="301">
@@ -437,6 +485,7 @@
                     <label/>
                     <onup>106</onup>
                     <include>SearchKeyDefs</include>
+                    <include>Bengie_KeyboardBack</include>
                 </control>
                 <!-- Done -->
                 <control type="radiobutton" id="300">
@@ -452,6 +501,7 @@
                     <textureradiooffnofocus colordiffuse="$INFO[Skin.String(BingieButtonTextColor)]">dialogs/keyboard/done.png</textureradiooffnofocus>
                     <label/>
                     <include>SearchKeyDefs</include>
+                    <include>Bengie_KeyboardBack</include>
                     <onup>107</onup>
                 </control>
                 <!-- Layout -->
@@ -463,6 +513,32 @@
                     <onup>9000</onup>
                 </control>
             </control>
+        </control>
+
+        <!-- Bengie: results while typing, so the check mark isn't needed. TMDb for Latin
+             text, XStream Player's shows and movies for Arabic, from the keyboard's own
+             text (Control.GetLabel(312).index(1)); each letter refreshes them. Right from
+             the keys goes here; a result opens its information page. -->
+        <control type="grouplist" id="5090">
+            <left>645</left>
+            <top>107</top>
+            <width>1188</width>
+            <height>960</height>
+            <orientation>vertical</orientation>
+            <itemgap>20</itemgap>
+            <onleft>9999</onleft>
+            <include content="Bengie_LiveResults">
+                <param name="id" value="5091" />
+                <param name="path" value="$VAR[Bengie_LiveSearchTMDb]" />
+            </include>
+            <include content="Bengie_LiveResults">
+                <param name="id" value="5092" />
+                <param name="path" value="$VAR[Bengie_LiveSearchXtreamSeries]" />
+            </include>
+            <include content="Bengie_LiveResults">
+                <param name="id" value="5093" />
+                <param name="path" value="$VAR[Bengie_LiveSearchXtreamMovies]" />
+            </include>
         </control>
     </include>
 

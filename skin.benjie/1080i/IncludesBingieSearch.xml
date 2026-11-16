@@ -5,6 +5,18 @@
     <!-- Bengie (issue #14): the TMDb search paths are empty for Arabic terms and the
          XStream Player ones for the rest, so the Search page can show the right results for
          whatever is typed without being reopened (see Custom_1109_BingieSearch.xml). -->
+    <!-- Bengie: live results beside the search keyboard (IncludesBingieKeyboard.xml,
+         Bengie_LiveResults); the keyboard's text is added to the end. -->
+    <variable name="Bengie_LiveSearchTMDb">
+        <value condition="!String.IsEmpty(Control.GetLabel(312).index(1)) + !$EXP[IsArabicLiveTerm]">plugin://plugin.video.tmdb.bingie.helper?info=search&amp;tmdb_type=both&amp;nextpage=false&amp;query=</value>
+    </variable>
+    <variable name="Bengie_LiveSearchXtreamSeries">
+        <value condition="!String.IsEmpty(Control.GetLabel(312).index(1)) + $EXP[IsArabicLiveTerm]">plugin://plugin.video.xstream-player/?mode=search_global&amp;widget=1&amp;profile_num=1&amp;stype=series&amp;query=</value>
+    </variable>
+    <variable name="Bengie_LiveSearchXtreamMovies">
+        <value condition="!String.IsEmpty(Control.GetLabel(312).index(1)) + $EXP[IsArabicLiveTerm]">plugin://plugin.video.xstream-player/?mode=search_global&amp;widget=1&amp;profile_num=1&amp;stype=movie&amp;query=</value>
+    </variable>
+
     <variable name="Bengie_FullKeyboardHint">
         <value condition="Skin.HasSetting(TouchMode)">$LOCALIZE[31591]</value>
         <value>$LOCALIZE[31230]</value>
@@ -398,6 +410,7 @@
                 <onup>$PARAM[onup]</onup>
                 <ondown>$PARAM[ondown]</ondown>
                 <include>SearchKeyDefs</include>
+                <include>Bengie_KeyboardBack</include>
             </control>
         </definition>
     </include>
@@ -415,6 +428,7 @@
     </include>
 	
 	<include name="SearchKeyDefs2">
+        <include>Bengie_KeyboardBack</include>
         <align>center</align>
         <font>Reg30</font>
         <textoffsetx>0</textoffsetx>
