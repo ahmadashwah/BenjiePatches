@@ -300,10 +300,21 @@ def run_sync():
     if gist_id != saved_gist_id:
         svc.setSetting("github_sync_gist_id", gist_id)
 
+    profiles = []
     for pnum in range(1, 11):
         if xs.getSetting(f"profile_{pnum}_enabled") != "true":
             continue
+        profiles.append(pnum)
         try:
             sync_profile(pnum, token, gist_id, profile_dir)
         except Exception as e:
             log(f"Error syncing profile {pnum}: {e}", xbmc.LOGERROR)
+
+    # Bengie: My List (Kodi's favourites and XStream Player's profile
+    # favourites) through the same gist.
+    try:
+        import mylist_sync
+
+        mylist_sync.sync_all(token, gist_id, profile_dir, profiles, _github_request, _fetch_remote_content)
+    except Exception as e:
+        log(f"Error syncing My List: {e}", xbmc.LOGERROR)

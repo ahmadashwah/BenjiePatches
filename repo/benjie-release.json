@@ -13,7 +13,7 @@
  },
  "script.benjie.bundle": {
   "fingerprint": "5566bbcba7141b3b990bfa179050077e4009bfc2cd413d335d7d5079f4e041eb",
-  "version": "1.0.6"
+  "version": "1.0.7"
  },
  "script.bingie.helper": {
   "fingerprint": "2e9184e28ab6f72020600af1c0f2a9b3f00085848858d03adceba293fdfbe253",
@@ -32,8 +32,8 @@
   "version": "1.0.1"
  },
  "service.iptvhelperfixes": {
-  "fingerprint": "6e7bc7791fe2c9d2139819b2de408c99647465b16979ac78e4b5b4ba339c8b0a",
-  "version": "1.9.10"
+  "fingerprint": "48fb5cbdbf3c8f330c014f9f8a2e0fdae6e88599254c6c85c517630f1d4750be",
+  "version": "1.9.11"
  },
  "skin.benjie": {
   "fingerprint": "c9af07ed0f54dc4365a1a61d29ac284cbe7719349edbe6918d1eb7484b1b1aa0",
