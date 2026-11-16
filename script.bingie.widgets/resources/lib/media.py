@@ -91,32 +91,49 @@ class Media(object):
         return sorted(all_items, key=itemgetter("recommendedscore"), reverse=True)[:self.options["limit"]]
 
     @staticmethod
+    def _parse_favourite(cmd):
+        ''' (path, is_folder) from a favourite's command, or None:
+        PlayMedia("path"[,opts]) plays, ActivateWindow(win,"path"[,return])
+        opens a folder. Read straight from favourites.xml: Kodi's own
+        Favourites.GetFavourites didn't report a movie favourite whose
+        address carries its plot and cast (long, commas, "|") as playable,
+        so movies added with "Add to favourites" never reached My List. '''
+        import re
+        cmd = (cmd or "").strip()
+        m = re.match(r'(?is)^PlayMedia\(\s*"(.*)"\s*(?:,[^"]*)?\)$', cmd) or \
+            re.match(r'(?is)^PlayMedia\(\s*([^,"]+?)\s*(?:,[^"]*)?\)$', cmd)
+        if m:
+            return m.group(1), False
+        m = re.match(r'(?is)^ActivateWindow\(\s*[^,]+,\s*"(.*)"\s*(?:,[^"]*)?\)$', cmd) or \
+            re.match(r'(?is)^ActivateWindow\(\s*[^,]+,\s*([^,"]+?)\s*(?:,[^"]*)?\)$', cmd)
+        if m:
+            return m.group(1), True
+        return None
+
+    @staticmethod
     def _kodi_favourites():
-        ''' Kodi's Favourites as My List items (newest first): a "media"
-        favourite plays its path, a "window" favourite (a show, a folder)
-        opens its folder. Others (scripts, add-on shortcuts) are skipped. '''
-        import xbmc, json as _json
+        ''' Kodi's Favourites as My List items (newest first): a played item
+        plays its path, a show or folder opens it. Others (scripts, add-on
+        shortcuts) are skipped. '''
+        import xbmcvfs
+        import xml.etree.ElementTree as ET
         try:
-            payload = {
-                "jsonrpc": "2.0", "id": 1, "method": "Favourites.GetFavourites",
-                "params": {"properties": ["path", "thumbnail", "window", "windowparameter"]},
-            }
-            result = _json.loads(xbmc.executeJSONRPC(_json.dumps(payload)))
-            favs = (result.get("result") or {}).get("favourites") or []
+            path = xbmcvfs.translatePath("special://profile/favourites.xml")
+            if not xbmcvfs.exists(path):
+                return []
+            favs = list(ET.parse(path).getroot())
         except Exception as e:
             log_msg("mylist kodi favourites error: %s" % e)
             return []
         items = []
         for fav in reversed(favs):
-            thumb = fav.get("thumbnail") or ""
-            if fav.get("type") == "media" and fav.get("path"):
-                path, folder = fav["path"], False
-            elif fav.get("type") == "window" and fav.get("windowparameter"):
-                path, folder = fav["windowparameter"], True
-            else:
+            parsed = Media._parse_favourite(fav.text)
+            if not parsed:
                 continue
+            path, folder = parsed
+            thumb = fav.get("thumb") or ""
             items.append({
-                "label": fav.get("title", ""),
+                "label": fav.get("name", ""),
                 "icon": thumb,
                 "art": {"poster": thumb, "thumb": thumb},
                 "type": "video",

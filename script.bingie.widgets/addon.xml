@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-    <addon id="script.bingie.widgets" name="Bingie Widgets" version="1.0.1.3" provider-name="matke">
+    <addon id="script.bingie.widgets" name="Bingie Widgets" version="1.0.1.4" provider-name="matke">
     <requires>
 		<import addon="xbmc.python" version="3.0.0"/>
         <import addon="xbmc.addon" version="12.0.0"/>
