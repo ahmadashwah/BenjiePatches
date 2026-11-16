@@ -9,8 +9,9 @@ repository existed (Bengie Setup, or IPTV Helper Fixes 1.8.0 and earlier) do
 not have it, so this installs repository.benjie itself, then any Bengie add-on
 that the repository has a newer version of (the forked XStream Player, TMDb
 Bingie Helper and Bingie Widgets, the skin, this service), straight from the
-repository's zips. It checks twice a day, and at once when the power menu's
-Update runs it (RunScript(service.iptvhelperfixes,update)).
+repository's zips. It checks twice a day (leaving it to Kodi where the
+repository is installed and Kodi installs updates automatically), and at once
+when the power menu's Update runs it (RunScript(service.iptvhelperfixes,update)).
 
 The one-time move copies Bingie's skin settings and menus (script.skinshortcuts)
 to skin.benjie's names, switches the skin and answers Kodi's "keep this skin?"
@@ -119,6 +120,62 @@ def _order(wanted, listing):
     return ordered
 
 
+def _make_replaceable(path):
+    """Windows refuses to open a hidden or read-only file for writing ("Permission
+    denied"); Kodi marks files whose names start with a dot hidden when it
+    installs a zip, so the skin's .gitattributes made every update of it fail.
+    Deleting the old file first works for both."""
+    if not os.path.lexists(path):
+        return
+    try:
+        os.chmod(path, 0o666)
+    except OSError:
+        pass
+    try:
+        os.remove(path)
+    except OSError:
+        pass
+
+
+LOCK_FILE = os.path.join(STATE_DIR, "benjie_update.lock")
+LOCK_STALE = 15 * 60
+
+
+def _take_lock():
+    """One update run at a time, across Kodi's Python interpreters (a service
+    restarted by an add-on update used to start a second run beside the first,
+    downloading the same 27 MB skin twice). A lock older than 15 minutes is a
+    leftover from a run that never finished."""
+    os.makedirs(STATE_DIR, exist_ok=True)
+    try:
+        if time.time() - os.path.getmtime(LOCK_FILE) < LOCK_STALE:
+            return False
+        os.remove(LOCK_FILE)
+    except OSError:
+        pass
+    try:
+        fd = os.open(LOCK_FILE, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+        os.write(fd, str(os.getpid()).encode())
+        os.close(fd)
+        return True
+    except OSError:
+        return False
+
+
+def _release_lock():
+    try:
+        os.remove(LOCK_FILE)
+    except OSError:
+        pass
+
+
+def kodi_updates_automatically():
+    """True when Kodi itself installs add-on updates (Settings > System >
+    Add-ons > Updates: "Install updates automatically", the default)."""
+    res = _rpc("Settings.GetSettingValue", setting="general.addonupdates")
+    return (res.get("result") or {}).get("value") == 0
+
+
 def _install(addon_id, version):
     """Unpacks <id>/ from the repository's zip into special://home/addons."""
     tmp = os.path.join(xbmcvfs.translatePath("special://temp/"), f"benjie_{addon_id}.zip")
@@ -136,10 +193,13 @@ def _install(addon_id, version):
             for name in names:
                 if name.endswith("/") or not name.startswith(addon_id + "/") or "__pycache__" in name:
                     continue
+                if os.path.basename(name).startswith(".git"):
+                    continue  # repository files, not part of the add-on
                 target = os.path.realpath(os.path.join(dest_root, name))
                 if not target.startswith(dest_root + os.sep):
                     continue
                 os.makedirs(os.path.dirname(target), exist_ok=True)
+                _make_replaceable(target)
                 with z.open(name) as src, open(target, "wb") as out:
                     shutil.copyfileobj(src, out)
     finally:
@@ -166,12 +226,35 @@ def update_all(monitor, force=False, progress=None):
     """Installs the repository if missing and every Bengie add-on that is
     out of date (plus skin.benjie on a device still on Bingie). Returns the
     list of (id, old version, new version) installed, or None when skipped
-    or the repository could not be read."""
+    or the repository could not be read.
+
+    The background check (not force) leaves a device that has the Bengie
+    repository and Kodi's automatic add-on updates on to Kodi: Kodi installs
+    the same updates itself, and two installers at once (at every start after
+    a release) downloaded everything twice and tripped over each other. Only
+    devices without the repository (set up before it existed), still on
+    Bingie, or with automatic updates off are updated from here. The power
+    menu's Update (force) always runs."""
     state = _load_state()
     if not force:
         wait = CHECK_INTERVAL if installed_version(SKIN) else RETRY_INTERVAL
         if time.time() - state.get("last_check", 0) < wait:
             return None
+        if installed_version(REPO_ADDON) and xbmc.getSkinDir() != OLD_SKIN and kodi_updates_automatically():
+            log("Bengie update: Kodi installs Bengie updates itself (repository installed, automatic updates on).")
+            return None
+    if not _take_lock():
+        log("Bengie update: another update is already running.")
+        if force:
+            raise RuntimeError("another update is already running")
+        return None
+    try:
+        return _update_all_locked(monitor, force, progress, state)
+    finally:
+        _release_lock()
+
+
+def _update_all_locked(monitor, force, progress, state):
     state["last_check"] = time.time()
     _save_state(state)
     try:

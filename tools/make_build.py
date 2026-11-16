@@ -272,7 +272,11 @@ def zip_addon(addon_id, out_zip, repo_url):
         for dp, dns, fns in os.walk(src):
             dns[:] = sorted(d for d in dns if want(d))
             for fn in sorted(fns):
-                if not want(fn):
+                # .gitattributes / .gitignore are repository files: Kodi marks
+                # dot-files hidden when it installs a zip, and Windows then
+                # refused to let IPTV Helper Fixes' updater overwrite them.
+                # (Still part of the fingerprint, so this alone bumps nothing.)
+                if not want(fn) or fn.startswith(".git"):
                     continue
                 full = os.path.join(dp, fn)
                 arc = addon_id + "/" + os.path.relpath(full, src).replace(os.sep, "/")
