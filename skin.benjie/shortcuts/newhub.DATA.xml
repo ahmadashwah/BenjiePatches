@@ -15,22 +15,6 @@
         <thumb />
         <action>$VAR[DefNewHub1Content]</action>
     </shortcut>
-    <shortcut>
-        <label>$VAR[DefNewHub2Name]</label>
-        <label2 />
-        <icon />
-        <thumb />
-        <action>$VAR[DefNewHub2Content]</action>
-		<visible>!Library.HasContent(Movies) + !Library.HasContent(TVShows)</visible>
-    </shortcut>
-	<shortcut>
-        <label>$VAR[DefNewHub3Name]</label>
-        <label2 />
-        <icon />
-        <thumb />
-        <action>$VAR[DefNewHub3Content]</action>
-		<visible>!Library.HasContent(Movies) + !Library.HasContent(TVShows)</visible>
-    </shortcut>
     
     <!-- IPTV Helper Fixes: streaming service rows -->
     <shortcut>

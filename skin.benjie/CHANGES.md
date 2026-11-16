@@ -1,5 +1,18 @@
 # Changes from Bingie 2.0.2
 
+## 2.0.2.11 (2026-11-15)
+
+- Rows moved between Home and New & Popular (`1080i/IncludesPaths.xml`,
+  `shortcuts/10000-1.DATA.xml`, `shortcuts/newhub.DATA.xml`):
+  - Home: Continue Watching, New Arabic Movies, New Arabic TV Shows, Last
+    Releases Movies, Last Releases TV Shows, Movies Trending Today, TV Shows
+    Trending Today, IMDB Top 250 TV Shows.
+  - New & Popular: Netflix Top 10 - TV Shows, Netflix Top 10 - Movies, then
+    the streaming-service rows.
+  Devices pick this up when Skin Shortcuts rebuilds the menus after the
+  update; a device whose Home or New & Popular rows were customized keeps
+  its own rows.
+
 ## 2.0.2.10 (2026-11-15)
 
 - Touch mode, a new switch in the skin settings (General, Advanced): shows an

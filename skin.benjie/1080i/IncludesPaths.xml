@@ -516,37 +516,56 @@
 	
 	<variable name="DefWidget3Content">
 		<value condition="Library.HasContent(Movies) | Library.HasContent(TVShows)">plugin://script.bingie.widgets/?action=forgenre&amp;mediatype=media&amp;limit=25&amp;reload=$INFO[Window(Home).Property(widgetreload)]</value>
-		<value condition="!Library.HasContent(Movies) + !Library.HasContent(TVShows) + System.HasAddon(plugin.video.xstream-player)">plugin://plugin.video.xstream-player/?mode=netflix_top10&amp;type=tv</value>
+		<value condition="!Library.HasContent(Movies) + !Library.HasContent(TVShows) + System.HasAddon(plugin.video.xstream-player)">plugin://plugin.video.tmdb.bingie.helper/?info=trakt_userlist&amp;list_name=Latest+Releases&amp;list_slug=latest-releases&amp;user_slug=giladg&amp;plugin_category=Latest+Releases&amp;widget=true&amp;reload=$INFO[Window(Home).Property(TMDbBingieHelper.Widgets.Reload)]</value>
         <value condition="!Library.HasContent(Movies) + !Library.HasContent(TVShows)">plugin://plugin.video.tmdb.bingie.helper?info=trakt_popular&amp;tmdb_type=tv&amp;widget=true&amp;reload=$INFO[Window(Home).Property(TMDbBingieHelper.Widgets.Reload)]</value>
     </variable>
 	
 	<variable name="DefWidget3Name">
 		<value condition="Library.HasContent(Movies) | Library.HasContent(TVShows)">$LOCALIZE[515]</value>
-		<value condition="!Library.HasContent(Movies) + !Library.HasContent(TVShows) + System.HasAddon(plugin.video.xstream-player)">Netflix Top 10 - TV Shows</value>
+		<value condition="!Library.HasContent(Movies) + !Library.HasContent(TVShows) + System.HasAddon(plugin.video.xstream-player)">$LOCALIZE[31334]</value>
         <value condition="!Library.HasContent(Movies) + !Library.HasContent(TVShows)">$LOCALIZE[31319]</value>
     </variable>
 	
 	<variable name="DefWidget4Content">
 		<value condition="Library.HasContent(Movies) | Library.HasContent(TVShows)">special://skin/extras/widgetplaylists/criticallyacclaimedmovies.xsp</value>
-		<value condition="!Library.HasContent(Movies) + !Library.HasContent(TVShows) + System.HasAddon(plugin.video.xstream-player)">plugin://plugin.video.xstream-player/?mode=netflix_top10&amp;type=movie</value>
+		<value condition="!Library.HasContent(Movies) + !Library.HasContent(TVShows) + System.HasAddon(plugin.video.xstream-player)">plugin://plugin.video.tmdb.bingie.helper/?info=trakt_userlist&amp;list_name=Latest+TV+Shows&amp;list_slug=latest-tv-shows&amp;user_slug=garycrawfordgc&amp;plugin_category=Latest+TV+Shows&amp;widget=true&amp;reload=$INFO[Window(Home).Property(TMDbBingieHelper.Widgets.Reload)]</value>
 		<value condition="!Library.HasContent(Movies) + !Library.HasContent(TVShows)">plugin://plugin.video.tmdb.bingie.helper/?info=trakt_userlist&amp;list_name=IMDB:+Top+Rated+Movies&amp;list_slug=imdb-top-rated-movies&amp;user_slug=justin&amp;plugin_category=IMDB:+Top+Rated+Movies&amp;widget=true&amp;reload=$INFO[Window(Home).Property(TMDbBingieHelper.Widgets.Reload)]</value>
     </variable>
 	
 	<variable name="DefWidget4Name">
 		<value condition="Library.HasContent(Movies) | Library.HasContent(TVShows)">$LOCALIZE[31532]</value>
-		<value condition="!Library.HasContent(Movies) + !Library.HasContent(TVShows) + System.HasAddon(plugin.video.xstream-player)">Netflix Top 10 - Movies</value>
+		<value condition="!Library.HasContent(Movies) + !Library.HasContent(TVShows) + System.HasAddon(plugin.video.xstream-player)">$LOCALIZE[31196]</value>
 		<value condition="!Library.HasContent(Movies) + !Library.HasContent(TVShows)">$LOCALIZE[31277]</value>
     </variable>
 	
 	<variable name="DefWidget5Content">
+		<value condition="!Library.HasContent(Movies) + !Library.HasContent(TVShows) + System.HasAddon(plugin.video.xstream-player)">plugin://plugin.video.tmdb.bingie.helper/?info=trending_day&amp;tmdb_type=movie&amp;widget=true&amp;reload=$INFO[Window(Home).Property(TMDbBingieHelper.Widgets.Reload)]</value>
 		<value condition="Library.HasContent(Movies) | Library.HasContent(TVShows)">plugin://script.bingie.widgets/?action=similar&amp;mediatype=media&amp;limit=25&amp;reload=$INFO[Window(Home).Property(widgetreload)]</value>
 		<value condition="!Library.HasContent(Movies) + !Library.HasContent(TVShows)">plugin://plugin.video.tmdb.bingie.helper/?info=trakt_userlist&amp;list_name=IMDB:+Top+Rated+TV+Shows&amp;list_slug=imdb-top-rated-tv-shows&amp;user_slug=justin&amp;plugin_category=IMDB:+Top+Rated+TV+Shows&amp;widget=true&amp;reload=$INFO[Window(Home).Property(TMDbBingieHelper.Widgets.Reload)]</value>
 	</variable>
 	
 	<variable name="DefWidget5Name">
+		<value condition="!Library.HasContent(Movies) + !Library.HasContent(TVShows) + System.HasAddon(plugin.video.xstream-player)">$LOCALIZE[31332]</value>
 		<value condition="Library.HasContent(Movies) | Library.HasContent(TVShows)">$ADDON[script.bingie.widgets 32011]</value>
 		<value condition="!Library.HasContent(Movies) + !Library.HasContent(TVShows)">$LOCALIZE[31443]</value>
     </variable>
+
+	<!-- Bengie: Home rows 7 and 8 -->
+	<variable name="DefWidget6Content">
+		<value condition="!Library.HasContent(Movies) + !Library.HasContent(TVShows) + System.HasAddon(plugin.video.xstream-player)">plugin://plugin.video.tmdb.bingie.helper/?info=trending_day&amp;tmdb_type=tv&amp;widget=true&amp;reload=$INFO[Window(Home).Property(TMDbBingieHelper.Widgets.Reload)]</value>
+	</variable>
+
+	<variable name="DefWidget6Name">
+		<value condition="!Library.HasContent(Movies) + !Library.HasContent(TVShows) + System.HasAddon(plugin.video.xstream-player)">$LOCALIZE[31256]</value>
+	</variable>
+
+	<variable name="DefWidget7Content">
+		<value condition="!Library.HasContent(Movies) + !Library.HasContent(TVShows) + System.HasAddon(plugin.video.xstream-player)">plugin://plugin.video.tmdb.bingie.helper/?info=trakt_userlist&amp;list_name=IMDB:+Top+Rated+TV+Shows&amp;list_slug=imdb-top-rated-tv-shows&amp;user_slug=justin&amp;plugin_category=IMDB:+Top+Rated+TV+Shows&amp;widget=true&amp;reload=$INFO[Window(Home).Property(TMDbBingieHelper.Widgets.Reload)]</value>
+	</variable>
+
+	<variable name="DefWidget7Name">
+		<value condition="!Library.HasContent(Movies) + !Library.HasContent(TVShows) + System.HasAddon(plugin.video.xstream-player)">$LOCALIZE[31443]</value>
+	</variable>
 
 	<variable name="DefArabicMoviesWidgetContent">
 		<value condition="System.HasAddon(plugin.video.xstream-player)">plugin://plugin.video.xstream-player/?mode=xtream_streams&amp;type=movie&amp;cat_id=155&amp;profile_num=1</value>
@@ -629,21 +648,25 @@
     </variable>
 	
 	<variable name="DefNewHubContent">
+		<value condition="!Library.HasContent(Movies) + !Library.HasContent(TVShows) + System.HasAddon(plugin.video.xstream-player)">plugin://plugin.video.xstream-player/?mode=netflix_top10&amp;type=tv</value>
 		<value condition="Library.HasContent(Movies) | Library.HasContent(TVShows)">plugin://script.bingie.widgets/?action=recent&amp;mediatype=media&amp;reload=$INFO[Window(Home).Property(widgetreload)]</value>
 		<value condition="!Library.HasContent(Movies) + !Library.HasContent(TVShows)">plugin://plugin.video.tmdb.bingie.helper/?info=trakt_userlist&amp;list_name=Latest+Releases&amp;list_slug=latest-releases&amp;user_slug=giladg&amp;plugin_category=Latest+Releases&amp;widget=true&amp;reload=$INFO[Window(Home).Property(TMDbBingieHelper.Widgets.Reload)]</value>
 	</variable>
 	
 	<variable name="DefNewHubName">
+		<value condition="!Library.HasContent(Movies) + !Library.HasContent(TVShows) + System.HasAddon(plugin.video.xstream-player)">Netflix Top 10 - TV Shows</value>
 		<value condition="Library.HasContent(Movies) | Library.HasContent(TVShows)">[CAPITALIZE]$LOCALIZE[20382][/CAPITALIZE]</value>
 		<value condition="!Library.HasContent(Movies) + !Library.HasContent(TVShows)">$LOCALIZE[31334]</value>
     </variable>
 	
 	<variable name="DefNewHub1Content">
+		<value condition="!Library.HasContent(Movies) + !Library.HasContent(TVShows) + System.HasAddon(plugin.video.xstream-player)">plugin://plugin.video.xstream-player/?mode=netflix_top10&amp;type=movie</value>
 		<value condition="Library.HasContent(Movies) | Library.HasContent(TVShows)">plugin://script.bingie.widgets/?action=popular&amp;mediatype=media&amp;reload=$INFO[Window(Home).Property(widgetreload)]</value>
 		<value condition="!Library.HasContent(Movies) + !Library.HasContent(TVShows)">plugin://plugin.video.tmdb.bingie.helper/?info=trakt_userlist&amp;list_name=Latest+TV+Shows&amp;list_slug=latest-tv-shows&amp;user_slug=garycrawfordgc&amp;plugin_category=Latest+TV+Shows&amp;widget=true&amp;reload=$INFO[Window(Home).Property(TMDbBingieHelper.Widgets.Reload)]</value>
 	</variable>
 	
 	<variable name="DefNewHub1Name">
+		<value condition="!Library.HasContent(Movies) + !Library.HasContent(TVShows) + System.HasAddon(plugin.video.xstream-player)">Netflix Top 10 - Movies</value>
 		<value condition="Library.HasContent(Movies) | Library.HasContent(TVShows)">$LOCALIZE[31563]</value>
 		<value condition="!Library.HasContent(Movies) + !Library.HasContent(TVShows)">$LOCALIZE[31196]</value>
     </variable>
