@@ -3,7 +3,9 @@
 <window>
     <defaultcontrol always="true">100</defaultcontrol>
     <include>DefaultSkinSettings</include>
-	<onunload>RunScript(script.skinshortcuts,type=buildxml&amp;mainmenuID=900&amp;levels=1&amp;group=mainmenu|powermenu|searchmenu|tmdbsearchmenu|moviehub|tvshowhub|newhub|musichub|customhub|somethinghub|mylisthub)</onunload>
+    <!-- Bengie: Skin Shortcuts 3 (Kodi 22) can't read this skin's v2 menu files and stops
+         with a message; there the shipped script-skinshortcuts-includes.xml is used as it is. -->
+	<onunload condition="!String.StartsWith(System.AddonVersion(script.skinshortcuts),3.)">RunScript(script.skinshortcuts,type=buildxml&amp;mainmenuID=900&amp;levels=1&amp;group=mainmenu|powermenu|searchmenu|tmdbsearchmenu|moviehub|tvshowhub|newhub|musichub|customhub|somethinghub|mylisthub)</onunload>
 	<onunload condition="!Skin.HasSetting(EnableRatings)">Skin.SetBool(TMDbBingieHelper.DisableRatings)</onunload>
     <onunload condition="Skin.HasSetting(EnableRatings)">Skin.Reset(TMDbBingieHelper.DisableRatings)</onunload>
     <controls>

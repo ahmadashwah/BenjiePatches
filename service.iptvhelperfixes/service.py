@@ -451,9 +451,13 @@ def apply_navigation_settings_once():
     if os.path.isfile(marker):
         return
     failed = [name for name, value in NAVIGATION_SETTINGS if not _set_kodi_setting(name, value)]
-    if failed:
+    if len(failed) == len(NAVIGATION_SETTINGS):
         log(f"Navigation settings not applied: {failed}; will retry.", xbmc.LOGWARNING)
         return
+    if failed:
+        # Bengie: Kodi 22 changed some of these (myvideos.selectaction); apply
+        # the rest once instead of retrying every 5 minutes forever.
+        log(f"Navigation settings this Kodi doesn't accept, skipped: {failed}", xbmc.LOGWARNING)
     os.makedirs(os.path.dirname(marker), exist_ok=True)
     with open(marker, "w") as f:
         f.write("done")
