@@ -90,6 +90,42 @@ class Media(object):
         all_items = self.sort_by_recommended(movies+tvshows)
         return sorted(all_items, key=itemgetter("recommendedscore"), reverse=True)[:self.options["limit"]]
 
+    @staticmethod
+    def _kodi_favourites():
+        ''' Kodi's Favourites as My List items (newest first): a "media"
+        favourite plays its path, a "window" favourite (a show, a folder)
+        opens its folder. Others (scripts, add-on shortcuts) are skipped. '''
+        import xbmc, json as _json
+        try:
+            payload = {
+                "jsonrpc": "2.0", "id": 1, "method": "Favourites.GetFavourites",
+                "params": {"properties": ["path", "thumbnail", "window", "windowparameter"]},
+            }
+            result = _json.loads(xbmc.executeJSONRPC(_json.dumps(payload)))
+            favs = (result.get("result") or {}).get("favourites") or []
+        except Exception as e:
+            log_msg("mylist kodi favourites error: %s" % e)
+            return []
+        items = []
+        for fav in reversed(favs):
+            thumb = fav.get("thumbnail") or ""
+            if fav.get("type") == "media" and fav.get("path"):
+                path, folder = fav["path"], False
+            elif fav.get("type") == "window" and fav.get("windowparameter"):
+                path, folder = fav["windowparameter"], True
+            else:
+                continue
+            items.append({
+                "label": fav.get("title", ""),
+                "icon": thumb,
+                "art": {"poster": thumb, "thumb": thumb},
+                "type": "video",
+                "isFolder": folder,
+                "extraproperties": {} if folder else {"IsPlayable": "true"},
+                "file": path,
+            })
+        return items
+
     def mylist(self):
         ''' get mylist -- this setup's video library is always empty (pure
         plugin-source content, nothing scanned into Kodi's own library), so
@@ -116,6 +152,12 @@ class Media(object):
         except Exception as e:
             log_msg("mylist xstream favorites export error: %s" % e)
             all_items = []
+        # Bengie: Kodi's own "Add to favourites" (the long-press menu) goes to
+        # Kodi's Favourites, not XStream Player's, so it never showed up here.
+        # My List now shows those too, newest first, ahead of XStream's.
+        seen = set(i.get("file") for i in all_items)
+        favourites = [f for f in self._kodi_favourites() if f["file"] not in seen]
+        all_items = favourites + all_items
         if all_items:
             return all_items[:self.options["limit"]]
         filters = []
