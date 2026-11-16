@@ -41,7 +41,7 @@ def is_available():
 
 
 def is_connected():
-    svc = xbmcaddon.Addon()
+    svc = xbmcaddon.Addon("service.iptvhelperfixes")
     return svc.getSetting("github_sync_enabled").lower() == "true" and bool(svc.getSetting("github_sync_token").strip())
 
 
@@ -137,7 +137,7 @@ def connect():
         dialog.ok("GitHub sync", "GitHub was not connected. You can try again from this add-on's settings.")
         return False
 
-    svc = xbmcaddon.Addon()
+    svc = xbmcaddon.Addon("service.iptvhelperfixes")
     svc.setSetting("github_sync_token", token)
     svc.setSetting("github_sync_gist_id", "")
     svc.setSetting("github_sync_enabled", "true")
@@ -154,7 +154,7 @@ def connect():
 
 
 def disconnect():
-    svc = xbmcaddon.Addon()
+    svc = xbmcaddon.Addon("service.iptvhelperfixes")
     if not is_connected() and not svc.getSetting("github_sync_token").strip():
         xbmcgui.Dialog().ok("GitHub sync", "GitHub is not connected.")
         return
@@ -169,7 +169,7 @@ def offer_once(has_login):
     """One-time, skippable offer shown after an IPTV login exists."""
     if not is_available() or is_connected() or not has_login:
         return
-    marker_dir = xbmcvfs.translatePath(xbmcaddon.Addon().getAddonInfo("profile"))
+    marker_dir = xbmcvfs.translatePath(xbmcaddon.Addon("service.iptvhelperfixes").getAddonInfo("profile"))
     marker = os.path.join(marker_dir, "github_offer_shown.flag")
     if os.path.isfile(marker):
         return

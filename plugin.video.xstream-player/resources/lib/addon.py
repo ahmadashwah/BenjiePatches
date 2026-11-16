@@ -8089,7 +8089,13 @@ def update_patch():
     except Exception:
         local_service = ""
     if _version_tuple(local_service) >= (1, 9, 0):
-        xbmc.executebuiltin(f"RunScript({_PATCH_ADDON_ID},update)")
+        # By file path, not RunScript(service.iptvhelperfixes,update): on Kodi
+        # 21.2 (an Android TV) that ran nothing -- the add-on's main part is
+        # its background service, and RunScript on a running script stops it
+        # instead of starting the update.
+        xbmc.executebuiltin(
+            f"RunScript(special://home/addons/{_PATCH_ADDON_ID}/connect.py,update)"
+        )
         return
 
     dialog = xbmcgui.Dialog()

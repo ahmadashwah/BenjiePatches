@@ -272,7 +272,7 @@ def sync_profile(pnum, token, gist_id, profile_dir):
 
 
 def run_sync():
-    svc = xbmcaddon.Addon()
+    svc = xbmcaddon.Addon("service.iptvhelperfixes")
     enabled = svc.getSetting("github_sync_enabled").lower() == "true"
     if not enabled:
         return

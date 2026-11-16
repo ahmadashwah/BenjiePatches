@@ -30,7 +30,7 @@ import xbmc
 import xbmcaddon
 import xbmcvfs
 
-ADDON = xbmcaddon.Addon()
+ADDON = xbmcaddon.Addon("service.iptvhelperfixes")
 ADDON_ID = ADDON.getAddonInfo("id")
 STATE_DIR = os.path.join(xbmcvfs.translatePath("special://profile/"), "addon_data", ADDON_ID)
 SESSION_FILE = os.path.join(STATE_DIR, "diag_session.json")
@@ -420,7 +420,7 @@ def upload(state):
     when it changed and only if a diagnostics or sync token is configured."""
     import github_sync  # same folder; imported lazily so a failure here can't break startup
 
-    svc = xbmcaddon.Addon()
+    svc = xbmcaddon.Addon("service.iptvhelperfixes")
     target = _upload_target(svc)
     if not target:
         return

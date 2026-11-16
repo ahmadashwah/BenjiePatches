@@ -11,7 +11,7 @@ that the repository has a newer version of (the forked XStream Player, TMDb
 Bingie Helper and Bingie Widgets, the skin, this service), straight from the
 repository's zips. It checks twice a day (leaving it to Kodi where the
 repository is installed and Kodi installs updates automatically), and at once
-when the power menu's Update runs it (RunScript(service.iptvhelperfixes,update)).
+when the power menu's Update runs it (connect.py with "update").
 
 The one-time move copies Bingie's skin settings and menus (script.skinshortcuts)
 to skin.benjie's names, switches the skin and answers Kodi's "keep this skin?"
@@ -39,7 +39,7 @@ DEFAULT_SKIN = "skin.estuary"
 CHECK_INTERVAL = 12 * 3600
 RETRY_INTERVAL = 30 * 60
 
-ADDON_ID = xbmcaddon.Addon().getAddonInfo("id")
+ADDON_ID = xbmcaddon.Addon("service.iptvhelperfixes").getAddonInfo("id")
 HOME = xbmcvfs.translatePath("special://home/")
 PROFILE = xbmcvfs.translatePath("special://profile/")
 STATE_DIR = os.path.join(PROFILE, "addon_data", ADDON_ID)

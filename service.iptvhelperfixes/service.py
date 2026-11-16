@@ -33,7 +33,7 @@ import error_report
 import github_sync
 import benjie_update
 
-ADDON = xbmcaddon.Addon()
+ADDON = xbmcaddon.Addon("service.iptvhelperfixes")
 ADDON_ID = ADDON.getAddonInfo("id")
 ADDON_PATH = xbmcvfs.translatePath(ADDON.getAddonInfo("path"))
 KODI_HOME = xbmcvfs.translatePath("special://home/")
