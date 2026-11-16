@@ -17,7 +17,10 @@
                 <onleft>9999</onleft>
                 <scrolltime tween="quadratic">300</scrolltime>
                 <onclick>Action(Info)</onclick>
-                <visible>Container($PARAM[id]).IsUpdating | Integer.IsGreater(Container($PARAM[id]).NumItems,0)</visible>
+                <!-- Visible as soon as there is text of its kind: Kodi only loads a row's
+                     content while it is visible (hiding it until it had items meant it
+                     never loaded). -->
+                <visible>$PARAM[visible]</visible>
                 <itemlayout width="297" height="430">
                     <control type="group">
                         <width>295</width>
@@ -529,14 +532,17 @@
             <onleft>9999</onleft>
             <include content="Bengie_LiveResults">
                 <param name="id" value="5091" />
+                <param name="visible" value="!String.IsEmpty(Control.GetLabel(312).index(1)) + !$EXP[IsArabicLiveTerm]" />
                 <param name="path" value="$VAR[Bengie_LiveSearchTMDb]" />
             </include>
             <include content="Bengie_LiveResults">
                 <param name="id" value="5092" />
+                <param name="visible" value="!String.IsEmpty(Control.GetLabel(312).index(1)) + $EXP[IsArabicLiveTerm]" />
                 <param name="path" value="$VAR[Bengie_LiveSearchXtreamSeries]" />
             </include>
             <include content="Bengie_LiveResults">
                 <param name="id" value="5093" />
+                <param name="visible" value="!String.IsEmpty(Control.GetLabel(312).index(1)) + $EXP[IsArabicLiveTerm]" />
                 <param name="path" value="$VAR[Bengie_LiveSearchXtreamMovies]" />
             </include>
         </control>

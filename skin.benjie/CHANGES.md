@@ -1,5 +1,12 @@
 # Changes from Bingie 2.0.2
 
+## 2.0.2.13 (2026-11-15)
+
+- `1080i/IncludesBingieKeyboard.xml`: the live result rows beside the search
+  keyboard now show as soon as there is text of their kind. They were hidden
+  until they had items, and Kodi only loads a row while it is visible, so in
+  2.0.2.12 no search ever started.
+
 ## 2.0.2.12 (2026-11-15)
 
 - Search keyboard (`1080i/IncludesBingieKeyboard.xml`, `IncludesBingieSearch.xml`,
