@@ -80,14 +80,10 @@
 			<property name="id">$NUMBER[5]</property>
 			<label>$LOCALIZE[342]</label>
 			<label2 />
-			<icon>/</icon>
+			<icon>shortcuts/clapperboard.png</icon>
 			<thumb>/</thumb>
 			<property name="labelID">movies</property>
 			<property name="defaultID">movies</property>
-			<property name="translatedPath">ActivateWindow(Videos,"plugin://plugin.video.xstream-player/?mode=movies_menu&amp;profile_num=1",return)</property>
-			<property name="widgetTarget">videos</property>
-			<property name="thumb.name">Custom multi image (folder)</property>
-			<property name="thumbName">Bingie</property>
 			<onclick>ActivateWindow(1111,return)</onclick>
 			<property name="path">ActivateWindow(1111,return)</property>
 			<property name="list">1111</property>
@@ -103,12 +99,10 @@
 			<property name="id">$NUMBER[6]</property>
 			<label>Live TV</label>
 			<label2>Custom item</label2>
-			<icon>DefaultShortcut.png</icon>
+			<icon>shortcuts/antenna.png</icon>
 			<thumb>thumb</thumb>
 			<property name="labelID">livetv</property>
 			<property name="defaultID" />
-			<property name="translatedPath">ActivateWindow(Videos,"plugin://plugin.video.xstream-player/?mode=live_menu&amp;profile_num=1",return)</property>
-			<property name="widgetTarget">videos</property>
 			<visible>System.HasPVRAddon</visible>
 			<onclick>ActivateWindow(TVChannels,return)</onclick>
 			<property name="path">ActivateWindow(TVChannels,return)</property>
@@ -290,8 +284,6 @@
 			<thumb>thumb</thumb>
 			<property name="labelID">plugin.video.xstream-player</property>
 			<property name="defaultID">plugin.video.xstream-player</property>
-			<property name="translatedPath">ActivateWindow(Videos,"plugin://plugin.video.xstream-player",return)</property>
-			<property name="widgetTarget">videos</property>
 			<onclick>ActivateWindow(Videos,"plugin://plugin.video.xstream-player",return)</onclick>
 			<property name="path">ActivateWindow(Videos,"plugin://plugin.video.xstream-player",return)</property>
 			<property name="list">plugin://plugin.video.xstream-player</property>
@@ -478,8 +470,6 @@
 			<thumb>thumb</thumb>
 			<property name="labelID">movies</property>
 			<property name="defaultID" />
-			<property name="translatedPath">ActivateWindow(Videos,"plugin://plugin.video.xstream-player/?mode=movies_menu&amp;profile_num=1",return)</property>
-			<property name="widgetTarget">videos</property>
 			<onclick>ActivateWindow(Videos,"plugin://plugin.video.xstream-player/?mode=movies_menu&amp;profile_num=1",return)</onclick>
 			<property name="path">ActivateWindow(Videos,"plugin://plugin.video.xstream-player/?mode=movies_menu&amp;profile_num=1",return)</property>
 			<property name="list">plugin://plugin.video.xstream-player/?mode=movies_menu&amp;profile_num=1</property>
@@ -576,19 +566,6 @@
 			<thumb>thumb</thumb>
 			<property name="labelID">series</property>
 			<property name="defaultID" />
-			<property name="translatedPath">ActivateWindow(Videos,"plugin://plugin.video.xstream-player/?mode=series_menu&amp;profile_num=1",return)</property>
-			<property name="widgetTarget">videos</property>
-			<property name="widgetstyle">poster</property>
-			<property name="widgetstyle.name">Poster</property>
-			<property name="widgetstyleName">Poster</property>
-			<property name="widgetTags">enable</property>
-			<property name="widgetTags.name">Enabled</property>
-			<property name="widgetTagsName">Enabled</property>
-			<property name="widgetTarget.name">Videos</property>
-			<property name="widgetTargetName">Videos</property>
-			<property name="widgetSortBy">default</property>
-			<property name="widgetSortBy.name">Default</property>
-			<property name="widgetSortByName">Default</property>
 			<onclick>ActivateWindow(Videos,"plugin://plugin.video.xstream-player/?mode=series_menu&amp;profile_num=1",return)</onclick>
 			<property name="path">ActivateWindow(Videos,"plugin://plugin.video.xstream-player/?mode=series_menu&amp;profile_num=1",return)</property>
 			<property name="list">plugin://plugin.video.xstream-player/?mode=series_menu&amp;profile_num=1</property>
@@ -631,40 +608,6 @@
 		<item id="3">
 			<property name="id">$NUMBER[3]</property>
 			<property name="mainmenuid">14</property>
-			<label>$VAR[DefNewHub2Name]</label>
-			<label2 />
-			<icon>DefaultShortcut.png</icon>
-			<thumb />
-			<property name="labelID">var-defnewhub2name</property>
-			<property name="defaultID">var-defnewhub2name</property>
-			<visible>[!Library.HasContent(Movies) + !Library.HasContent(TVShows)] + String.IsEqual(Container(900).ListItem.Property(submenuVisibility),newhub)</visible>
-			<onclick>$VAR[DefNewHub2Content]</onclick>
-			<property name="path">$VAR[DefNewHub2Content]</property>
-			<property name="list">$VAR[DefNewHub2Content]</property>
-			<visible>String.IsEqual(System.ProfileName,Master user)</visible>
-			<property name="group">newhub</property>
-			<property name="isSubmenu">True</property>
-			</item>
-		<item id="4">
-			<property name="id">$NUMBER[4]</property>
-			<property name="mainmenuid">14</property>
-			<label>$VAR[DefNewHub3Name]</label>
-			<label2 />
-			<icon>DefaultShortcut.png</icon>
-			<thumb />
-			<property name="labelID">var-defnewhub3name</property>
-			<property name="defaultID">var-defnewhub3name</property>
-			<visible>[!Library.HasContent(Movies) + !Library.HasContent(TVShows)] + String.IsEqual(Container(900).ListItem.Property(submenuVisibility),newhub)</visible>
-			<onclick>$VAR[DefNewHub3Content]</onclick>
-			<property name="path">$VAR[DefNewHub3Content]</property>
-			<property name="list">$VAR[DefNewHub3Content]</property>
-			<visible>String.IsEqual(System.ProfileName,Master user)</visible>
-			<property name="group">newhub</property>
-			<property name="isSubmenu">True</property>
-			</item>
-		<item id="5">
-			<property name="id">$NUMBER[5]</property>
-			<property name="mainmenuid">14</property>
 			<label>$VAR[DefNewHub4Name]</label>
 			<label2 />
 			<icon>DefaultShortcut.png</icon>
@@ -679,8 +622,8 @@
 			<property name="group">newhub</property>
 			<property name="isSubmenu">True</property>
 			</item>
-		<item id="6">
-			<property name="id">$NUMBER[6]</property>
+		<item id="4">
+			<property name="id">$NUMBER[4]</property>
 			<property name="mainmenuid">14</property>
 			<label>$VAR[DefNewHub5Name]</label>
 			<label2 />
@@ -696,8 +639,8 @@
 			<property name="group">newhub</property>
 			<property name="isSubmenu">True</property>
 			</item>
-		<item id="7">
-			<property name="id">$NUMBER[7]</property>
+		<item id="5">
+			<property name="id">$NUMBER[5]</property>
 			<property name="mainmenuid">14</property>
 			<label>$VAR[DefNewHub6Name]</label>
 			<label2 />
@@ -713,8 +656,8 @@
 			<property name="group">newhub</property>
 			<property name="isSubmenu">True</property>
 			</item>
-		<item id="8">
-			<property name="id">$NUMBER[8]</property>
+		<item id="6">
+			<property name="id">$NUMBER[6]</property>
 			<property name="mainmenuid">14</property>
 			<label>$VAR[DefNewHub7Name]</label>
 			<label2 />
@@ -730,8 +673,8 @@
 			<property name="group">newhub</property>
 			<property name="isSubmenu">True</property>
 			</item>
-		<item id="9">
-			<property name="id">$NUMBER[9]</property>
+		<item id="7">
+			<property name="id">$NUMBER[7]</property>
 			<property name="mainmenuid">14</property>
 			<label>$VAR[DefNewHub8Name]</label>
 			<label2 />
@@ -747,8 +690,8 @@
 			<property name="group">newhub</property>
 			<property name="isSubmenu">True</property>
 			</item>
-		<item id="10">
-			<property name="id">$NUMBER[10]</property>
+		<item id="8">
+			<property name="id">$NUMBER[8]</property>
 			<property name="mainmenuid">14</property>
 			<label>$VAR[DefNewHub9Name]</label>
 			<label2 />
@@ -764,8 +707,8 @@
 			<property name="group">newhub</property>
 			<property name="isSubmenu">True</property>
 			</item>
-		<item id="11">
-			<property name="id">$NUMBER[11]</property>
+		<item id="9">
+			<property name="id">$NUMBER[9]</property>
 			<property name="mainmenuid">14</property>
 			<label>$VAR[DefNewHub10Name]</label>
 			<label2 />
@@ -781,8 +724,8 @@
 			<property name="group">newhub</property>
 			<property name="isSubmenu">True</property>
 			</item>
-		<item id="12">
-			<property name="id">$NUMBER[12]</property>
+		<item id="10">
+			<property name="id">$NUMBER[10]</property>
 			<property name="mainmenuid">14</property>
 			<label>$VAR[DefNewHub11Name]</label>
 			<label2 />
@@ -798,8 +741,8 @@
 			<property name="group">newhub</property>
 			<property name="isSubmenu">True</property>
 			</item>
-		<item id="13">
-			<property name="id">$NUMBER[13]</property>
+		<item id="11">
+			<property name="id">$NUMBER[11]</property>
 			<property name="mainmenuid">14</property>
 			<label>$VAR[DefNewHub12Name]</label>
 			<label2 />
@@ -815,8 +758,8 @@
 			<property name="group">newhub</property>
 			<property name="isSubmenu">True</property>
 			</item>
-		<item id="14">
-			<property name="id">$NUMBER[14]</property>
+		<item id="12">
+			<property name="id">$NUMBER[12]</property>
 			<property name="mainmenuid">14</property>
 			<label>$VAR[DefNewHub13Name]</label>
 			<label2 />
@@ -832,8 +775,8 @@
 			<property name="group">newhub</property>
 			<property name="isSubmenu">True</property>
 			</item>
-		<item id="15">
-			<property name="id">$NUMBER[15]</property>
+		<item id="13">
+			<property name="id">$NUMBER[13]</property>
 			<property name="mainmenuid">14</property>
 			<label>$VAR[DefNewHub14Name]</label>
 			<label2 />
@@ -849,8 +792,8 @@
 			<property name="group">newhub</property>
 			<property name="isSubmenu">True</property>
 			</item>
-		<item id="16">
-			<property name="id">$NUMBER[16]</property>
+		<item id="14">
+			<property name="id">$NUMBER[14]</property>
 			<property name="mainmenuid">14</property>
 			<label>$VAR[DefNewHub15Name]</label>
 			<label2 />
@@ -875,9 +818,9 @@
 			<thumb />
 			<property name="labelID">var-defmusichub3name</property>
 			<property name="defaultID">var-defmusichub3name</property>
-			<onclick>special://home/addons/skin.benjie/extras/widgetplaylists/recentlyaddedalbums.xsp</onclick>
-			<property name="path">special://home/addons/skin.benjie/extras/widgetplaylists/recentlyaddedalbums.xsp</property>
-			<property name="list">special://home/addons/skin.benjie/extras/widgetplaylists/recentlyaddedalbums.xsp</property>
+			<onclick>C:\Users\ahmad\AppData\Local\Temp\claude\7e7f554bcb1c05f3\54ae8fa3-d08a-47f0-934c-af3eadcdcc91\scratchpad\kodiE\portable_data\addons\skin.benjie\extras\widgetplaylists\recentlyaddedalbums.xsp</onclick>
+			<property name="path">C:\Users\ahmad\AppData\Local\Temp\claude\7e7f554bcb1c05f3\54ae8fa3-d08a-47f0-934c-af3eadcdcc91\scratchpad\kodiE\portable_data\addons\skin.benjie\extras\widgetplaylists\recentlyaddedalbums.xsp</property>
+			<property name="list">C:\Users\ahmad\AppData\Local\Temp\claude\7e7f554bcb1c05f3\54ae8fa3-d08a-47f0-934c-af3eadcdcc91\scratchpad\kodiE\portable_data\addons\skin.benjie\extras\widgetplaylists\recentlyaddedalbums.xsp</property>
 			<visible>[String.IsEqual(System.ProfileName,Master user)] + String.IsEqual(Container(900).ListItem.Property(submenuVisibility),musichub)</visible>
 			<property name="group">musichub</property>
 			<property name="isSubmenu">True</property>
@@ -891,9 +834,9 @@
 			<thumb />
 			<property name="labelID">31131</property>
 			<property name="defaultID">31131</property>
-			<onclick>special://home/addons/skin.benjie/extras/widgetplaylists/recentlyaddedartists.xsp</onclick>
-			<property name="path">special://home/addons/skin.benjie/extras/widgetplaylists/recentlyaddedartists.xsp</property>
-			<property name="list">special://home/addons/skin.benjie/extras/widgetplaylists/recentlyaddedartists.xsp</property>
+			<onclick>C:\Users\ahmad\AppData\Local\Temp\claude\7e7f554bcb1c05f3\54ae8fa3-d08a-47f0-934c-af3eadcdcc91\scratchpad\kodiE\portable_data\addons\skin.benjie\extras\widgetplaylists\recentlyaddedartists.xsp</onclick>
+			<property name="path">C:\Users\ahmad\AppData\Local\Temp\claude\7e7f554bcb1c05f3\54ae8fa3-d08a-47f0-934c-af3eadcdcc91\scratchpad\kodiE\portable_data\addons\skin.benjie\extras\widgetplaylists\recentlyaddedartists.xsp</property>
+			<property name="list">C:\Users\ahmad\AppData\Local\Temp\claude\7e7f554bcb1c05f3\54ae8fa3-d08a-47f0-934c-af3eadcdcc91\scratchpad\kodiE\portable_data\addons\skin.benjie\extras\widgetplaylists\recentlyaddedartists.xsp</property>
 			<visible>[String.IsEqual(System.ProfileName,Master user)] + String.IsEqual(Container(900).ListItem.Property(submenuVisibility),musichub)</visible>
 			<property name="group">musichub</property>
 			<property name="isSubmenu">True</property>
@@ -907,9 +850,9 @@
 			<thumb />
 			<property name="labelID">31211</property>
 			<property name="defaultID">31211</property>
-			<onclick>special://home/addons/skin.benjie/extras/widgetplaylists/recentlyaddedsongs.xsp</onclick>
-			<property name="path">special://home/addons/skin.benjie/extras/widgetplaylists/recentlyaddedsongs.xsp</property>
-			<property name="list">special://home/addons/skin.benjie/extras/widgetplaylists/recentlyaddedsongs.xsp</property>
+			<onclick>C:\Users\ahmad\AppData\Local\Temp\claude\7e7f554bcb1c05f3\54ae8fa3-d08a-47f0-934c-af3eadcdcc91\scratchpad\kodiE\portable_data\addons\skin.benjie\extras\widgetplaylists\recentlyaddedsongs.xsp</onclick>
+			<property name="path">C:\Users\ahmad\AppData\Local\Temp\claude\7e7f554bcb1c05f3\54ae8fa3-d08a-47f0-934c-af3eadcdcc91\scratchpad\kodiE\portable_data\addons\skin.benjie\extras\widgetplaylists\recentlyaddedsongs.xsp</property>
+			<property name="list">C:\Users\ahmad\AppData\Local\Temp\claude\7e7f554bcb1c05f3\54ae8fa3-d08a-47f0-934c-af3eadcdcc91\scratchpad\kodiE\portable_data\addons\skin.benjie\extras\widgetplaylists\recentlyaddedsongs.xsp</property>
 			<visible>[String.IsEqual(System.ProfileName,Master user)] + String.IsEqual(Container(900).ListItem.Property(submenuVisibility),musichub)</visible>
 			<property name="group">musichub</property>
 			<property name="isSubmenu">True</property>
@@ -1045,6 +988,38 @@
 			<property name="group">10000.1</property>
 			<property name="isSubmenu">True</property>
 			</item>
+		<item id="7">
+			<property name="id">$NUMBER[7]</property>
+			<property name="mainmenuid">2</property>
+			<label>$VAR[DefWidget6Name]</label>
+			<label2 />
+			<icon>DefaultShortcut.png</icon>
+			<thumb />
+			<property name="labelID">var-defwidget6name</property>
+			<property name="defaultID">var-defwidget6name</property>
+			<onclick>$VAR[DefWidget6Content]</onclick>
+			<property name="path">$VAR[DefWidget6Content]</property>
+			<property name="list">$VAR[DefWidget6Content]</property>
+			<visible>[String.IsEqual(System.ProfileName,Master user)] + String.IsEqual(Container(900).ListItem.Property(submenuVisibility),num-10000)</visible>
+			<property name="group">10000.1</property>
+			<property name="isSubmenu">True</property>
+			</item>
+		<item id="8">
+			<property name="id">$NUMBER[8]</property>
+			<property name="mainmenuid">2</property>
+			<label>$VAR[DefWidget7Name]</label>
+			<label2 />
+			<icon>DefaultShortcut.png</icon>
+			<thumb />
+			<property name="labelID">var-defwidget7name</property>
+			<property name="defaultID">var-defwidget7name</property>
+			<onclick>$VAR[DefWidget7Content]</onclick>
+			<property name="path">$VAR[DefWidget7Content]</property>
+			<property name="list">$VAR[DefWidget7Content]</property>
+			<visible>[String.IsEqual(System.ProfileName,Master user)] + String.IsEqual(Container(900).ListItem.Property(submenuVisibility),num-10000)</visible>
+			<property name="group">10000.1</property>
+			<property name="isSubmenu">True</property>
+			</item>
 		</include>
 	<include name="skinshortcuts-group-num-137">
 		<description>No items</description>
@@ -1161,6 +1136,38 @@
 			<property name="group">10000.1</property>
 			<property name="isSubmenu">True</property>
 			</item>
+		<item id="7">
+			<property name="id">$NUMBER[7]</property>
+			<property name="mainmenuid">2</property>
+			<label>$VAR[DefWidget6Name]</label>
+			<label2 />
+			<icon>DefaultShortcut.png</icon>
+			<thumb />
+			<property name="labelID">var-defwidget6name</property>
+			<property name="defaultID">var-defwidget6name</property>
+			<onclick>$VAR[DefWidget6Content]</onclick>
+			<property name="path">$VAR[DefWidget6Content]</property>
+			<property name="list">$VAR[DefWidget6Content]</property>
+			<visible>String.IsEqual(System.ProfileName,Master user)</visible>
+			<property name="group">10000.1</property>
+			<property name="isSubmenu">True</property>
+			</item>
+		<item id="8">
+			<property name="id">$NUMBER[8]</property>
+			<property name="mainmenuid">2</property>
+			<label>$VAR[DefWidget7Name]</label>
+			<label2 />
+			<icon>DefaultShortcut.png</icon>
+			<thumb />
+			<property name="labelID">var-defwidget7name</property>
+			<property name="defaultID">var-defwidget7name</property>
+			<onclick>$VAR[DefWidget7Content]</onclick>
+			<property name="path">$VAR[DefWidget7Content]</property>
+			<property name="list">$VAR[DefWidget7Content]</property>
+			<visible>String.IsEqual(System.ProfileName,Master user)</visible>
+			<property name="group">10000.1</property>
+			<property name="isSubmenu">True</property>
+			</item>
 		</include>
 	<include name="skinshortcuts-group-alt-num-10000-1">
 		<item id="1">
@@ -1255,6 +1262,38 @@
 			<onclick>$VAR[DefWidget5Content]</onclick>
 			<property name="path">$VAR[DefWidget5Content]</property>
 			<property name="list">$VAR[DefWidget5Content]</property>
+			<visible>[String.IsEqual(System.ProfileName,Master user)] + String.IsEqual(Window(10000).Property(submenuVisibility),num-10000)</visible>
+			<property name="group">10000.1</property>
+			<property name="isSubmenu">True</property>
+			</item>
+		<item id="7">
+			<property name="id">$NUMBER[7]</property>
+			<property name="mainmenuid">2</property>
+			<label>$VAR[DefWidget6Name]</label>
+			<label2 />
+			<icon>DefaultShortcut.png</icon>
+			<thumb />
+			<property name="labelID">var-defwidget6name</property>
+			<property name="defaultID">var-defwidget6name</property>
+			<onclick>$VAR[DefWidget6Content]</onclick>
+			<property name="path">$VAR[DefWidget6Content]</property>
+			<property name="list">$VAR[DefWidget6Content]</property>
+			<visible>[String.IsEqual(System.ProfileName,Master user)] + String.IsEqual(Window(10000).Property(submenuVisibility),num-10000)</visible>
+			<property name="group">10000.1</property>
+			<property name="isSubmenu">True</property>
+			</item>
+		<item id="8">
+			<property name="id">$NUMBER[8]</property>
+			<property name="mainmenuid">2</property>
+			<label>$VAR[DefWidget7Name]</label>
+			<label2 />
+			<icon>DefaultShortcut.png</icon>
+			<thumb />
+			<property name="labelID">var-defwidget7name</property>
+			<property name="defaultID">var-defwidget7name</property>
+			<onclick>$VAR[DefWidget7Content]</onclick>
+			<property name="path">$VAR[DefWidget7Content]</property>
+			<property name="list">$VAR[DefWidget7Content]</property>
 			<visible>[String.IsEqual(System.ProfileName,Master user)] + String.IsEqual(Window(10000).Property(submenuVisibility),num-10000)</visible>
 			<property name="group">10000.1</property>
 			<property name="isSubmenu">True</property>
@@ -1530,8 +1569,6 @@
 			<thumb>thumb</thumb>
 			<property name="labelID">plugin.video.xstream-player</property>
 			<property name="defaultID">plugin.video.xstream-player</property>
-			<property name="translatedPath">ActivateWindow(Videos,"plugin://plugin.video.xstream-player",return)</property>
-			<property name="widgetTarget">videos</property>
 			<onclick>ActivateWindow(Videos,"plugin://plugin.video.xstream-player",return)</onclick>
 			<property name="path">ActivateWindow(Videos,"plugin://plugin.video.xstream-player",return)</property>
 			<property name="list">plugin://plugin.video.xstream-player</property>
@@ -1550,8 +1587,6 @@
 			<thumb>thumb</thumb>
 			<property name="labelID">plugin.video.xstream-player</property>
 			<property name="defaultID">plugin.video.xstream-player</property>
-			<property name="translatedPath">ActivateWindow(Videos,"plugin://plugin.video.xstream-player",return)</property>
-			<property name="widgetTarget">videos</property>
 			<onclick>ActivateWindow(Videos,"plugin://plugin.video.xstream-player",return)</onclick>
 			<property name="path">ActivateWindow(Videos,"plugin://plugin.video.xstream-player",return)</property>
 			<property name="list">plugin://plugin.video.xstream-player</property>
@@ -2000,39 +2035,6 @@
 			<param name="widgetTarget" value="videos" />
 			</include>
 		</include>
-	<include name="skinshortcuts-template-xtreamsearch">
-		<include condition="String.IsEqual(System.ProfileName,Master user)">skinshortcuts-template-xtreamsearch-Master user</include>
-		</include>
-	<include name="skinshortcuts-template-xtreamsearch-Master user">
-		<include content="Object_SearchList_Template">
-			<param name="id" value="5044" />
-			<param name="groupid" value="7544" />
-			<param name="path" value="$VAR[SearchXtreamMovies]" />
-			<param name="path2" value="" />
-			<param name="label" value="$LOCALIZE[342]" />
-			<param name="widgetLimit" value="$INFO[Skin.String(WidgetsGlobalLimit)]" />
-			<param name="layout" value="PosterPanelBingie" />
-			<param name="layoutwidth" value="295" />
-			<param name="layoutheight" value="420" />
-			<param name="height" value="975" />
-			<param name="widgetTags" value="WidgetTagOverlayDisable" />
-			<param name="widgetTarget" value="videos" />
-			</include>
-		<include content="Object_SearchList_Template">
-			<param name="id" value="5045" />
-			<param name="groupid" value="7545" />
-			<param name="path" value="$VAR[SearchXtreamSeries]" />
-			<param name="path2" value="" />
-			<param name="label" value="$LOCALIZE[31566]" />
-			<param name="widgetLimit" value="$INFO[Skin.String(WidgetsGlobalLimit)]" />
-			<param name="layout" value="PosterPanelBingie" />
-			<param name="layoutwidth" value="295" />
-			<param name="layoutheight" value="420" />
-			<param name="height" value="975" />
-			<param name="widgetTags" value="WidgetTagOverlayDisable" />
-			<param name="widgetTarget" value="videos" />
-			</include>
-		</include>
 	<include name="skinshortcuts-group-tmdbsearchmenu-1">
 		<description>No items</description>
 		</include>
@@ -2065,8 +2067,6 @@
 			<thumb>thumb</thumb>
 			<property name="labelID">movies</property>
 			<property name="defaultID" />
-			<property name="translatedPath">ActivateWindow(Videos,"plugin://plugin.video.xstream-player/?mode=movies_menu&amp;profile_num=1",return)</property>
-			<property name="widgetTarget">videos</property>
 			<onclick>ActivateWindow(Videos,"plugin://plugin.video.xstream-player/?mode=movies_menu&amp;profile_num=1",return)</onclick>
 			<property name="path">ActivateWindow(Videos,"plugin://plugin.video.xstream-player/?mode=movies_menu&amp;profile_num=1",return)</property>
 			<property name="list">plugin://plugin.video.xstream-player/?mode=movies_menu&amp;profile_num=1</property>
@@ -2133,8 +2133,6 @@
 			<thumb>thumb</thumb>
 			<property name="labelID">movies</property>
 			<property name="defaultID" />
-			<property name="translatedPath">ActivateWindow(Videos,"plugin://plugin.video.xstream-player/?mode=movies_menu&amp;profile_num=1",return)</property>
-			<property name="widgetTarget">videos</property>
 			<onclick>ActivateWindow(Videos,"plugin://plugin.video.xstream-player/?mode=movies_menu&amp;profile_num=1",return)</onclick>
 			<property name="path">ActivateWindow(Videos,"plugin://plugin.video.xstream-player/?mode=movies_menu&amp;profile_num=1",return)</property>
 			<property name="list">plugin://plugin.video.xstream-player/?mode=movies_menu&amp;profile_num=1</property>
@@ -2332,19 +2330,6 @@
 			<thumb>thumb</thumb>
 			<property name="labelID">series</property>
 			<property name="defaultID" />
-			<property name="translatedPath">ActivateWindow(Videos,"plugin://plugin.video.xstream-player/?mode=series_menu&amp;profile_num=1",return)</property>
-			<property name="widgetTarget">videos</property>
-			<property name="widgetstyle">poster</property>
-			<property name="widgetstyle.name">Poster</property>
-			<property name="widgetstyleName">Poster</property>
-			<property name="widgetTags">enable</property>
-			<property name="widgetTags.name">Enabled</property>
-			<property name="widgetTagsName">Enabled</property>
-			<property name="widgetTarget.name">Videos</property>
-			<property name="widgetTargetName">Videos</property>
-			<property name="widgetSortBy">default</property>
-			<property name="widgetSortBy.name">Default</property>
-			<property name="widgetSortByName">Default</property>
 			<onclick>ActivateWindow(Videos,"plugin://plugin.video.xstream-player/?mode=series_menu&amp;profile_num=1",return)</onclick>
 			<property name="path">ActivateWindow(Videos,"plugin://plugin.video.xstream-player/?mode=series_menu&amp;profile_num=1",return)</property>
 			<property name="list">plugin://plugin.video.xstream-player/?mode=series_menu&amp;profile_num=1</property>
@@ -2411,19 +2396,6 @@
 			<thumb>thumb</thumb>
 			<property name="labelID">series</property>
 			<property name="defaultID" />
-			<property name="translatedPath">ActivateWindow(Videos,"plugin://plugin.video.xstream-player/?mode=series_menu&amp;profile_num=1",return)</property>
-			<property name="widgetTarget">videos</property>
-			<property name="widgetstyle">poster</property>
-			<property name="widgetstyle.name">Poster</property>
-			<property name="widgetstyleName">Poster</property>
-			<property name="widgetTags">enable</property>
-			<property name="widgetTags.name">Enabled</property>
-			<property name="widgetTagsName">Enabled</property>
-			<property name="widgetTarget.name">Videos</property>
-			<property name="widgetTargetName">Videos</property>
-			<property name="widgetSortBy">default</property>
-			<property name="widgetSortBy.name">Default</property>
-			<property name="widgetSortByName">Default</property>
 			<onclick>ActivateWindow(Videos,"plugin://plugin.video.xstream-player/?mode=series_menu&amp;profile_num=1",return)</onclick>
 			<property name="path">ActivateWindow(Videos,"plugin://plugin.video.xstream-player/?mode=series_menu&amp;profile_num=1",return)</property>
 			<property name="list">plugin://plugin.video.xstream-player/?mode=series_menu&amp;profile_num=1</property>
@@ -2516,11 +2488,11 @@
 			<param name="height" value="341" />
 			<param name="widgetName" value="Series" />
 			<param name="submenuid" value="" />
-			<param name="widgetTags" value="WidgetTagOverlayEnable" />
+			<param name="widgetTags" value="WidgetTagOverlayDisable" />
 			<param name="widgetTarget" value="videos" />
 			<param name="widgetPath" value="plugin://plugin.video.xstream-player/?mode=series_menu&amp;profile_num=1" />
-			<param name="widgetStyle" value="widget_layout_poster" />
-			<param name="widgetSortBy" value="default" />
+			<param name="widgetStyle" value="widget_layout_default" />
+			<param name="widgetSortBy" value="" />
 			<param name="widgetSortOrder" value="" />
 			<param name="widgetLimit" value="$INFO[Skin.String(WidgetsGlobalLimit)]" />
 			</include>
@@ -2567,40 +2539,6 @@
 		<item id="3">
 			<property name="id">$NUMBER[3]</property>
 			<property name="mainmenuid">14</property>
-			<label>$VAR[DefNewHub2Name]</label>
-			<label2 />
-			<icon>DefaultShortcut.png</icon>
-			<thumb />
-			<property name="labelID">var-defnewhub2name</property>
-			<property name="defaultID">var-defnewhub2name</property>
-			<visible>!Library.HasContent(Movies) + !Library.HasContent(TVShows)</visible>
-			<onclick>$VAR[DefNewHub2Content]</onclick>
-			<property name="path">$VAR[DefNewHub2Content]</property>
-			<property name="list">$VAR[DefNewHub2Content]</property>
-			<visible>String.IsEqual(System.ProfileName,Master user)</visible>
-			<property name="group">newhub</property>
-			<property name="isSubmenu">True</property>
-			</item>
-		<item id="4">
-			<property name="id">$NUMBER[4]</property>
-			<property name="mainmenuid">14</property>
-			<label>$VAR[DefNewHub3Name]</label>
-			<label2 />
-			<icon>DefaultShortcut.png</icon>
-			<thumb />
-			<property name="labelID">var-defnewhub3name</property>
-			<property name="defaultID">var-defnewhub3name</property>
-			<visible>!Library.HasContent(Movies) + !Library.HasContent(TVShows)</visible>
-			<onclick>$VAR[DefNewHub3Content]</onclick>
-			<property name="path">$VAR[DefNewHub3Content]</property>
-			<property name="list">$VAR[DefNewHub3Content]</property>
-			<visible>String.IsEqual(System.ProfileName,Master user)</visible>
-			<property name="group">newhub</property>
-			<property name="isSubmenu">True</property>
-			</item>
-		<item id="5">
-			<property name="id">$NUMBER[5]</property>
-			<property name="mainmenuid">14</property>
 			<label>$VAR[DefNewHub4Name]</label>
 			<label2 />
 			<icon>DefaultShortcut.png</icon>
@@ -2615,8 +2553,8 @@
 			<property name="group">newhub</property>
 			<property name="isSubmenu">True</property>
 			</item>
-		<item id="6">
-			<property name="id">$NUMBER[6]</property>
+		<item id="4">
+			<property name="id">$NUMBER[4]</property>
 			<property name="mainmenuid">14</property>
 			<label>$VAR[DefNewHub5Name]</label>
 			<label2 />
@@ -2632,8 +2570,8 @@
 			<property name="group">newhub</property>
 			<property name="isSubmenu">True</property>
 			</item>
-		<item id="7">
-			<property name="id">$NUMBER[7]</property>
+		<item id="5">
+			<property name="id">$NUMBER[5]</property>
 			<property name="mainmenuid">14</property>
 			<label>$VAR[DefNewHub6Name]</label>
 			<label2 />
@@ -2649,8 +2587,8 @@
 			<property name="group">newhub</property>
 			<property name="isSubmenu">True</property>
 			</item>
-		<item id="8">
-			<property name="id">$NUMBER[8]</property>
+		<item id="6">
+			<property name="id">$NUMBER[6]</property>
 			<property name="mainmenuid">14</property>
 			<label>$VAR[DefNewHub7Name]</label>
 			<label2 />
@@ -2666,8 +2604,8 @@
 			<property name="group">newhub</property>
 			<property name="isSubmenu">True</property>
 			</item>
-		<item id="9">
-			<property name="id">$NUMBER[9]</property>
+		<item id="7">
+			<property name="id">$NUMBER[7]</property>
 			<property name="mainmenuid">14</property>
 			<label>$VAR[DefNewHub8Name]</label>
 			<label2 />
@@ -2683,8 +2621,8 @@
 			<property name="group">newhub</property>
 			<property name="isSubmenu">True</property>
 			</item>
-		<item id="10">
-			<property name="id">$NUMBER[10]</property>
+		<item id="8">
+			<property name="id">$NUMBER[8]</property>
 			<property name="mainmenuid">14</property>
 			<label>$VAR[DefNewHub9Name]</label>
 			<label2 />
@@ -2700,8 +2638,8 @@
 			<property name="group">newhub</property>
 			<property name="isSubmenu">True</property>
 			</item>
-		<item id="11">
-			<property name="id">$NUMBER[11]</property>
+		<item id="9">
+			<property name="id">$NUMBER[9]</property>
 			<property name="mainmenuid">14</property>
 			<label>$VAR[DefNewHub10Name]</label>
 			<label2 />
@@ -2717,8 +2655,8 @@
 			<property name="group">newhub</property>
 			<property name="isSubmenu">True</property>
 			</item>
-		<item id="12">
-			<property name="id">$NUMBER[12]</property>
+		<item id="10">
+			<property name="id">$NUMBER[10]</property>
 			<property name="mainmenuid">14</property>
 			<label>$VAR[DefNewHub11Name]</label>
 			<label2 />
@@ -2734,8 +2672,8 @@
 			<property name="group">newhub</property>
 			<property name="isSubmenu">True</property>
 			</item>
-		<item id="13">
-			<property name="id">$NUMBER[13]</property>
+		<item id="11">
+			<property name="id">$NUMBER[11]</property>
 			<property name="mainmenuid">14</property>
 			<label>$VAR[DefNewHub12Name]</label>
 			<label2 />
@@ -2751,8 +2689,8 @@
 			<property name="group">newhub</property>
 			<property name="isSubmenu">True</property>
 			</item>
-		<item id="14">
-			<property name="id">$NUMBER[14]</property>
+		<item id="12">
+			<property name="id">$NUMBER[12]</property>
 			<property name="mainmenuid">14</property>
 			<label>$VAR[DefNewHub13Name]</label>
 			<label2 />
@@ -2768,8 +2706,8 @@
 			<property name="group">newhub</property>
 			<property name="isSubmenu">True</property>
 			</item>
-		<item id="15">
-			<property name="id">$NUMBER[15]</property>
+		<item id="13">
+			<property name="id">$NUMBER[13]</property>
 			<property name="mainmenuid">14</property>
 			<label>$VAR[DefNewHub14Name]</label>
 			<label2 />
@@ -2785,8 +2723,8 @@
 			<property name="group">newhub</property>
 			<property name="isSubmenu">True</property>
 			</item>
-		<item id="16">
-			<property name="id">$NUMBER[16]</property>
+		<item id="14">
+			<property name="id">$NUMBER[14]</property>
 			<property name="mainmenuid">14</property>
 			<label>$VAR[DefNewHub15Name]</label>
 			<label2 />
@@ -2839,40 +2777,6 @@
 		<item id="3">
 			<property name="id">$NUMBER[3]</property>
 			<property name="mainmenuid">14</property>
-			<label>$VAR[DefNewHub2Name]</label>
-			<label2 />
-			<icon>DefaultShortcut.png</icon>
-			<thumb />
-			<property name="labelID">var-defnewhub2name</property>
-			<property name="defaultID">var-defnewhub2name</property>
-			<visible>[!Library.HasContent(Movies) + !Library.HasContent(TVShows)] + String.IsEqual(Window(10000).Property(submenuVisibility),newhub)</visible>
-			<onclick>$VAR[DefNewHub2Content]</onclick>
-			<property name="path">$VAR[DefNewHub2Content]</property>
-			<property name="list">$VAR[DefNewHub2Content]</property>
-			<visible>String.IsEqual(System.ProfileName,Master user)</visible>
-			<property name="group">newhub</property>
-			<property name="isSubmenu">True</property>
-			</item>
-		<item id="4">
-			<property name="id">$NUMBER[4]</property>
-			<property name="mainmenuid">14</property>
-			<label>$VAR[DefNewHub3Name]</label>
-			<label2 />
-			<icon>DefaultShortcut.png</icon>
-			<thumb />
-			<property name="labelID">var-defnewhub3name</property>
-			<property name="defaultID">var-defnewhub3name</property>
-			<visible>[!Library.HasContent(Movies) + !Library.HasContent(TVShows)] + String.IsEqual(Window(10000).Property(submenuVisibility),newhub)</visible>
-			<onclick>$VAR[DefNewHub3Content]</onclick>
-			<property name="path">$VAR[DefNewHub3Content]</property>
-			<property name="list">$VAR[DefNewHub3Content]</property>
-			<visible>String.IsEqual(System.ProfileName,Master user)</visible>
-			<property name="group">newhub</property>
-			<property name="isSubmenu">True</property>
-			</item>
-		<item id="5">
-			<property name="id">$NUMBER[5]</property>
-			<property name="mainmenuid">14</property>
 			<label>$VAR[DefNewHub4Name]</label>
 			<label2 />
 			<icon>DefaultShortcut.png</icon>
@@ -2887,8 +2791,8 @@
 			<property name="group">newhub</property>
 			<property name="isSubmenu">True</property>
 			</item>
-		<item id="6">
-			<property name="id">$NUMBER[6]</property>
+		<item id="4">
+			<property name="id">$NUMBER[4]</property>
 			<property name="mainmenuid">14</property>
 			<label>$VAR[DefNewHub5Name]</label>
 			<label2 />
@@ -2904,8 +2808,8 @@
 			<property name="group">newhub</property>
 			<property name="isSubmenu">True</property>
 			</item>
-		<item id="7">
-			<property name="id">$NUMBER[7]</property>
+		<item id="5">
+			<property name="id">$NUMBER[5]</property>
 			<property name="mainmenuid">14</property>
 			<label>$VAR[DefNewHub6Name]</label>
 			<label2 />
@@ -2921,8 +2825,8 @@
 			<property name="group">newhub</property>
 			<property name="isSubmenu">True</property>
 			</item>
-		<item id="8">
-			<property name="id">$NUMBER[8]</property>
+		<item id="6">
+			<property name="id">$NUMBER[6]</property>
 			<property name="mainmenuid">14</property>
 			<label>$VAR[DefNewHub7Name]</label>
 			<label2 />
@@ -2938,8 +2842,8 @@
 			<property name="group">newhub</property>
 			<property name="isSubmenu">True</property>
 			</item>
-		<item id="9">
-			<property name="id">$NUMBER[9]</property>
+		<item id="7">
+			<property name="id">$NUMBER[7]</property>
 			<property name="mainmenuid">14</property>
 			<label>$VAR[DefNewHub8Name]</label>
 			<label2 />
@@ -2955,8 +2859,8 @@
 			<property name="group">newhub</property>
 			<property name="isSubmenu">True</property>
 			</item>
-		<item id="10">
-			<property name="id">$NUMBER[10]</property>
+		<item id="8">
+			<property name="id">$NUMBER[8]</property>
 			<property name="mainmenuid">14</property>
 			<label>$VAR[DefNewHub9Name]</label>
 			<label2 />
@@ -2972,8 +2876,8 @@
 			<property name="group">newhub</property>
 			<property name="isSubmenu">True</property>
 			</item>
-		<item id="11">
-			<property name="id">$NUMBER[11]</property>
+		<item id="9">
+			<property name="id">$NUMBER[9]</property>
 			<property name="mainmenuid">14</property>
 			<label>$VAR[DefNewHub10Name]</label>
 			<label2 />
@@ -2989,8 +2893,8 @@
 			<property name="group">newhub</property>
 			<property name="isSubmenu">True</property>
 			</item>
-		<item id="12">
-			<property name="id">$NUMBER[12]</property>
+		<item id="10">
+			<property name="id">$NUMBER[10]</property>
 			<property name="mainmenuid">14</property>
 			<label>$VAR[DefNewHub11Name]</label>
 			<label2 />
@@ -3006,8 +2910,8 @@
 			<property name="group">newhub</property>
 			<property name="isSubmenu">True</property>
 			</item>
-		<item id="13">
-			<property name="id">$NUMBER[13]</property>
+		<item id="11">
+			<property name="id">$NUMBER[11]</property>
 			<property name="mainmenuid">14</property>
 			<label>$VAR[DefNewHub12Name]</label>
 			<label2 />
@@ -3023,8 +2927,8 @@
 			<property name="group">newhub</property>
 			<property name="isSubmenu">True</property>
 			</item>
-		<item id="14">
-			<property name="id">$NUMBER[14]</property>
+		<item id="12">
+			<property name="id">$NUMBER[12]</property>
 			<property name="mainmenuid">14</property>
 			<label>$VAR[DefNewHub13Name]</label>
 			<label2 />
@@ -3040,8 +2944,8 @@
 			<property name="group">newhub</property>
 			<property name="isSubmenu">True</property>
 			</item>
-		<item id="15">
-			<property name="id">$NUMBER[15]</property>
+		<item id="13">
+			<property name="id">$NUMBER[13]</property>
 			<property name="mainmenuid">14</property>
 			<label>$VAR[DefNewHub14Name]</label>
 			<label2 />
@@ -3057,8 +2961,8 @@
 			<property name="group">newhub</property>
 			<property name="isSubmenu">True</property>
 			</item>
-		<item id="16">
-			<property name="id">$NUMBER[16]</property>
+		<item id="14">
+			<property name="id">$NUMBER[14]</property>
 			<property name="mainmenuid">14</property>
 			<label>$VAR[DefNewHub15Name]</label>
 			<label2 />
@@ -3126,55 +3030,11 @@
 		<include content="widget_header_multi" condition="true">
 			<param name="widgetid" value="6053" />
 			<param name="submenuid" value="" />
-			<param name="widgetName" value="$VAR[DefNewHub2Name]" />
-			</include>
-		<include content="widget_base" condition="true">
-			<param name="contentStyle" value="normal" />
-			<param name="widgetid" value="6053" />
-			<param name="container" value="fixedlist" />
-			<param name="position" value="horizontal" />
-			<param name="width" value="100%" />
-			<param name="height" value="341" />
-			<param name="widgetName" value="$VAR[DefNewHub2Name]" />
-			<param name="submenuid" value="" />
-			<param name="widgetTags" value="WidgetTagOverlayDisable" />
-			<param name="widgetTarget" value="videos" />
-			<param name="widgetPath" value="$VAR[DefNewHub2Content]" />
-			<param name="widgetStyle" value="widget_layout_default" />
-			<param name="widgetSortBy" value="" />
-			<param name="widgetSortOrder" value="" />
-			<param name="widgetLimit" value="$INFO[Skin.String(WidgetsGlobalLimit)]" />
-			</include>
-		<include content="widget_header_multi" condition="true">
-			<param name="widgetid" value="6054" />
-			<param name="submenuid" value="" />
-			<param name="widgetName" value="$VAR[DefNewHub3Name]" />
-			</include>
-		<include content="widget_base" condition="true">
-			<param name="contentStyle" value="normal" />
-			<param name="widgetid" value="6054" />
-			<param name="container" value="fixedlist" />
-			<param name="position" value="horizontal" />
-			<param name="width" value="100%" />
-			<param name="height" value="341" />
-			<param name="widgetName" value="$VAR[DefNewHub3Name]" />
-			<param name="submenuid" value="" />
-			<param name="widgetTags" value="WidgetTagOverlayDisable" />
-			<param name="widgetTarget" value="videos" />
-			<param name="widgetPath" value="$VAR[DefNewHub3Content]" />
-			<param name="widgetStyle" value="widget_layout_default" />
-			<param name="widgetSortBy" value="" />
-			<param name="widgetSortOrder" value="" />
-			<param name="widgetLimit" value="$INFO[Skin.String(WidgetsGlobalLimit)]" />
-			</include>
-		<include content="widget_header_multi" condition="true">
-			<param name="widgetid" value="6055" />
-			<param name="submenuid" value="" />
 			<param name="widgetName" value="$VAR[DefNewHub4Name]" />
 			</include>
 		<include content="widget_base" condition="true">
 			<param name="contentStyle" value="normal" />
-			<param name="widgetid" value="6055" />
+			<param name="widgetid" value="6053" />
 			<param name="container" value="fixedlist" />
 			<param name="position" value="horizontal" />
 			<param name="width" value="100%" />
@@ -3190,13 +3050,13 @@
 			<param name="widgetLimit" value="$INFO[Skin.String(WidgetsGlobalLimit)]" />
 			</include>
 		<include content="widget_header_multi" condition="true">
-			<param name="widgetid" value="6056" />
+			<param name="widgetid" value="6054" />
 			<param name="submenuid" value="" />
 			<param name="widgetName" value="$VAR[DefNewHub5Name]" />
 			</include>
 		<include content="widget_base" condition="true">
 			<param name="contentStyle" value="normal" />
-			<param name="widgetid" value="6056" />
+			<param name="widgetid" value="6054" />
 			<param name="container" value="fixedlist" />
 			<param name="position" value="horizontal" />
 			<param name="width" value="100%" />
@@ -3212,13 +3072,13 @@
 			<param name="widgetLimit" value="$INFO[Skin.String(WidgetsGlobalLimit)]" />
 			</include>
 		<include content="widget_header_multi" condition="true">
-			<param name="widgetid" value="6057" />
+			<param name="widgetid" value="6055" />
 			<param name="submenuid" value="" />
 			<param name="widgetName" value="$VAR[DefNewHub6Name]" />
 			</include>
 		<include content="widget_base" condition="true">
 			<param name="contentStyle" value="normal" />
-			<param name="widgetid" value="6057" />
+			<param name="widgetid" value="6055" />
 			<param name="container" value="fixedlist" />
 			<param name="position" value="horizontal" />
 			<param name="width" value="100%" />
@@ -3234,13 +3094,13 @@
 			<param name="widgetLimit" value="$INFO[Skin.String(WidgetsGlobalLimit)]" />
 			</include>
 		<include content="widget_header_multi" condition="true">
-			<param name="widgetid" value="6058" />
+			<param name="widgetid" value="6056" />
 			<param name="submenuid" value="" />
 			<param name="widgetName" value="$VAR[DefNewHub7Name]" />
 			</include>
 		<include content="widget_base" condition="true">
 			<param name="contentStyle" value="normal" />
-			<param name="widgetid" value="6058" />
+			<param name="widgetid" value="6056" />
 			<param name="container" value="fixedlist" />
 			<param name="position" value="horizontal" />
 			<param name="width" value="100%" />
@@ -3256,13 +3116,13 @@
 			<param name="widgetLimit" value="$INFO[Skin.String(WidgetsGlobalLimit)]" />
 			</include>
 		<include content="widget_header_multi" condition="true">
-			<param name="widgetid" value="6059" />
+			<param name="widgetid" value="6057" />
 			<param name="submenuid" value="" />
 			<param name="widgetName" value="$VAR[DefNewHub8Name]" />
 			</include>
 		<include content="widget_base" condition="true">
 			<param name="contentStyle" value="normal" />
-			<param name="widgetid" value="6059" />
+			<param name="widgetid" value="6057" />
 			<param name="container" value="fixedlist" />
 			<param name="position" value="horizontal" />
 			<param name="width" value="100%" />
@@ -3278,13 +3138,13 @@
 			<param name="widgetLimit" value="$INFO[Skin.String(WidgetsGlobalLimit)]" />
 			</include>
 		<include content="widget_header_multi" condition="true">
-			<param name="widgetid" value="6060" />
+			<param name="widgetid" value="6058" />
 			<param name="submenuid" value="" />
 			<param name="widgetName" value="$VAR[DefNewHub9Name]" />
 			</include>
 		<include content="widget_base" condition="true">
 			<param name="contentStyle" value="normal" />
-			<param name="widgetid" value="6060" />
+			<param name="widgetid" value="6058" />
 			<param name="container" value="fixedlist" />
 			<param name="position" value="horizontal" />
 			<param name="width" value="100%" />
@@ -3300,13 +3160,13 @@
 			<param name="widgetLimit" value="$INFO[Skin.String(WidgetsGlobalLimit)]" />
 			</include>
 		<include content="widget_header_multi" condition="true">
-			<param name="widgetid" value="6061" />
+			<param name="widgetid" value="6059" />
 			<param name="submenuid" value="" />
 			<param name="widgetName" value="$VAR[DefNewHub10Name]" />
 			</include>
 		<include content="widget_base" condition="true">
 			<param name="contentStyle" value="normal" />
-			<param name="widgetid" value="6061" />
+			<param name="widgetid" value="6059" />
 			<param name="container" value="fixedlist" />
 			<param name="position" value="horizontal" />
 			<param name="width" value="100%" />
@@ -3322,13 +3182,13 @@
 			<param name="widgetLimit" value="$INFO[Skin.String(WidgetsGlobalLimit)]" />
 			</include>
 		<include content="widget_header_multi" condition="true">
-			<param name="widgetid" value="6062" />
+			<param name="widgetid" value="6060" />
 			<param name="submenuid" value="" />
 			<param name="widgetName" value="$VAR[DefNewHub11Name]" />
 			</include>
 		<include content="widget_base" condition="true">
 			<param name="contentStyle" value="normal" />
-			<param name="widgetid" value="6062" />
+			<param name="widgetid" value="6060" />
 			<param name="container" value="fixedlist" />
 			<param name="position" value="horizontal" />
 			<param name="width" value="100%" />
@@ -3344,13 +3204,13 @@
 			<param name="widgetLimit" value="$INFO[Skin.String(WidgetsGlobalLimit)]" />
 			</include>
 		<include content="widget_header_multi" condition="true">
-			<param name="widgetid" value="6063" />
+			<param name="widgetid" value="6061" />
 			<param name="submenuid" value="" />
 			<param name="widgetName" value="$VAR[DefNewHub12Name]" />
 			</include>
 		<include content="widget_base" condition="true">
 			<param name="contentStyle" value="normal" />
-			<param name="widgetid" value="6063" />
+			<param name="widgetid" value="6061" />
 			<param name="container" value="fixedlist" />
 			<param name="position" value="horizontal" />
 			<param name="width" value="100%" />
@@ -3366,13 +3226,13 @@
 			<param name="widgetLimit" value="$INFO[Skin.String(WidgetsGlobalLimit)]" />
 			</include>
 		<include content="widget_header_multi" condition="true">
-			<param name="widgetid" value="6064" />
+			<param name="widgetid" value="6062" />
 			<param name="submenuid" value="" />
 			<param name="widgetName" value="$VAR[DefNewHub13Name]" />
 			</include>
 		<include content="widget_base" condition="true">
 			<param name="contentStyle" value="normal" />
-			<param name="widgetid" value="6064" />
+			<param name="widgetid" value="6062" />
 			<param name="container" value="fixedlist" />
 			<param name="position" value="horizontal" />
 			<param name="width" value="100%" />
@@ -3388,13 +3248,13 @@
 			<param name="widgetLimit" value="$INFO[Skin.String(WidgetsGlobalLimit)]" />
 			</include>
 		<include content="widget_header_multi" condition="true">
-			<param name="widgetid" value="6065" />
+			<param name="widgetid" value="6063" />
 			<param name="submenuid" value="" />
 			<param name="widgetName" value="$VAR[DefNewHub14Name]" />
 			</include>
 		<include content="widget_base" condition="true">
 			<param name="contentStyle" value="normal" />
-			<param name="widgetid" value="6065" />
+			<param name="widgetid" value="6063" />
 			<param name="container" value="fixedlist" />
 			<param name="position" value="horizontal" />
 			<param name="width" value="100%" />
@@ -3410,13 +3270,13 @@
 			<param name="widgetLimit" value="$INFO[Skin.String(WidgetsGlobalLimit)]" />
 			</include>
 		<include content="widget_header_multi" condition="true">
-			<param name="widgetid" value="6066" />
+			<param name="widgetid" value="6064" />
 			<param name="submenuid" value="" />
 			<param name="widgetName" value="$VAR[DefNewHub15Name]" />
 			</include>
 		<include content="widget_base" condition="true">
 			<param name="contentStyle" value="normal" />
-			<param name="widgetid" value="6066" />
+			<param name="widgetid" value="6064" />
 			<param name="container" value="fixedlist" />
 			<param name="position" value="horizontal" />
 			<param name="width" value="100%" />
@@ -3448,9 +3308,9 @@
 			<thumb />
 			<property name="labelID">var-defmusichub3name</property>
 			<property name="defaultID">var-defmusichub3name</property>
-			<onclick>special://home/addons/skin.benjie/extras/widgetplaylists/recentlyaddedalbums.xsp</onclick>
-			<property name="path">special://home/addons/skin.benjie/extras/widgetplaylists/recentlyaddedalbums.xsp</property>
-			<property name="list">special://home/addons/skin.benjie/extras/widgetplaylists/recentlyaddedalbums.xsp</property>
+			<onclick>C:\Users\ahmad\AppData\Local\Temp\claude\7e7f554bcb1c05f3\54ae8fa3-d08a-47f0-934c-af3eadcdcc91\scratchpad\kodiE\portable_data\addons\skin.benjie\extras\widgetplaylists\recentlyaddedalbums.xsp</onclick>
+			<property name="path">C:\Users\ahmad\AppData\Local\Temp\claude\7e7f554bcb1c05f3\54ae8fa3-d08a-47f0-934c-af3eadcdcc91\scratchpad\kodiE\portable_data\addons\skin.benjie\extras\widgetplaylists\recentlyaddedalbums.xsp</property>
+			<property name="list">C:\Users\ahmad\AppData\Local\Temp\claude\7e7f554bcb1c05f3\54ae8fa3-d08a-47f0-934c-af3eadcdcc91\scratchpad\kodiE\portable_data\addons\skin.benjie\extras\widgetplaylists\recentlyaddedalbums.xsp</property>
 			<visible>String.IsEqual(System.ProfileName,Master user)</visible>
 			<property name="group">musichub</property>
 			<property name="isSubmenu">True</property>
@@ -3464,9 +3324,9 @@
 			<thumb />
 			<property name="labelID">31131</property>
 			<property name="defaultID">31131</property>
-			<onclick>special://home/addons/skin.benjie/extras/widgetplaylists/recentlyaddedartists.xsp</onclick>
-			<property name="path">special://home/addons/skin.benjie/extras/widgetplaylists/recentlyaddedartists.xsp</property>
-			<property name="list">special://home/addons/skin.benjie/extras/widgetplaylists/recentlyaddedartists.xsp</property>
+			<onclick>C:\Users\ahmad\AppData\Local\Temp\claude\7e7f554bcb1c05f3\54ae8fa3-d08a-47f0-934c-af3eadcdcc91\scratchpad\kodiE\portable_data\addons\skin.benjie\extras\widgetplaylists\recentlyaddedartists.xsp</onclick>
+			<property name="path">C:\Users\ahmad\AppData\Local\Temp\claude\7e7f554bcb1c05f3\54ae8fa3-d08a-47f0-934c-af3eadcdcc91\scratchpad\kodiE\portable_data\addons\skin.benjie\extras\widgetplaylists\recentlyaddedartists.xsp</property>
+			<property name="list">C:\Users\ahmad\AppData\Local\Temp\claude\7e7f554bcb1c05f3\54ae8fa3-d08a-47f0-934c-af3eadcdcc91\scratchpad\kodiE\portable_data\addons\skin.benjie\extras\widgetplaylists\recentlyaddedartists.xsp</property>
 			<visible>String.IsEqual(System.ProfileName,Master user)</visible>
 			<property name="group">musichub</property>
 			<property name="isSubmenu">True</property>
@@ -3480,9 +3340,9 @@
 			<thumb />
 			<property name="labelID">31211</property>
 			<property name="defaultID">31211</property>
-			<onclick>special://home/addons/skin.benjie/extras/widgetplaylists/recentlyaddedsongs.xsp</onclick>
-			<property name="path">special://home/addons/skin.benjie/extras/widgetplaylists/recentlyaddedsongs.xsp</property>
-			<property name="list">special://home/addons/skin.benjie/extras/widgetplaylists/recentlyaddedsongs.xsp</property>
+			<onclick>C:\Users\ahmad\AppData\Local\Temp\claude\7e7f554bcb1c05f3\54ae8fa3-d08a-47f0-934c-af3eadcdcc91\scratchpad\kodiE\portable_data\addons\skin.benjie\extras\widgetplaylists\recentlyaddedsongs.xsp</onclick>
+			<property name="path">C:\Users\ahmad\AppData\Local\Temp\claude\7e7f554bcb1c05f3\54ae8fa3-d08a-47f0-934c-af3eadcdcc91\scratchpad\kodiE\portable_data\addons\skin.benjie\extras\widgetplaylists\recentlyaddedsongs.xsp</property>
+			<property name="list">C:\Users\ahmad\AppData\Local\Temp\claude\7e7f554bcb1c05f3\54ae8fa3-d08a-47f0-934c-af3eadcdcc91\scratchpad\kodiE\portable_data\addons\skin.benjie\extras\widgetplaylists\recentlyaddedsongs.xsp</property>
 			<visible>String.IsEqual(System.ProfileName,Master user)</visible>
 			<property name="group">musichub</property>
 			<property name="isSubmenu">True</property>
@@ -3498,9 +3358,9 @@
 			<thumb />
 			<property name="labelID">var-defmusichub3name</property>
 			<property name="defaultID">var-defmusichub3name</property>
-			<onclick>special://home/addons/skin.benjie/extras/widgetplaylists/recentlyaddedalbums.xsp</onclick>
-			<property name="path">special://home/addons/skin.benjie/extras/widgetplaylists/recentlyaddedalbums.xsp</property>
-			<property name="list">special://home/addons/skin.benjie/extras/widgetplaylists/recentlyaddedalbums.xsp</property>
+			<onclick>C:\Users\ahmad\AppData\Local\Temp\claude\7e7f554bcb1c05f3\54ae8fa3-d08a-47f0-934c-af3eadcdcc91\scratchpad\kodiE\portable_data\addons\skin.benjie\extras\widgetplaylists\recentlyaddedalbums.xsp</onclick>
+			<property name="path">C:\Users\ahmad\AppData\Local\Temp\claude\7e7f554bcb1c05f3\54ae8fa3-d08a-47f0-934c-af3eadcdcc91\scratchpad\kodiE\portable_data\addons\skin.benjie\extras\widgetplaylists\recentlyaddedalbums.xsp</property>
+			<property name="list">C:\Users\ahmad\AppData\Local\Temp\claude\7e7f554bcb1c05f3\54ae8fa3-d08a-47f0-934c-af3eadcdcc91\scratchpad\kodiE\portable_data\addons\skin.benjie\extras\widgetplaylists\recentlyaddedalbums.xsp</property>
 			<visible>[String.IsEqual(System.ProfileName,Master user)] + String.IsEqual(Window(10000).Property(submenuVisibility),musichub)</visible>
 			<property name="group">musichub</property>
 			<property name="isSubmenu">True</property>
@@ -3514,9 +3374,9 @@
 			<thumb />
 			<property name="labelID">31131</property>
 			<property name="defaultID">31131</property>
-			<onclick>special://home/addons/skin.benjie/extras/widgetplaylists/recentlyaddedartists.xsp</onclick>
-			<property name="path">special://home/addons/skin.benjie/extras/widgetplaylists/recentlyaddedartists.xsp</property>
-			<property name="list">special://home/addons/skin.benjie/extras/widgetplaylists/recentlyaddedartists.xsp</property>
+			<onclick>C:\Users\ahmad\AppData\Local\Temp\claude\7e7f554bcb1c05f3\54ae8fa3-d08a-47f0-934c-af3eadcdcc91\scratchpad\kodiE\portable_data\addons\skin.benjie\extras\widgetplaylists\recentlyaddedartists.xsp</onclick>
+			<property name="path">C:\Users\ahmad\AppData\Local\Temp\claude\7e7f554bcb1c05f3\54ae8fa3-d08a-47f0-934c-af3eadcdcc91\scratchpad\kodiE\portable_data\addons\skin.benjie\extras\widgetplaylists\recentlyaddedartists.xsp</property>
+			<property name="list">C:\Users\ahmad\AppData\Local\Temp\claude\7e7f554bcb1c05f3\54ae8fa3-d08a-47f0-934c-af3eadcdcc91\scratchpad\kodiE\portable_data\addons\skin.benjie\extras\widgetplaylists\recentlyaddedartists.xsp</property>
 			<visible>[String.IsEqual(System.ProfileName,Master user)] + String.IsEqual(Window(10000).Property(submenuVisibility),musichub)</visible>
 			<property name="group">musichub</property>
 			<property name="isSubmenu">True</property>
@@ -3530,9 +3390,9 @@
 			<thumb />
 			<property name="labelID">31211</property>
 			<property name="defaultID">31211</property>
-			<onclick>special://home/addons/skin.benjie/extras/widgetplaylists/recentlyaddedsongs.xsp</onclick>
-			<property name="path">special://home/addons/skin.benjie/extras/widgetplaylists/recentlyaddedsongs.xsp</property>
-			<property name="list">special://home/addons/skin.benjie/extras/widgetplaylists/recentlyaddedsongs.xsp</property>
+			<onclick>C:\Users\ahmad\AppData\Local\Temp\claude\7e7f554bcb1c05f3\54ae8fa3-d08a-47f0-934c-af3eadcdcc91\scratchpad\kodiE\portable_data\addons\skin.benjie\extras\widgetplaylists\recentlyaddedsongs.xsp</onclick>
+			<property name="path">C:\Users\ahmad\AppData\Local\Temp\claude\7e7f554bcb1c05f3\54ae8fa3-d08a-47f0-934c-af3eadcdcc91\scratchpad\kodiE\portable_data\addons\skin.benjie\extras\widgetplaylists\recentlyaddedsongs.xsp</property>
+			<property name="list">C:\Users\ahmad\AppData\Local\Temp\claude\7e7f554bcb1c05f3\54ae8fa3-d08a-47f0-934c-af3eadcdcc91\scratchpad\kodiE\portable_data\addons\skin.benjie\extras\widgetplaylists\recentlyaddedsongs.xsp</property>
 			<visible>[String.IsEqual(System.ProfileName,Master user)] + String.IsEqual(Window(10000).Property(submenuVisibility),musichub)</visible>
 			<property name="group">musichub</property>
 			<property name="isSubmenu">True</property>
@@ -3558,7 +3418,7 @@
 			<param name="submenuid" value="" />
 			<param name="widgetTags" value="WidgetTagOverlayDisable" />
 			<param name="widgetTarget" value="music" />
-			<param name="widgetPath" value="special://home/addons/skin.benjie/extras/widgetplaylists/recentlyaddedalbums.xsp" />
+			<param name="widgetPath" value="C:\Users\ahmad\AppData\Local\Temp\claude\7e7f554bcb1c05f3\54ae8fa3-d08a-47f0-934c-af3eadcdcc91\scratchpad\kodiE\portable_data\addons\skin.benjie\extras\widgetplaylists\recentlyaddedalbums.xsp" />
 			<param name="widgetStyle" value="widget_layout_square" />
 			<param name="widgetSortBy" value="" />
 			<param name="widgetSortOrder" value="" />
@@ -3580,7 +3440,7 @@
 			<param name="submenuid" value="" />
 			<param name="widgetTags" value="WidgetTagOverlayDisable" />
 			<param name="widgetTarget" value="music" />
-			<param name="widgetPath" value="special://home/addons/skin.benjie/extras/widgetplaylists/recentlyaddedartists.xsp" />
+			<param name="widgetPath" value="C:\Users\ahmad\AppData\Local\Temp\claude\7e7f554bcb1c05f3\54ae8fa3-d08a-47f0-934c-af3eadcdcc91\scratchpad\kodiE\portable_data\addons\skin.benjie\extras\widgetplaylists\recentlyaddedartists.xsp" />
 			<param name="widgetStyle" value="widget_layout_square" />
 			<param name="widgetSortBy" value="" />
 			<param name="widgetSortOrder" value="" />
@@ -3602,7 +3462,7 @@
 			<param name="submenuid" value="" />
 			<param name="widgetTags" value="WidgetTagOverlayDisable" />
 			<param name="widgetTarget" value="music" />
-			<param name="widgetPath" value="special://home/addons/skin.benjie/extras/widgetplaylists/recentlyaddedsongs.xsp" />
+			<param name="widgetPath" value="C:\Users\ahmad\AppData\Local\Temp\claude\7e7f554bcb1c05f3\54ae8fa3-d08a-47f0-934c-af3eadcdcc91\scratchpad\kodiE\portable_data\addons\skin.benjie\extras\widgetplaylists\recentlyaddedsongs.xsp" />
 			<param name="widgetStyle" value="widget_layout_square" />
 			<param name="widgetSortBy" value="" />
 			<param name="widgetSortOrder" value="" />
@@ -3878,6 +3738,50 @@
 			<param name="widgetTags" value="WidgetTagOverlayDisable" />
 			<param name="widgetTarget" value="videos" />
 			<param name="widgetPath" value="$VAR[DefWidget5Content]" />
+			<param name="widgetStyle" value="widget_layout_default" />
+			<param name="widgetSortBy" value="" />
+			<param name="widgetSortOrder" value="" />
+			<param name="widgetLimit" value="$INFO[Skin.String(WidgetsGlobalLimit)]" />
+			</include>
+		<include content="widget_header_multi" condition="true">
+			<param name="widgetid" value="23009" />
+			<param name="submenuid" value="" />
+			<param name="widgetName" value="$VAR[DefWidget6Name]" />
+			</include>
+		<include content="widget_base" condition="true">
+			<param name="contentStyle" value="normal" />
+			<param name="widgetid" value="23009" />
+			<param name="container" value="fixedlist" />
+			<param name="position" value="horizontal" />
+			<param name="width" value="100%" />
+			<param name="height" value="341" />
+			<param name="widgetName" value="$VAR[DefWidget6Name]" />
+			<param name="submenuid" value="" />
+			<param name="widgetTags" value="WidgetTagOverlayDisable" />
+			<param name="widgetTarget" value="videos" />
+			<param name="widgetPath" value="$VAR[DefWidget6Content]" />
+			<param name="widgetStyle" value="widget_layout_default" />
+			<param name="widgetSortBy" value="" />
+			<param name="widgetSortOrder" value="" />
+			<param name="widgetLimit" value="$INFO[Skin.String(WidgetsGlobalLimit)]" />
+			</include>
+		<include content="widget_header_multi" condition="true">
+			<param name="widgetid" value="23010" />
+			<param name="submenuid" value="" />
+			<param name="widgetName" value="$VAR[DefWidget7Name]" />
+			</include>
+		<include content="widget_base" condition="true">
+			<param name="contentStyle" value="normal" />
+			<param name="widgetid" value="23010" />
+			<param name="container" value="fixedlist" />
+			<param name="position" value="horizontal" />
+			<param name="width" value="100%" />
+			<param name="height" value="341" />
+			<param name="widgetName" value="$VAR[DefWidget7Name]" />
+			<param name="submenuid" value="" />
+			<param name="widgetTags" value="WidgetTagOverlayDisable" />
+			<param name="widgetTarget" value="videos" />
+			<param name="widgetPath" value="$VAR[DefWidget7Content]" />
 			<param name="widgetStyle" value="widget_layout_default" />
 			<param name="widgetSortBy" value="" />
 			<param name="widgetSortOrder" value="" />

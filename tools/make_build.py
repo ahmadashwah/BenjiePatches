@@ -299,12 +299,46 @@ def assets(root):
     return found
 
 
+# Kodi 22 (Skin Shortcuts 3) can't rebuild the skin's menus, so devices on it
+# use the shipped 1080i/script-skinshortcuts-includes.xml as it is. It must be
+# rebuilt (Skin Shortcuts 2 on a Kodi 21 copy, then copied back) whenever the
+# menu files in shortcuts/ change; this records which menu files it was built
+# from and warns when they changed since.
+MENU_SOURCE_RECORD = os.path.join(REPO, "tools", "skin_menus_built_from.sha256")
+
+
+def menu_files_hash():
+    h = hashlib.sha256()
+    folder = os.path.join(REPO, SKIN, "shortcuts")
+    for name in sorted(os.listdir(folder)):
+        if name.endswith(".xml"):
+            with open(os.path.join(folder, name), "rb") as f:
+                h.update(name.encode() + b"\0" + f.read().replace(b"\r\n", b"\n"))
+    return h.hexdigest()
+
+
+def check_menu_includes():
+    recorded = open(MENU_SOURCE_RECORD).read().strip() if os.path.isfile(MENU_SOURCE_RECORD) else ""
+    if recorded != menu_files_hash():
+        print("WARNING: skin.benjie/shortcuts changed since 1080i/script-skinshortcuts-includes.xml was rebuilt.")
+        print("         Kodi 22 devices use that file as it is: rebuild it with Skin Shortcuts 2 on a")
+        print("         Kodi 21 copy, copy it back, then run with --menus-rebuilt.")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--test-url", help="repository address to build for instead of GitHub Pages")
     ap.add_argument("--out", help="output folder (default: this repo)")
     ap.add_argument("--check", action="store_true", help="only show which versions a release would bump")
+    ap.add_argument("--menus-rebuilt", action="store_true",
+                    help="record that the shipped menu includes match the current shortcuts/ files")
     args = ap.parse_args()
+    if args.menus_rebuilt:
+        with open(MENU_SOURCE_RECORD, "w") as f:
+            f.write(menu_files_hash() + "\n")
+        print("Recorded: the shipped menu includes match shortcuts/.")
+        return
+    check_menu_includes()
     repo_url = args.test_url or PAGES_URL
     if not repo_url.endswith("/"):
         repo_url += "/"

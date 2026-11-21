@@ -17,7 +17,7 @@
     </extension>
 </addon>
 <!-- Bengie: a modified version of the Bingie skin by matke (skin.bingie 2.0.2), GPL v2.0. See CHANGES.md. -->
-<addon id="skin.benjie" version="2.0.2.13" name="Bengie 2.0" provider-name="matke (Bingie), modified by ahmadashwah">
+<addon id="skin.benjie" version="2.0.2.14" name="Bengie 2.0" provider-name="matke (Bingie), modified by ahmadashwah">
 	<requires>
 		<import version="5.17.0" addon="xbmc.gui"/>
 		<import addon="script.bingie.helper" version="1.1.2"/>
@@ -61,10 +61,10 @@
 <!-- Bengie: no code. Requires the current release of every Bengie add-on, so
      updating this one brings them all to the same release. tools/make_build.py
      bumps it and sets these versions whenever any of them changed. -->
-<addon id="script.benjie.bundle" name="Bengie add-ons" version="1.0.7" provider-name="ahmadashwah">
+<addon id="script.benjie.bundle" name="Bengie add-ons" version="1.0.8" provider-name="ahmadashwah">
 	<requires>
 		<import addon="xbmc.python" version="3.0.0" />
-		<import addon="service.iptvhelperfixes" version="1.9.11" />
+		<import addon="service.iptvhelperfixes" version="1.9.12" />
 		<import addon="plugin.video.xstream-player" version="2.1.5.7" />
 		<import addon="plugin.video.tmdb.bingie.helper" version="1.0.3.4" />
 		<import addon="script.bingie.widgets" version="1.0.1.4" />
@@ -84,7 +84,7 @@
 		</assets>
 	</extension>
 </addon>
-<addon id="service.iptvhelperfixes" name="IPTV Helper Fixes" version="1.9.11" provider-name="ahmadashwah">
+<addon id="service.iptvhelperfixes" name="IPTV Helper Fixes" version="1.9.12" provider-name="ahmadashwah">
     <requires>
         <import addon="xbmc.python" version="3.0.0"/>
         <import addon="script.module.requests" version="2.22.0"/>

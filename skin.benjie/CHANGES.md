@@ -1,5 +1,20 @@
 # Changes from Bingie 2.0.2
 
+## 2.0.2.14 (2026-11-21)
+
+- Kodi 22 support (`1080i/Home.xml`, `1080i/SkinSettings.xml`): Kodi 22 comes
+  with Skin Shortcuts 3, which can't read this skin's menu files and stopped
+  with a "built for Skin Shortcuts v2" message. With Skin Shortcuts 3 the skin
+  no longer asks it to rebuild the menus and uses the shipped
+  `1080i/script-skinshortcuts-includes.xml` as it is; menus can't be edited
+  on Kodi 22 for now. Kodi 21 is unchanged.
+- `1080i/script-skinshortcuts-includes.xml` rebuilt from the current menu
+  files (the Home / New & Popular rows from 2.0.2.11), so Kodi 22 devices get
+  the same rows as Kodi 21.
+- Tested on Kodi 22.0 RC2: Home and its rows, playback from Continue Watching
+  and through TMDb Bingie Helper, results while typing and Back on the search
+  keyboard.
+
 ## 2.0.2.13 (2026-11-15)
 
 - `1080i/IncludesBingieKeyboard.xml`: the live result rows beside the search
